@@ -1,0 +1,91 @@
+// src/App.jsx
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+import Navbar from "./components/navbar/Navbar";
+import Footer from "./components/footer/Footer";
+
+import Landing from "./pages/landing/Landing";
+import Dashboard from "./pages/dashboard/Dashboard";
+
+import Register from "./pages/auth/Register";
+import Login from "./pages/auth/Login";
+import Settings from "./pages/auth/Settings";
+
+import PlayLocal from "./pages/play/local/PlayLocal";
+import PlayBot from "./pages/play/bot/PlayBot";
+
+import Stats from "./pages/stats/Stats";
+
+import PositionTrainer from "./pages/training/PositionTrainer";
+
+import Profile from "./pages/social/Profile";
+
+import ReviewGame from "./pages/review/ReviewGame";
+const App = () => {
+  return (
+    <div className="mainContainer">
+      <Router>
+        <Navbar />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+
+          <Route path="/player/:username" element={<Profile />} />
+          <Route path="/review/:playerId/:gameId" element={<ReviewGame />} />
+
+          <Route path="/trainer" element={<PositionTrainer />} />
+
+          {/* protected Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/play/local"
+            element={
+              <ProtectedRoute>
+                <PlayLocal />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/play/bot"
+            element={
+              <ProtectedRoute>
+                <PlayBot />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stats"
+            element={
+              <ProtectedRoute>
+                <Stats />
+              </ProtectedRoute>
+            }
+          />
+
+        </Routes>
+        <Footer />
+      </Router>
+    </div>
+  );
+};
+
+export default App;

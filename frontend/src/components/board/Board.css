@@ -1,0 +1,70 @@
+
+.board {
+  display: flex;
+  flex-direction: column;
+  background-color: #0077b6;
+  padding: 10px;
+  border-radius: 10px;
+  width: max-content;
+  margin: auto;
+}
+
+.board-row {
+  display: flex;
+}
+
+.cell {
+  width: 60px;
+  height: 60px;
+  margin: 5px;
+  background-color: #90e0ef; 
+  border-radius: 50%;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cell:hover {
+  transform: scale(1.1);
+}
+
+.cell.highlighted {
+  box-shadow: 0 0 10px 5px rgba(255, 215, 0, 0.7);
+}
+
+.piece {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.player1-piece {
+  background-color: red;
+}
+
+.player2-piece {
+  background-color: yellow;
+}
+
+@media (max-width: 768px) {
+  .cell {
+    width: 40px;
+    height: 40px;
+    margin: 3px;
+  }
+}
+
+.board-loading {
+  width: 420px; 
+  height: 360px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0077b6;
+  border-radius: 10px;
+  color: white;
+  font-size: 24px;
+}
+.cell.latest-move {
+  border: 4px solid rgb(0, 0, 0);
+}
