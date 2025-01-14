@@ -13,6 +13,7 @@ const PositionTrainer = () => {
 
   const generateTrainingPosition = async (type) => {
     setLoading(true);
+    setTrainingType(type);
     try {
       const randomMoves =
         type === "early"

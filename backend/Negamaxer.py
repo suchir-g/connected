@@ -124,3 +124,16 @@ class Negamaxer:
                     score -= position.count_alignments(position.array_board, r, c, -player, self.difficulty)
 
         return score
+
+    def get_column_scores(self, position, player):
+        valid_moves = position.get_valid_moves()
+        column_scores = {}
+
+        for move in valid_moves:
+            new_position = position.copy()
+            new_position.drop_piece(move, player)
+            score = -self.negamax(new_position, -player, self.max_depth, -float('inf'), float('inf'))
+            column_scores[move] = score
+
+        return column_scores
+

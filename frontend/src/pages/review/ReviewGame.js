@@ -7,34 +7,38 @@ import { getBestMove } from "../../config/api";
 
 const ReviewGame = () => {
   const { gameId, playerId } = useParams();
-  const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0))); 
+  const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0)));
   const [moves, setMoves] = useState([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
-  const [precomputedBestMoves, setPrecomputedBestMoves] = useState([]); 
-  const [latestMove, setLatestMove] = useState(null); 
-  const [loading, setLoading] = useState(true); 
-  const [evaluating, setEvaluating] = useState(false); 
+  const [precomputedBestMoves, setPrecomputedBestMoves] = useState([]);
+  const [latestMove, setLatestMove] = useState(null);
+  const [scores, setScores] = useState(Array(7).fill(null)); // Store scores for each column
+  const [loading, setLoading] = useState(true);
+  const [evaluating, setEvaluating] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchGame = async () => {
       try {
+        console.log("Fetching game data...");
         setLoading(true);
         const gameRef = doc(db, "players", playerId, "games", gameId);
         const gameSnap = await getDoc(gameRef);
 
         if (gameSnap.exists()) {
           const gameData = gameSnap.data();
+          console.log("Game data fetched successfully:", gameData);
+
           const moves = gameData.moves
             .split("")
-            .map((move) => parseInt(move, 10) - 1); 
+            .map((move) => parseInt(move, 10) - 1);
           setMoves(moves);
 
           if (gameData.bestMoves.length > 0) {
-            // use precomputed best moves if available
+            console.log("Using precomputed best moves:", gameData.bestMoves);
             setPrecomputedBestMoves(gameData.bestMoves);
           } else {
-            // compute and save best moves if not available
+            console.log("Best moves not precomputed. Precomputing now...");
             await precomputeBestMoves(moves, gameRef);
           }
         } else {
@@ -52,64 +56,84 @@ const ReviewGame = () => {
   }, [gameId, playerId]);
 
   const precomputeBestMoves = async (moves, gameRef) => {
-    setEvaluating(true); 
+    setEvaluating(true);
     let tempBoard = Array(6)
       .fill(0)
-      .map(() => Array(7).fill(0)); 
+      .map(() => Array(7).fill(0));
     const bestMoves = [];
 
     for (let i = 0; i < moves.length; i++) {
-      const player = i % 2 === 0 ? 1 : -1; 
-      const opponent = -player; 
+      const player = i % 2 === 0 ? 1 : -1;
+      const opponent = -player;
 
       try {
+        console.log(
+          `Fetching best move for player ${opponent} at move index ${i}...`
+        );
         const response = await getBestMove(tempBoard, opponent);
+        console.log(`Best move fetched: ${response.data.best_move}`);
         bestMoves.push(response.data.best_move);
       } catch (err) {
-        console.error("Error precomputing best move:", err);
-        bestMoves.push(null); 
+        console.error(`Error fetching best move at move index ${i}:`, err);
+        bestMoves.push(null);
       }
 
       tempBoard = applyMove(tempBoard, moves[i], player);
     }
 
     try {
-      console.log("Updating best moves in Firestore:", bestMoves);
-      await updateDoc(gameRef, { bestMoves }); 
+      console.log("Saving precomputed best moves to Firestore:", bestMoves);
+      await updateDoc(gameRef, { bestMoves });
       console.log("Best moves saved successfully.");
-      setPrecomputedBestMoves(bestMoves); 
+      setPrecomputedBestMoves(bestMoves);
     } catch (err) {
       console.error("Error saving best moves to Firestore:", err);
     }
 
-    setEvaluating(false); 
+    setEvaluating(false);
   };
 
   const applyMove = (board, column, player) => {
-    const newBoard = board.map((row) => [...row]); 
+    const newBoard = board.map((row) => [...row]);
     let latestRow = null;
 
     for (let row = newBoard.length - 1; row >= 0; row--) {
       if (newBoard[row][column] === 0) {
         newBoard[row][column] = player;
-        latestRow = row; 
+        latestRow = row;
         break;
       }
     }
 
-    setLatestMove({ row: latestRow, column }); 
+    setLatestMove({ row: latestRow, column });
     return newBoard;
   };
 
   const renderBoardAtMove = (moveIndex) => {
     let tempBoard = Array(6)
       .fill(0)
-      .map(() => Array(7).fill(0)); 
+      .map(() => Array(7).fill(0));
     for (let i = 0; i <= moveIndex; i++) {
-      const player = i % 2 === 0 ? 1 : -1; 
+      const player = i % 2 === 0 ? 1 : -1;
       tempBoard = applyMove(tempBoard, moves[i], player);
     }
     setBoard(tempBoard);
+    fetchColumnScores(tempBoard, currentMoveIndex % 2 === 0 ? 1 : -1);
+  };
+
+  const fetchColumnScores = async (board, currentPlayer) => {
+    try {
+      console.log("Fetching column scores...");
+      const response = await getBestMove(board, currentPlayer);
+      console.log(
+        "Column scores fetched successfully:",
+        response.data.column_scores
+      );
+      setScores(response.data.column_scores || Array(7).fill(null));
+    } catch (err) {
+      console.error("Error fetching column scores:", err);
+      setScores(Array(7).fill(null));
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -156,8 +180,22 @@ const ReviewGame = () => {
         highlightedColumns={[precomputedBestMoves[currentMoveIndex]]}
         latestMove={latestMove}
       />
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: "10px",
+        }}
+      >
+        {scores.map((score, index) => (
+          <div key={index} style={{ textAlign: "center" }}>
+            <p>Column {index + 1}</p>
+            <p>{score !== null ? score : "N/A"}</p>
+          </div>
+        ))}
+      </div>
       <p>
-        best move for this turn:{" "}
+        Best move for this turn:{" "}
         {precomputedBestMoves[currentMoveIndex] !== null
           ? precomputedBestMoves[currentMoveIndex] + 1
           : "Not available"}

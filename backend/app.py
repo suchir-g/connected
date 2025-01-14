@@ -173,5 +173,39 @@ def generate_board():
     board = simulate_board(moves)
     return jsonify({"board": board})
 
+@app.route('/column-scores', methods=['POST'])
+def column_scores():
+    print("Received request to /column-scores")
+    global negamaxer
+
+    data = request.get_json()
+    if not data:
+        print("Error: No data received")
+        return jsonify({'error': 'No data sent'}), 400
+
+    board = data.get('board')
+    current_player = data.get('current_player')
+
+    if current_player not in [1, -1]:
+        print("Error: Invalid current_player value")
+        return jsonify({'error': 'Invalid current_player value - must be 1 or -1.'}), 400
+
+    if not validate_board(board):
+        print("Error: Invalid board format")
+        return jsonify({'error': 'Invalid board format!'}), 400
+
+    game_position = Position(array_board=board)
+    print(f"Processing column scores for player {current_player} with board:\n{board}")
+
+    try:
+        column_scores = negamaxer.get_column_scores(game_position, current_player)
+        print("Column scores calculated successfully:", column_scores)
+        return jsonify({'column_scores': column_scores}), 200
+    except Exception as e:
+        print("Error during column score computation:", str(e))
+        return jsonify({'error': str(e)}), 500
+
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
