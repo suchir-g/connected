@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -21,8 +20,11 @@ import Stats from "./pages/stats/Stats";
 import PositionTrainer from "./pages/training/PositionTrainer";
 
 import Profile from "./pages/social/Profile";
+import Social from "./pages/social/Social";
 
 import ReviewGame from "./pages/review/ReviewGame";
+import SearchUser from "./components/friends/SearchUser";
+
 const App = () => {
   return (
     <div className="mainContainer">
@@ -38,6 +40,9 @@ const App = () => {
           <Route path="/review/:playerId/:gameId" element={<ReviewGame />} />
 
           <Route path="/trainer" element={<PositionTrainer />} />
+
+          <Route path="/search" element={<SearchUser />} />
+          <Route path="/social" element={<Social />} />
 
           {/* protected Routes */}
           <Route
@@ -80,7 +85,6 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-
         </Routes>
         <Footer />
       </Router>

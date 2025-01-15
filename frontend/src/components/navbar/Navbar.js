@@ -8,7 +8,7 @@ const Navbar = () => {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
       <div className="container-fluid">
-        <Link className="navbar-brand" to="/">
+        <Link className="navbar-brand" to="/dashboard">
           Connected
         </Link>
 
@@ -26,31 +26,42 @@ const Navbar = () => {
 
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto">
-            <li className="nav-item">
-              <Link className="nav-link" to="/">
-                Home
-              </Link>
-            </li>
             {currentUser ? (
               <>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/dashboard">
-                    Dashboard
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/play/local">
-                    Play Local
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/play/bot">
-                    Play Bot
-                  </Link>
+                <li className="nav-item dropdown">
+                  <span
+                    className="nav-link dropdown-toggle"
+                    id="navbarDropdown"
+                    role="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    Play
+                  </span>
+                  <ul
+                    className="dropdown-menu"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <li>
+                      <Link className="dropdown-item" to="/play/local">
+                        Play Local
+                      </Link>
+                    </li>
+                    <li>
+                      <Link className="dropdown-item" to="/play/bot">
+                        Play Bot
+                      </Link>
+                    </li>
+                  </ul>
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" to="/stats">
                     Stats
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/social">
+                    Social
                   </Link>
                 </li>
               </>

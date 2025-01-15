@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "../../config/firebase";
 import {
@@ -14,6 +14,7 @@ import LineGraph from "../../components/graphs/LineGraph";
 import AddFriend from "../../components/friends/AddFriend";
 import FriendRequests from "../../components/friends/FriendRequests";
 import FriendsList from "../../components/friends/FriendsList";
+import { AuthContext } from "../../contexts/AuthContext";
 
 const difficultyLabels = [
   "very_Easy",
@@ -30,6 +31,7 @@ const Profile = () => {
   const [recentGames, setRecentGames] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const { currentUser } = useContext(AuthContext);
 
   useEffect(() => {
     if (!username) {
@@ -39,7 +41,7 @@ const Profile = () => {
     }
 
     const fetchPlayerData = async () => {
-      setLoading(true); 
+      setLoading(true);
       console.log("Fetching player data for:", username);
 
       try {
@@ -122,6 +124,11 @@ const Profile = () => {
 
   return (
     <div style={{ padding: "20px" }}>
+      {username === currentUser?.username && (
+            <a href="/.settings" className="btn btn-primary mt-3">
+              Profile Settings
+            </a>
+          )}
       <h2>Player Profile: {username}</h2>
       {error && <p style={{ color: "red" }}>{error}</p>}
       {loading && <p>Loading profile...</p>}
