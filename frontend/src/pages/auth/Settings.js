@@ -8,6 +8,8 @@ import {
   signOut,
 } from "firebase/auth";
 import { doc, deleteDoc } from "firebase/firestore";
+import ToggleThemeButton from "../../components/theme/ToggleThemeButton";
+
 
 const Settings = () => {
   const user = auth.currentUser;
@@ -128,6 +130,7 @@ const Settings = () => {
       <div>
         <button onClick={handleSignOut}>Sign Out</button>
       </div>
+      <ToggleThemeButton />
     </div>
   );
 };
