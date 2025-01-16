@@ -1,16 +1,19 @@
 import React, { useRef, useEffect } from "react";
+import { useTheme } from "../../contexts/ThemeContext";
+import styles from "./LineGraph.module.css";
 
 const LineGraph = ({ labels = [], values = [], scale = 1 }) => {
   const canvasRef = useRef(null);
+  const { darkMode } = useTheme();
 
   useEffect(() => {
     if (!Array.isArray(labels) || !Array.isArray(values)) {
-      console.error("Invalid labels or values provided to LineGraph.");
+      console.error("Things provided aren't arrays");
       return;
     }
 
     if (labels.length !== values.length) {
-      console.error("Labels and values must have the same length.");
+      console.error("Things provided aren't the same length");
       return;
     }
 
@@ -26,75 +29,57 @@ const LineGraph = ({ labels = [], values = [], scale = 1 }) => {
     const width = canvas.width - padding * 2;
     const height = canvas.height - padding * 2;
 
-    const maxValue = Math.max(...values, 1);
-    const yStep = height / maxValue;
-    const xStep = width / (values.length - 1 || 1);
+    const maxValue = Math.max(...values, 1); // can't divide by 0
 
     ctx.beginPath();
-    ctx.moveTo(padding, padding); // TOP LEFT
-    ctx.lineTo(padding, canvas.height - padding); // BOTTOM LEFT
-    ctx.lineTo(canvas.width - padding, canvas.height - padding); //BOTTOM RIGHT
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, canvas.height - padding);
+    ctx.lineTo(canvas.width - padding, canvas.height - padding);
+    ctx.strokeStyle = darkMode ? "#ffffff" : "#000000"; // Adjust axis color based on theme
     ctx.stroke();
 
-    const yTicks = 5;
-    const yIncrement = maxValue / yTicks;
-
-    for (let i = 0; i <= yTicks; i++) {
-      const value = Math.round(i * yIncrement);
-      const y = canvas.height - padding - i * (height / yTicks);
-
-      ctx.strokeStyle = "#ccc";
+    const yStep = maxValue / 5;
+    for (let i = 0; i <= maxValue; i += yStep) {
+      const y = canvas.height - padding - (i / maxValue) * height;
+      ctx.fillStyle = darkMode ? "#ffffff" : "#000000"; // Adjust text color based on theme
+      ctx.fillText(Math.round(i), padding - 30 * scale, y + 5 * scale);
       ctx.beginPath();
       ctx.moveTo(padding, y);
       ctx.lineTo(canvas.width - padding, y);
+      ctx.strokeStyle = darkMode ? "#555555" : "#ccc"; // Adjust grid line color based on theme
       ctx.stroke();
-
-      ctx.fillStyle = "black";
-      ctx.font = `${12 * scale}px Arial`;
-      ctx.fillText(value, padding - 40 * scale, y + 5 * scale);
     }
 
     ctx.beginPath();
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 2 * scale;
-
+    ctx.moveTo(
+      padding,
+      canvas.height - padding - (values[0] / maxValue) * height
+    );
     values.forEach((value, index) => {
-      const x = padding + index * xStep;
-      const y = canvas.height - padding - value * yStep;
-
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
+      const x = padding + (index * width) / (labels.length - 1);
+      const y = canvas.height - padding - (value / maxValue) * height;
+      ctx.lineTo(x, y);
     });
+    ctx.strokeStyle = darkMode ? "#17a2b8" : "#007bff"; // Adjust line color based on theme
     ctx.stroke();
 
     values.forEach((value, index) => {
-      const x = padding + index * xStep;
-      const y = canvas.height - padding - value * yStep;
+      const x = padding + (index * width) / (labels.length - 1);
+      const y = canvas.height - padding - (value / maxValue) * height;
 
+      ctx.fillStyle = darkMode ? "#ffffff" : "#000000"; // Adjust point color based on theme
       ctx.beginPath();
       ctx.arc(x, y, 5 * scale, 0, 2 * Math.PI);
-      ctx.fillStyle = "red";
       ctx.fill();
 
-      ctx.fillStyle = "black";
-      ctx.font = `${12 * scale}px Arial`;
-      ctx.fillText(value.toFixed(2), x - 10 * scale, y - 10 * scale);
-    });
-
-    labels.forEach((label, index) => {
-      const x = padding + index * xStep;
-
-      ctx.fillStyle = "black";
+      ctx.fillStyle = darkMode ? "#ffffff" : "#000000"; // Adjust text color based on theme
       ctx.textAlign = "center";
       ctx.font = `${12 * scale}px Arial`;
-      ctx.fillText(label, x, canvas.height - padding + 20 * scale);
+      ctx.fillText(labels[index], x, canvas.height - padding + 20 * scale);
     });
-  }, [labels, values, scale]);
+  }, [labels, values, scale, darkMode]);
 
-  return <canvas ref={canvasRef} style={{ border: "1px solid black" }} />;
+  return <canvas ref={canvasRef} className={styles.graphContainer} />;
 };
 
 export default LineGraph;

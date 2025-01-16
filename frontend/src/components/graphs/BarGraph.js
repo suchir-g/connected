@@ -1,7 +1,9 @@
 import React, { useRef, useEffect } from "react";
-
+import { useTheme } from "../../contexts/ThemeContext";
+import styles from "./BarGraph.module.css";
 const BarGraph = ({ labels = [], values = [], scale = 1 }) => {
   const canvasRef = useRef(null);
+  const { darkMode } = useTheme();
 
   useEffect(() => {
     if (!Array.isArray(labels) || !Array.isArray(values)) {
@@ -33,16 +35,18 @@ const BarGraph = ({ labels = [], values = [], scale = 1 }) => {
     ctx.moveTo(padding, padding);
     ctx.lineTo(padding, canvas.height - padding);
     ctx.lineTo(canvas.width - padding, canvas.height - padding);
+    ctx.strokeStyle = darkMode ? "#ffffff" : "#000000"; // Adjust axis color based on theme
     ctx.stroke();
 
-    const yStep = maxValue / 5; 
+    const yStep = maxValue / 5;
     for (let i = 0; i <= maxValue; i += yStep) {
       const y = canvas.height - padding - (i / maxValue) * height;
+      ctx.fillStyle = darkMode ? "#ffffff" : "#000000"; // Adjust text color based on theme
       ctx.fillText(Math.round(i), padding - 30 * scale, y + 5 * scale);
       ctx.beginPath();
       ctx.moveTo(padding, y);
       ctx.lineTo(canvas.width - padding, y);
-      ctx.strokeStyle = "#ccc";
+      ctx.strokeStyle = darkMode ? "#555555" : "#ccc"; // Adjust grid line color based on theme
       ctx.stroke();
     }
 
@@ -51,10 +55,10 @@ const BarGraph = ({ labels = [], values = [], scale = 1 }) => {
       const barHeight = (value / maxValue) * height;
       const y = canvas.height - padding - barHeight;
 
-      ctx.fillStyle = "blue";
+      ctx.fillStyle = darkMode ? "#17a2b8" : "#007bff"; // Adjust bar color based on theme
       ctx.fillRect(x + 5 * scale, y, barWidth - 10 * scale, barHeight);
 
-      ctx.fillStyle = "black";
+      ctx.fillStyle = darkMode ? "#ffffff" : "#000000"; // Adjust text color based on theme
       ctx.textAlign = "center";
       ctx.font = `${12 * scale}px Arial`;
       ctx.fillText(
@@ -63,9 +67,9 @@ const BarGraph = ({ labels = [], values = [], scale = 1 }) => {
         canvas.height - padding + 20 * scale
       );
     });
-  }, [labels, values, scale]);
+  }, [labels, values, scale, darkMode]);
 
-  return <canvas ref={canvasRef} style={{ border: "1px solid black" }} />;
+  return <canvas ref={canvasRef} className={styles.graphContainer} />;
 };
 
 export default BarGraph;

@@ -8,8 +8,7 @@ import {
   signOut,
 } from "firebase/auth";
 import { doc, deleteDoc } from "firebase/firestore";
-import ToggleThemeButton from "../../components/theme/ToggleThemeButton";
-
+import ToggleThemeButton from "../../components/navbar/ToggleThemeButton";
 
 const Settings = () => {
   const user = auth.currentUser;
@@ -70,7 +69,7 @@ const Settings = () => {
       await deleteUser(user);
 
       await signOut(auth);
-      window.location.reload(); 
+      window.location.reload();
     } catch (err) {
       setError(err.message);
     }
@@ -79,7 +78,7 @@ const Settings = () => {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      window.location.reload(); 
+      window.location.reload();
     } catch (err) {
       setError(err.message);
     }
@@ -118,11 +117,7 @@ const Settings = () => {
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
         />
-        <button
-          onClick={handleDeleteAccount}
-        >
-          Delete Account
-        </button>
+        <button onClick={handleDeleteAccount}>Delete Account</button>
       </div>
 
       <hr />

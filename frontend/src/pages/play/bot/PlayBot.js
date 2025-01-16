@@ -6,8 +6,8 @@ import {
   makeMove as apiMakeMove,
   setDifficulty as apiSetDifficulty,
 } from "../../../config/api";
-import { auth, db } from "../../../config/firebase"; 
-import { doc, collection, addDoc } from "firebase/firestore"; 
+import { auth, db } from "../../../config/firebase";
+import { doc, collection, addDoc } from "firebase/firestore";
 
 const difficultyLevels = [
   "very_easy",
@@ -24,17 +24,17 @@ const PlayBot = () => {
   const [winner, setWinner] = useState(null);
   const [isDraw, setIsDraw] = useState(false);
   const [highlightedColumns, setHighlightedColumns] = useState([]);
-  const [difficulty, setDifficulty] = useState("medium"); 
-  const [moves, setMoves] = useState(""); 
-  const movesRef = useRef(""); 
-  const [searchParams] = useSearchParams(); 
+  const [difficulty, setDifficulty] = useState("medium");
+  const [moves, setMoves] = useState("");
+  const movesRef = useRef("");
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const queryDifficulty = searchParams.get("difficulty");
     if (difficultyLevels.includes(queryDifficulty)) {
       setDifficulty(queryDifficulty);
     } else {
-      setDifficulty("medium"); 
+      setDifficulty("medium");
     }
 
     initializeGame();
@@ -59,8 +59,8 @@ const PlayBot = () => {
       setWinner(null);
       setIsDraw(false);
       setHighlightedColumns([]);
-      setMoves(""); 
-      movesRef.current = ""; 
+      setMoves("");
+      movesRef.current = "";
       setIsLocked(false);
     } catch (error) {
       console.error("Error initializing game:", error);
@@ -86,7 +86,7 @@ const PlayBot = () => {
     }
 
     const playerMove = column + 1;
-    movesRef.current += playerMove.toString(); 
+    movesRef.current += playerMove.toString();
     setMoves(movesRef.current);
     console.log(`Updated Moves (Player Move): ${movesRef.current}`);
 
@@ -113,7 +113,7 @@ const PlayBot = () => {
         if (ai_move !== undefined && ai_move !== null) {
           const aiMove = ai_move + 1;
           movesRef.current += aiMove.toString();
-          setMoves(movesRef.current); 
+          setMoves(movesRef.current);
           console.log(`Updated Moves (AI Move): ${movesRef.current}`);
         }
 
@@ -167,40 +167,51 @@ const PlayBot = () => {
   };
 
   return (
-    <div className="playbot-container">
-      <h1>Play against Bot</h1>
-      <Board
-        board={board}
-        highlightedColumns={highlightedColumns}
-        onColumnClick={handleMakeMove}
-      />
-      <div className="controls">
-        <button onClick={initializeGame} disabled={isLocked}>
-          Start or Reset Game
-        </button>
-        <div className="difficulty-slider">
-          <label htmlFor="difficulty">AI Difficulty:</label>
-          <select
-            id="difficulty"
-            value={difficulty}
-            onChange={handleDifficultyChange}
-          >
-            {difficultyLevels.map((level) => (
-              <option key={level} value={level}>
-                {level
-                  .split("_")
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(" ")}
-              </option>
-            ))}
-          </select>
+    <div className="container mt-4 text-center">
+      <h1 className="my-4">Play against Bot</h1>
+      <div className="row">
+        <div className="col">
+          <Board
+            board={board}
+            highlightedColumns={highlightedColumns}
+            onColumnClick={handleMakeMove}
+          />
         </div>
       </div>
-      <div className="status">
-        {winner === 1 && <p>You win!</p>}
-        {winner === -1 && <p>AI wins!</p>}
-        {isDraw && <p>It's a draw.</p>}
-        {isLocked && !winner && !isDraw && <p>Waiting for AI move...</p>}
+      <div className="row mt-4">
+        <div className="col d-flex justify-content-center">
+          <button
+            onClick={initializeGame}
+            disabled={isLocked}
+            className="btn btn-primary"
+          >
+            Start or Reset Game
+          </button>
+        </div>
+      </div>
+      <div className="row mt-4">
+        <div className="col d-flex justify-content-center">
+          <div className="d-flex align-items-center">
+            <label htmlFor="difficulty" className="me-2">
+              AI Difficulty:
+            </label>
+            <select
+              id="difficulty"
+              value={difficulty}
+              onChange={handleDifficultyChange}
+              className="form-select w-auto"
+            >
+              {difficultyLevels.map((level) => (
+                <option key={level} value={level}>
+                  {level
+                    .split("_")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
     </div>
   );

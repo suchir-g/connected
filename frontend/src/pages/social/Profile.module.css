@@ -1,0 +1,38 @@
+.profileContainer {
+    padding: 20px;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    transition: background-color 0.3s, color 0.3s;
+  }
+  
+  .profileContainer h2,
+  .profileContainer h3 {
+    color: var(--bs-body-color);
+  }
+  
+  .profileContainer table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--table-bg);
+    color: var(--table-text-color);
+  }
+  
+  .profileContainer table th,
+  .profileContainer table td {
+    border: 1px solid var(--table-border-color);
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .profileContainer table th {
+    background-color: var(--bs-primary);
+    color: var(--bs-body-bg);
+  }
+  
+  .profileContainer table tr:nth-child(even) {
+    background-color: var(--bs-light);
+  }
+  
+  .profileContainer table tr:nth-child(odd) {
+    background-color: var(--bs-dark);
+  }

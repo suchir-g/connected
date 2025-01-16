@@ -1,109 +1,140 @@
+/* Light theme variables */
 :root {
-    --bs-body-bg: #ffffff;
-    --bs-body-color: #212121;
-  
-    /* Light theme defaults */
-    --table-bg: #ffffff;
-    --table-border-color: #dee2e6;
-    --table-text-color: #000000;
-    --graph-bg: #f5f5f5;
-    --graph-bar-color: #007bff;
-  }
-  
-  /* Light theme variables */
-  .light-theme {
-    --bs-body-bg: #ffffff;
-    --bs-body-color: #000000;
-  
-    /* Table Styles */
-    --table-bg: #ffffff;
-    --table-border-color: #dee2e6;
-    --table-text-color: #000000;
-  
-    /* Graph Styles */
-    --graph-bg: #f5f5f5;
-    --graph-bar-color: #007bff;
-  }
-  
-  /* Dark theme variables */
-  .dark-theme {
-    --bs-body-bg: #3d3d3d;
-    --bs-body-color: #ffffff;
-  
-    /* Table Styles */
-    --table-bg: #2c2c2c;
-    --table-border-color: #555555;
-    --table-text-color: #ffffff;
-  
-    /* Graph Styles */
-    --graph-bg: #2c2c2c;
-    --graph-bar-color: #ffc107;
-  }
-  
-  /* Global Overrides */
-  body,
-  .mainContainer,
-  .container,
-  .loadingContainer {
-    background-color: var(--bs-body-bg) !important;
-    color: var(--bs-body-color) !important;
-    transition: background-color 0.3s, color 0.3s;
-  }
+  --bs-body-bg: #ffffff;
+  --bs-body-color: #212121;
 
-  .navLink {
-    color: white !important;
-  }
-  
-  /* Navbar Specific Styles - Removed */
-  
-  /* Table Styles */
-  table {
-    background-color: var(--table-bg) !important;
-    color: var(--table-text-color) !important;
-  }
-  
-  table th,
-  table td {
-    border-color: var(--table-border-color) !important;
-  }
-  
-  /* Ensure Bootstrap table classes adapt to theme */
-  .dark-theme .table {
-    background-color: var(--table-bg) !important;
-    color: var(--table-text-color) !important;
-  }
-  
-  .dark-theme .table th,
-  .dark-theme .table td {
-    border-color: var(--table-border-color) !important;
-  }
-  
-  /* Graph Components */
-  .graph-container {
-    background-color: var(--graph-bg) !important;
-    border-radius: 8px;
-    padding: 16px;
-    transition: background-color 0.3s;
-  }
-  
-  /* Ensure canvas background aligns with graph-container */
-  .graph-container canvas {
-    background-color: var(--graph-bg);
-  }
-  
-  /* Ensure all text elements inherit color */
-  a,
-  a:hover,
-  a:focus,
-  a:active {
-    color: var(--bs-body-color) !important;
-  }
-  
-  button,
-  input,
-  select,
-  textarea {
-    color: var(--bs-body-color) !important;
-    background-color: var(--bs-body-bg) !important;
-    border-color: var(--bs-body-color) !important;
-  }
+  /* Bootstrap color overrides */
+  --bs-primary: #007bff; /* Main theme color */
+  --bs-secondary: #6c757d;
+  --bs-success: #28a745;
+  --bs-info: #17a2b8;
+  --bs-warning: #ffc107;
+  --bs-danger: #dc3545;
+  --bs-light: #f8f9fa;
+  --bs-dark: #343a40;
+
+  --graph-bg: #f5f5f5;
+  --graph-bar-color: #17a2b8; /* Main theme color */
+}
+
+/* Dark theme variables */
+.dark-theme {
+  --bs-body-bg: #1b1b1b;
+  --bs-body-color: #ffffff;
+
+  /* Bootstrap color overrides */
+  --bs-primary: #17a2b8; /* Main theme color */
+  --bs-secondary: #6c757d;
+  --bs-success: #28a745;
+  --bs-info: #17a2b8;
+  --bs-warning: #ffc107;
+  --bs-danger: #dc3545;
+  --bs-light: #343a40;
+  --bs-dark: #1b1b1b;
+
+  --graph-bg: #2c2c2c;
+  --graph-bar-color: #17a2b8; /* Main theme color */
+}
+
+/* Global Overrides */
+body,
+.mainContainer,
+.container,
+.loadingContainer {
+  background-color: var(--bs-body-bg) !important;
+  color: var(--bs-body-color) !important;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Table Styles */
+table {
+  background-color: var(--table-bg) !important;
+  color: var(--table-text-color) !important;
+}
+
+table th,
+table td {
+  border-color: var(--table-border-color) !important;
+}
+
+/* Ensure Bootstrap table classes adapt to theme */
+.dark-theme .table {
+  background-color: var(--table-bg) !important;
+  color: var(--table-text-color) !important;
+}
+
+.dark-theme .table th,
+.dark-theme .table td {
+  border-color: var(--table-border-color) !important;
+}
+
+/* Graph Components */
+.graph-container {
+  background-color: var(--graph-bg) !important;
+  border-radius: 8px;
+  padding: 16px;
+  transition: background-color 0.3s;
+}
+
+/* Ensure canvas background aligns with graph-container */
+.graph-container canvas {
+  background-color: var(--graph-bg);
+}
+
+/* Ensure all text elements inherit color */
+a,
+a:hover,
+a:focus,
+a:active {
+  color: var(--bs-body-color) !important;
+}
+
+button,
+input,
+select,
+textarea {
+  color: var(--bs-body-color) !important;
+  background-color: var(--bs-body-bg) !important;
+  border-color: var(--bs-body-color) !important;
+}
+
+/* Ensure Bootstrap buttons adapt to theme */
+.btn-primary {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+}
+
+.btn-secondary {
+  background-color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+}
+
+.btn-success {
+  background-color: var(--bs-success) !important;
+  border-color: var(--bs-success) !important;
+}
+
+.btn-info {
+  background-color: var(--bs-info) !important;
+  border-color: var(--bs-info) !important;
+}
+
+.btn-warning {
+  background-color: var(--bs-warning) !important;
+  border-color: var(--bs-warning) !important;
+}
+
+.btn-danger {
+  background-color: var(--bs-danger) !important;
+  border-color: var(--bs-danger) !important;
+}
+
+.btn-light {
+  background-color: var(--bs-light) !important;
+  border-color: var(--bs-light) !important;
+}
+
+.btn-dark {
+  background-color: var(--bs-dark) !important;
+  border-color: var(--bs-dark) !important;
+}

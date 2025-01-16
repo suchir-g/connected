@@ -1,18 +1,21 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from "../../contexts/ThemeContext";
+import styles from "./Navbar.module.css";
 
 const Navbar = () => {
   const { currentUser, userData } = useAuth();
   const { darkMode } = useTheme();
 
   return (
-    <nav className={`navbar navbar-expand-lg navbar-dark bg-dark`}>
+    <nav
+      className={`navbar navbar-expand-lg navbar-dark bg-dark ${styles["navbar-dark-theme"]}`}
+    >
       <div className="container-fluid">
-        <Link className="navbar-brand" to="/dashboard">
+        <NavLink className={`navbar-brand ${styles.navLink}`} to="/dashboard">
           Connected
-        </Link>
+        </NavLink>
 
         <button
           className="navbar-toggler"
@@ -32,7 +35,7 @@ const Navbar = () => {
               <>
                 <li className="nav-item dropdown">
                   <span
-                    className="nav-link dropdown-toggle"
+                    className={`nav-link dropdown-toggle ${styles.navLink}`}
                     id="navbarDropdown"
                     role="button"
                     data-bs-toggle="dropdown"
@@ -41,43 +44,67 @@ const Navbar = () => {
                     Play
                   </span>
                   <ul
-                    className="dropdown-menu"
+                    className={`dropdown-menu dropdown-menu-dark ${styles["dropdown-menu"]}`}
                     aria-labelledby="navbarDropdown"
                   >
                     <li>
-                      <Link className="dropdown-item" to="/play/local">
+                      <NavLink
+                        className={`dropdown-item ${styles.navLink}`}
+                        to="/play/local"
+                        activeClassName={styles.active}
+                      >
                         Play Local
-                      </Link>
+                      </NavLink>
                     </li>
                     <li>
-                      <Link className="dropdown-item" to="/play/bot">
+                      <NavLink
+                        className={`dropdown-item ${styles.navLink}`}
+                        to="/play/bot"
+                        activeClassName={styles.active}
+                      >
                         Play Bot
-                      </Link>
+                      </NavLink>
                     </li>
                   </ul>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link text-muted" to="/stats">
+                  <NavLink
+                    className={`nav-link ${styles.navLink}`}
+                    to="/stats"
+                    activeClassName={styles.active}
+                  >
                     Stats
-                  </Link>
+                  </NavLink>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link text-muted" to="/social">
+                  <NavLink
+                    className={`nav-link ${styles.navLink}`}
+                    to="/social"
+                    activeClassName={styles.active}
+                  >
                     Social
-                  </Link>
+                  </NavLink>
                 </li>
               </>
             ) : (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link text-muted" to="/login">
+                  <NavLink
+                    className={`nav-link ${styles.navLink}`}
+                    to="/login"
+                    activeClassName={styles.active}
+                  >
                     Login
-                  </Link>
+                  </NavLink>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link text-muted" to="/register">
+                  <NavLink
+                    className={`nav-link ${styles.navLink}`}
+                    to="/register"
+                    activeClassName={styles.active}
+                  >
                     Register
-                  </Link>
+                  </NavLink>
                 </li>
               </>
             )}
@@ -87,16 +114,19 @@ const Navbar = () => {
             <ul className="navbar-nav ms-auto">
               {userData ? (
                 <li className="nav-item">
-                  <Link
-                    className="nav-link text-muted"
+                  <NavLink
+                    className={`nav-link ${styles.navLink}`}
                     to={`/player/${userData.username}`}
+                    activeClassName={styles.active}
                   >
                     <i className="bi bi-person-circle fs-4"></i>
-                  </Link>
+                  </NavLink>
                 </li>
               ) : (
                 <li className="nav-item">
-                  <span className="nav-link disabled">Loading...</span>
+                  <span className={`nav-link disabled ${styles.navLink}`}>
+                    Loading...
+                  </span>
                 </li>
               )}
             </ul>

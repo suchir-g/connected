@@ -125,10 +125,10 @@ const Profile = () => {
   return (
     <div style={{ padding: "20px" }}>
       {username === currentUser?.username && (
-            <a href="/.settings" className="btn btn-primary mt-3">
-              Profile Settings
-            </a>
-          )}
+        <a href="/.settings" className="btn btn-primary mt-3">
+          Profile Settings
+        </a>
+      )}
       <h2>Player Profile: {username}</h2>
       {error && <p style={{ color: "red" }}>{error}</p>}
       {loading && <p>Loading profile...</p>}
@@ -195,8 +195,6 @@ const Profile = () => {
           />
 
           <AddFriend targetUsername={username} />
-          <FriendRequests />
-          <FriendsList />
         </>
       )}
     </div>

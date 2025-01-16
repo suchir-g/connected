@@ -1,0 +1,40 @@
+.navLink {
+    color: #747474; /* Muted color for non-active links */
+  }
+  
+  .navLink.active {
+    color: #e0e0e0; /* Color for active link */
+  }
+  
+  /* Navbar Specific Styles */
+  .navbar-dark-theme {
+    background-color: #1f1f1f;
+    color: #424242;
+  }
+  
+  .navbar-dark-theme .navbar-nav .nav-link {
+    color: #747474; /* Muted color for non-active links */
+  }
+  
+  .navbar-dark-theme .navbar-nav .nav-link.active {
+    color: #e0e0e0; /* Color for active link */
+  }
+  
+  .navbar-dark-theme .dropdown-menu {
+    background-color: #343a40;
+    color: #ffffff;
+  }
+  
+  .navbar-dark-theme .dropdown-item {
+    color: #ffffff;
+  }
+  
+  .navbar-dark-theme .dropdown-item:hover,
+  .navbar-dark-theme .dropdown-item:focus {
+    background-color: #495057; /* Slightly lighter grey */
+    color: #ffffff;
+  }
+  
+  .navbar-brand {
+    color: #ffffff;
+  }

@@ -101,7 +101,6 @@ const FriendRecommendations = () => {
           })
         );
 
-        //uasiouah
 
         const filteredFriendsData = friendsData.filter(Boolean);
 
