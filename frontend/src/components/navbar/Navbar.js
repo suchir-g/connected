@@ -1,12 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Navbar = () => {
   const { currentUser, userData } = useAuth();
+  const { darkMode } = useTheme();
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav className={`navbar navbar-expand-lg navbar-dark bg-dark`}>
       <div className="container-fluid">
         <Link className="navbar-brand" to="/dashboard">
           Connected
@@ -55,12 +57,12 @@ const Navbar = () => {
                   </ul>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/stats">
+                  <Link className="nav-link text-muted" to="/stats">
                     Stats
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/social">
+                  <Link className="nav-link text-muted" to="/social">
                     Social
                   </Link>
                 </li>
@@ -68,12 +70,12 @@ const Navbar = () => {
             ) : (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/login">
+                  <Link className="nav-link text-muted" to="/login">
                     Login
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/register">
+                  <Link className="nav-link text-muted" to="/register">
                     Register
                   </Link>
                 </li>
@@ -86,7 +88,7 @@ const Navbar = () => {
               {userData ? (
                 <li className="nav-item">
                   <Link
-                    className="nav-link"
+                    className="nav-link text-muted"
                     to={`/player/${userData.username}`}
                   >
                     <i className="bi bi-person-circle fs-4"></i>

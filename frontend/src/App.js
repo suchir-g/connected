@@ -25,6 +25,8 @@ import Social from "./pages/social/Social";
 import ReviewGame from "./pages/review/ReviewGame";
 import SearchUser from "./components/friends/SearchUser";
 
+import Loading from "./components/loading/Loading";
+
 const App = () => {
   return (
     <div className="mainContainer">
@@ -43,6 +45,8 @@ const App = () => {
 
           <Route path="/search" element={<SearchUser />} />
           <Route path="/social" element={<Social />} />
+
+          <Route path="/loading" element={<Loading />} />
 
           {/* protected Routes */}
           <Route

@@ -151,7 +151,7 @@ const Stats = () => {
       {!loading && gameHistory.length > 0 && (
         <>
           <h3>Game History</h3>
-          <table border="1" cellPadding="10" cellSpacing="0">
+          <table border="1" cellPadding="10" cellSpacing="0" className="table">
             <thead>
               <tr>
                 <th>Date</th>

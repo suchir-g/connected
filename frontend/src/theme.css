@@ -1,0 +1,109 @@
+:root {
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #212121;
+  
+    /* Light theme defaults */
+    --table-bg: #ffffff;
+    --table-border-color: #dee2e6;
+    --table-text-color: #000000;
+    --graph-bg: #f5f5f5;
+    --graph-bar-color: #007bff;
+  }
+  
+  /* Light theme variables */
+  .light-theme {
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #000000;
+  
+    /* Table Styles */
+    --table-bg: #ffffff;
+    --table-border-color: #dee2e6;
+    --table-text-color: #000000;
+  
+    /* Graph Styles */
+    --graph-bg: #f5f5f5;
+    --graph-bar-color: #007bff;
+  }
+  
+  /* Dark theme variables */
+  .dark-theme {
+    --bs-body-bg: #3d3d3d;
+    --bs-body-color: #ffffff;
+  
+    /* Table Styles */
+    --table-bg: #2c2c2c;
+    --table-border-color: #555555;
+    --table-text-color: #ffffff;
+  
+    /* Graph Styles */
+    --graph-bg: #2c2c2c;
+    --graph-bar-color: #ffc107;
+  }
+  
+  /* Global Overrides */
+  body,
+  .mainContainer,
+  .container,
+  .loadingContainer {
+    background-color: var(--bs-body-bg) !important;
+    color: var(--bs-body-color) !important;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .navLink {
+    color: white !important;
+  }
+  
+  /* Navbar Specific Styles - Removed */
+  
+  /* Table Styles */
+  table {
+    background-color: var(--table-bg) !important;
+    color: var(--table-text-color) !important;
+  }
+  
+  table th,
+  table td {
+    border-color: var(--table-border-color) !important;
+  }
+  
+  /* Ensure Bootstrap table classes adapt to theme */
+  .dark-theme .table {
+    background-color: var(--table-bg) !important;
+    color: var(--table-text-color) !important;
+  }
+  
+  .dark-theme .table th,
+  .dark-theme .table td {
+    border-color: var(--table-border-color) !important;
+  }
+  
+  /* Graph Components */
+  .graph-container {
+    background-color: var(--graph-bg) !important;
+    border-radius: 8px;
+    padding: 16px;
+    transition: background-color 0.3s;
+  }
+  
+  /* Ensure canvas background aligns with graph-container */
+  .graph-container canvas {
+    background-color: var(--graph-bg);
+  }
+  
+  /* Ensure all text elements inherit color */
+  a,
+  a:hover,
+  a:focus,
+  a:active {
+    color: var(--bs-body-color) !important;
+  }
+  
+  button,
+  input,
+  select,
+  textarea {
+    color: var(--bs-body-color) !important;
+    background-color: var(--bs-body-bg) !important;
+    border-color: var(--bs-body-color) !important;
+  }
