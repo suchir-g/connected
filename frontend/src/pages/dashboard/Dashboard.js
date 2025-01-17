@@ -6,9 +6,12 @@ import { AuthContext } from "../../contexts/AuthContext";
 import BarGraph from "../../components/graphs/BarGraph";
 import LineGraph from "../../components/graphs/LineGraph";
 import "bootstrap/dist/css/bootstrap.min.css";
+import styles from "./Dashboard.module.css";
 
 import FriendRequests from "../../components/friends/FriendRequests";
 import FriendsList from "../../components/friends/FriendsList";
+import Loading from "../../components/loading/Loading";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const difficultyLevels = [
   "very_easy",
@@ -34,6 +37,8 @@ const Dashboard = () => {
     useState("very_easy");
   const [loading, setLoading] = useState(true);
 
+  const darkMode = useTheme().darkMode;
+  console.log("DARK MODE:",darkMode);
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!currentUser) return;
@@ -132,10 +137,10 @@ const Dashboard = () => {
 
   return (
     <div className="container-fluid mt-4 px-3">
-      <h1 className="text-center mb-4">Connect 4 Dashboard</h1>
+      <h1 className="text-center mb-4">Dashboard</h1>
 
       {loading ? (
-        <p className="text-center">Loading...</p>
+        <Loading />
       ) : (
         <>
           <div className="row g-3 mb-4">
@@ -174,7 +179,7 @@ const Dashboard = () => {
 
           <div className="row g-3 mb-4">
             <div className="col-lg-6 col-md-12">
-              <div className="card">
+              <div className="card" style={{"border": "1px solid #808080"}}>
                 <div className="card-body text-center">
                   <h5 className="card-title">Total Games Played</h5>
                   <p className="card-text fs-2">{totalGamesCount}</p>
@@ -182,7 +187,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="col-lg-6 col-md-12">
-              <div className="card">
+              <div className="card"  style={{"border": "1px solid #808080"}}>
                 <div className="card-body text-center">
                   <h5 className="card-title">Win/Loss Ratio</h5>
                   <p className="card-text fs-2">
@@ -197,7 +202,7 @@ const Dashboard = () => {
 
           <div className="row g-3 mb-4">
             <div className="col-lg-6 col-md-12">
-              <div className="card">
+              <div className="card"  style={{"border": "1px solid #808080"}}>
                 <div className="card-body">
                   <h5 className="card-title text-center">Daily Win Ratio</h5>
                   <div className="graph-container">
@@ -211,7 +216,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="col-lg-6 col-md-12">
-              <div className="card">
+              <div className="card"  style={{"border": "1px solid #808080"}}>
                 <div className="card-body">
                   <h5 className="card-title text-center">Wins vs Losses</h5>
                   <div className="graph-container">
@@ -228,32 +233,32 @@ const Dashboard = () => {
 
           <div className="row g-3">
             <div className="col-md-12">
-              <div className="card">
+              <div className="card"  style={{"border": "1px solid #808080"}}>
                 <div className="card-body">
                   <h5 className="card-title">Recent Games</h5>
                   {recentGames.length > 0 ? (
-                    <table className="table table-responsive">
+                    <table className={`table table-responsive ${styles.table}`}>
                       <thead>
                         <tr>
-                          <th>Date</th>
-                          <th>Result</th>
-                          <th>Difficulty</th>
-                          <th>Moves</th>
-                          <th>Action</th>
+                          <th style={{color: darkMode ? "white" : "black"}}>Date</th>
+                          <th style={{color: darkMode ? "white" : "black"}}>Result</th>
+                          <th style={{color: darkMode ? "white" : "black"}}>Difficulty</th>
+                          <th style={{color: darkMode ? "white" : "black"}}>Moves</th>
+                          <th style={{color: darkMode ? "white" : "black"}}>Action</th>
                         </tr>
                       </thead>
                       <tbody>
                         {recentGames.map((game) => (
                           <tr key={game.id}>
-                            <td>
+                            <td style={{color: darkMode ? "#8f8f8f" : "black"}}>
                               {new Date(
                                 game.timestamp.seconds * 1000
                               ).toLocaleString()}
                             </td>
-                            <td>{game.result.toUpperCase()}</td>
-                            <td>{game.difficulty}</td>
-                            <td>{game.moves}</td>
-                            <td>
+                            <td style={{color: darkMode ? "#8f8f8f" : "black"}}>{game.result.toUpperCase()}</td>
+                            <td style={{color: darkMode ? "#8f8f8f" : "black"}}>{game.difficulty}</td>
+                            <td style={{color: darkMode ? "#8f8f8f" : "black"}}>{game.moves}</td>
+                            <td style={{color: darkMode ? "#8f8f8f" : "black"}}>
                               <Link
                                 className="btn btn-primary btn-sm"
                                 to={`/review/${currentUser.uid}/${game.id}`}

@@ -129,18 +129,14 @@ const Profile = () => {
           Profile Settings
         </a>
       )}
-      <h2>Player Profile: {username}</h2>
+      <h2>{username}</h2>
       {error && <p style={{ color: "red" }}>{error}</p>}
       {loading && <p>Loading profile...</p>}
 
       {!loading && playerData && (
         <>
-          <p>
-            <strong>Username:</strong> {playerData.username}
-          </p>
-          <p>
-            <strong>Email:</strong> {playerData.email}
-          </p>
+          <AddFriend targetUsername={username} />
+      <br />
 
           <h3>Recent Games</h3>
           {recentGames.length > 0 ? (
@@ -194,7 +190,6 @@ const Profile = () => {
             color="blue"
           />
 
-          <AddFriend targetUsername={username} />
         </>
       )}
     </div>

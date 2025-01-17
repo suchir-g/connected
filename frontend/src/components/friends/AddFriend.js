@@ -84,7 +84,7 @@ const AddFriend = ({ targetUsername }) => {
 
   return (
     <div>
-      <button onClick={handleAddFriend}>Add Friend</button>
+      <button onClick={handleAddFriend} className="btn btn-primary">Add Friend</button>
       {message && <p>{message}</p>}
     </div>
   );

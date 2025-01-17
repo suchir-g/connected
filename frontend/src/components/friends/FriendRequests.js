@@ -68,26 +68,35 @@ const FriendRequests = () => {
   };
 
   return (
-    <div>
-      <h3>Friend Requests</h3>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {requests.length > 0 ? (
-        <ul>
-          {requests.map((req) => (
-            <li key={req.requestId}>
-              {req.username}
-              <button onClick={() => handleRespond(req.requestId, true)}>
-                Accept
-              </button>
-              <button onClick={() => handleRespond(req.requestId, false)}>
-                Reject
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No incoming friend requests.</p>
-      )}
+    <div className="container mt-4">
+      <h2 className="mb-4">Friend Requests</h2>
+      {error && <div className="alert alert-danger">{error}</div>}
+      <div className="row">
+        {requests.map((request, index) => (
+          <div key={index} className="col-12 mb-3">
+            <div className="card w-100 border-secondary">
+              <div className="card-body d-flex flex-column">
+                <h5 className="card-title">{request.username}</h5>
+                <p className="card-text">{request.bio}</p>
+                <div className="mt-auto d-flex justify-content-between">
+                  <button
+                    className="btn btn-success"
+                    onClick={() => handleAccept(request.id)}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleReject(request.id)}
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
