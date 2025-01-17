@@ -127,20 +127,23 @@ const FriendRecommendations = () => {
   }, [currentUser]);
 
   return (
-    <div>
-      <h3>Friend Recommendations</h3>
-      <ul>
-        {recommendations.map((user) => (
-          <li key={user.uid}>
-            <Link to={`/player/${user.username}`}>
-              {user.username}{" "}
-              <span style={{ marginLeft: "8px", color: "blue" }}>
-                ({user.mutualFriends} mutual friends)
-              </span>
-            </Link>
-          </li>
+    <div className="container mt-4">
+      <h2 className="mb-4">Friend Recommendations</h2>
+      <div className="row">
+        {recommendations.map((recommendation, index) => (
+          <div key={index} className="col-12 mb-3">
+            <div className="card w-100 border-secondary">
+              <div className="card-body d-flex flex-column">
+                <h5 className="card-title">{recommendation.username}</h5>
+                <p className="card-text">{recommendation.bio}</p>
+                <Link to={`/profile/${recommendation.uid}`} className="btn btn-primary mt-auto">
+                  View Profile
+                </Link>
+              </div>
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };

@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { use, useState } from "react";
 import Board from "../../../components/board/Board";
 import { getBestMove as apiGetBestMove } from "../../../config/api"; 
+import { useTheme } from "../../../contexts/ThemeContext";
+
 const PlayLocal = () => {
   const initialBoard = Array.from({ length: 6 }, () => Array(7).fill(0));
+
+  const darkMode = useTheme().darkMode;
 
   const [board, setBoard] = useState(initialBoard); 
   const [currentPlayer, setCurrentPlayer] = useState(1); 
@@ -10,6 +14,7 @@ const PlayLocal = () => {
   const [isDraw, setIsDraw] = useState(false);
   const [highlightedColumns, setHighlightedColumns] = useState([]);
   const [isFetchingSuggestion, setIsFetchingSuggestion] = useState(false);
+  const [lastMove, setLastMove] = useState({row: null, column: null});
 
   const initializeGame = () => {
     setBoard(initialBoard);
@@ -24,11 +29,13 @@ const PlayLocal = () => {
       return;
     }
 
+    
     const row = findEmptyRow(board, column);
     if (row === -1) {
       alert("fulll col");
       return;
     }
+    console.log(row, column)
 
     const updatedBoard = board.map((row) => [...row]);
     updatedBoard[row][column] = currentPlayer;
@@ -48,7 +55,7 @@ const PlayLocal = () => {
 
     setBoard(updatedBoard);
     setCurrentPlayer(currentPlayer === 1 ? -1 : 1);
-
+    setLastMove({ row, column });
     setHighlightedColumns([]);
   };
 
@@ -136,28 +143,44 @@ const PlayLocal = () => {
   };
 
   return (
-    <div className="playlocal-container">
-      <h1>LOCAL play</h1>
-      <Board
-        board={board}
-        highlightedColumns={highlightedColumns}
-        onColumnClick={handleMakeMove}
-      />
-      <div className="controls">
-        <button onClick={initializeGame} disabled={isFetchingSuggestion}>
-          Start / Reset Game
-        </button>
-        <button
+    <div className="container mt-4 text-center">
+      <h1 className="my-4">Play Locally</h1>
+      <div className="row">
+        <div className="col">
+        <Board
+            board={board}
+            highlightedColumns={highlightedColumns}
+            onColumnClick={handleMakeMove}
+            latestMove={lastMove}
+          />
+        </div>
+      </div>
+        <div style={{borderRadius: "50%", width: "50px", height: "50px", backgroundColor: currentPlayer == 1 ? "red" : "yellow", border: "4px solid black", boxShadow:`0px 0px 20px ${currentPlayer == 1 ? "#eb4034a8" : "#ffe419a8"}`}}></div>
+      <div className="row mt-4">
+        <div className="col d-flex justify-content-center">
+          <button
+            onClick={initializeGame}
+            disabled={isFetchingSuggestion}
+            className="btn btn-primary mx-2 shadow"
+          >
+            Start or Reset Game
+          </button>
+          <button
           onClick={handleSuggestMove}
           disabled={isFetchingSuggestion || winner !== null || isDraw}
+          className="btn btn-success mx-2 shadow"
         >
           {isFetchingSuggestion ? "Fetching Suggestion..." : "Suggest AI Move"}
         </button>
+        </div>
       </div>
+      <div className="row mt-4">
+        <div className="col d-flex justify-content-center"></div>
       <div className="status">
         {winner === 1 && <p>Player 1 wins </p>}
         {winner === -1 && <p>Player 2 wins</p>}
         {isDraw && <p> DRAW</p>}
+      </div>
       </div>
     </div>
   );

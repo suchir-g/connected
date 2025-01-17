@@ -8,6 +8,7 @@ import {
 } from "../../../config/api";
 import { auth, db } from "../../../config/firebase";
 import { doc, collection, addDoc } from "firebase/firestore";
+import styles from "./PlayBot.module.css";
 
 const difficultyLevels = [
   "very_easy",
