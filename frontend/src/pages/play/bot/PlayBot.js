@@ -69,6 +69,8 @@ const PlayBot = () => {
     }
   };
 
+  //dsaisahsuai
+
   const applyMove = (currentBoard, column, player) => {
     const newBoard = currentBoard.map((row) => [...row]);
     for (let row = newBoard.length - 1; row >= 0; row--) {
