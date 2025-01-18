@@ -1,21 +1,29 @@
 import "./Board.css";
 
 const Board = ({
-  board,
+  rows = 6, // Default to 6 rows
+  cols = 7, // Default to 7 columns
+  board = Array.from({ length: 6 }, () => Array.from({ length: 7 }, () => 0)), // Default to 6x7 empty board
   highlightedColumns = [],
   latestMove = null,
   onColumnClick,
 }) => {
   if (
     !Array.isArray(board) ||
-    board.length !== 6 ||
-    !board.every((row) => Array.isArray(row) && row.length === 7)
+    board.length !== rows ||
+    !board.every((row) => Array.isArray(row) && row.length === cols)
   ) {
-    return <div className="board-loading">LOADING BOArd...</div>;
+    return <div className="board-loading">LOADING BOARD...</div>;
   }
 
   return (
-    <div className="board">
+    <div
+      className="board"
+      style={{
+        gridTemplateColumns: `repeat(${cols}, auto)`, // Dynamic grid based on column count
+        gridTemplateRows: `repeat(${rows}, auto)`, // Dynamic grid based on row count
+      }}
+    >
       {board.map((row, rowIndex) => (
         <div key={rowIndex} className="board-row">
           {row.map((cell, colIndex) => {

@@ -3,7 +3,7 @@ import random
 from zobristHashing import init_zobrist, compute_zobrist_hash
 
 class Negamaxer:
-    def __init__(self, difficulty='medium', opening_book_file='opening_book.pkl'):
+    def __init__(self, difficulty='medium', opening_book_file='opening_book.pkl', win_condition=4):
         self.difficulty_settings = {
             'very_easy': 1,
             'easy': 1,
@@ -14,26 +14,24 @@ class Negamaxer:
         }
         self.max_depth = self.difficulty_settings.get(difficulty, 3)
         self.difficulty = difficulty
+        self.win_condition = win_condition  # Adjustable win condition (e.g., 4-in-a-row or 5-in-a-row)
 
-        # table and everything is just for expert level
         if difficulty == 'expert':
             try:
                 with open(opening_book_file, 'rb') as f:
                     self.opening_book = pickle.load(f)
             except FileNotFoundError:
                 self.opening_book = {}
-                print("no opening book found. Now playing without one.")
+                print("No opening book found. Now playing without one.")
 
             self.zobrist_table = init_zobrist(rows=6, cols=7)  
             self.transposition_table = {}  # for caching negamax results
         else:
-            # get rid of all of them
             self.opening_book = None
             self.zobrist_table = None
             self.transposition_table = None
 
     def choose_move(self, position, player):
-        # if it's in the opening book, use it
         if self.difficulty == 'expert' and self.opening_book is not None:
             board_key = str(position.array_board)
             if board_key in self.opening_book:
@@ -42,7 +40,6 @@ class Negamaxer:
 
         valid_moves = position.get_valid_moves()
 
-        # check for immediate winning moves
         for move in valid_moves:
             new_position = position.copy()
             new_position.drop_piece(move, player)
@@ -50,7 +47,6 @@ class Negamaxer:
                 print(f"Guaranteed win move found: {move}")
                 return move
 
-        # check for moves that block the opponent's winning move
         for move in valid_moves:
             new_position = position.copy()
             new_position.drop_piece(move, -player)
@@ -58,17 +54,12 @@ class Negamaxer:
                 print(f"Blocking opponent's winning move: {move}")
                 return move
 
-        # fall back to negamax if no guaranteed win or block is found
-        # this is the time expensive bit
         best_score = -float('inf')
         best_move = None
 
         for move in valid_moves:
             new_position = position.copy()
             new_position.drop_piece(move, player)
-
-            # negamax means it's the same scoring system just negative on both sides (due to symmetry)
-
             score = -self.negamax(new_position, -player, self.max_depth, -float('inf'), float('inf')) 
             if score > best_score:
                 best_score = score
@@ -77,15 +68,11 @@ class Negamaxer:
         return best_move
 
     def negamax(self, position, player, depth, alpha, beta):
-        # terminal state check or depth limit reached
         if depth == 0 or position.check_winner() is not None or position.is_draw():
             return self.evaluate(position, player)
 
-        # expert: use zobrist hashing and transposition table
         if self.difficulty == 'expert' and self.zobrist_table is not None:
             pos_hash = compute_zobrist_hash(position, self.zobrist_table)
-
-            # lookup in the transposition table
             tt_key = (pos_hash, depth)
             if tt_key in self.transposition_table:
                 return self.transposition_table[tt_key]
@@ -102,17 +89,16 @@ class Negamaxer:
             if alpha >= beta:
                 break 
 
-        # if it hasn't seen it before it saves it to the transposition table
         if self.difficulty == 'expert' and self.zobrist_table is not None:
             self.transposition_table[tt_key] = best_score
 
         return best_score
 
     def evaluate(self, position, player):
-        # if it's a winning or losing position return something very high
-        if position.check_winner() == player:
+        winner = position.check_winner()
+        if winner == player:
             return 10000 
-        elif position.check_winner() == -player:
+        elif winner == -player:
             return -10000
 
         score = 0
@@ -136,4 +122,3 @@ class Negamaxer:
             column_scores[move] = score
 
         return column_scores
-

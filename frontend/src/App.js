@@ -26,6 +26,7 @@ import ReviewGame from "./pages/review/ReviewGame";
 import SearchUser from "./components/friends/SearchUser";
 
 import Loading from "./components/loading/Loading";
+import PlayVariants from "./pages/play/variants/bot/PlayVariants";
 
 const App = () => {
   return (
@@ -78,6 +79,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <PlayBot />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/play/variants/bot"
+            element={
+              <ProtectedRoute>
+                <PlayVariants />
               </ProtectedRoute>
             }
           />

@@ -1,15 +1,17 @@
 from typing import Optional, List
-import random
 
 class Position:
-    ROWS = 6
-    COLS = 7
-
     def __init__(self,
+                 rows: int = 6,
+                 cols: int = 7,
+                 n_in_a_row: int = 4,
                  array_board: Optional[List[List[int]]] = None,
                  p1_bitboard: int = 0,
                  p2_bitboard: int = 0):
-        # if nothing is provided in initialisation, it tries to build up from the bitboards and if not it just initialises to an empty board
+        self.ROWS = rows
+        self.COLS = cols
+        self.n_in_a_row = n_in_a_row
+
         if array_board is None:
             self.array_board = [[0] * self.COLS for _ in range(self.ROWS)]
             for c in range(self.COLS):
@@ -39,7 +41,10 @@ class Position:
 
     def copy(self):
         new_array = [row[:] for row in self.array_board]
-        return Position(array_board=new_array,
+        return Position(rows=self.ROWS,
+                        cols=self.COLS,
+                        n_in_a_row=self.n_in_a_row,
+                        array_board=new_array,
                         p1_bitboard=self.p1_bitboard,
                         p2_bitboard=self.p2_bitboard)
 
@@ -77,7 +82,7 @@ class Position:
                 for dr, dc in directions:
                     rr, cc = r, c
                     count = 0
-                    for _ in range(4):
+                    for _ in range(self.n_in_a_row):
                         if 0 <= rr < self.ROWS and 0 <= cc < self.COLS:
                             if self.array_board[rr][cc] == val:
                                 count += 1
@@ -87,7 +92,7 @@ class Position:
                                 break
                         else:
                             break
-                    if count == 4:
+                    if count == self.n_in_a_row:
                         return val
         return None
 
@@ -102,30 +107,29 @@ class Position:
     def count_alignments(self, board, row, col, player, difficulty):
         directions = [(1, 0), (0, 1), (1, 1), (1, -1)]  # vertical, horizontal, diagonal
         align_score = 0
- 
+
         if difficulty == 'very_easy':
-            weights = {2: 10, 3: 5, 4: 1000}
+            weights = {2: 10, 3: 5, self.n_in_a_row: 1000}
             consider_open_ends = False
             directions_to_check = [(1, 0)]  # only vertical/horizontal because it's dumber
         elif difficulty == 'easy':
-            weights = {2: 5, 3: 50, 4: 1000}
+            weights = {2: 5, 3: 50, self.n_in_a_row: 1000}
             consider_open_ends = False
             directions_to_check = [(1, 0)]
         elif difficulty == 'medium':
-            weights = {2: 10, 3: 100, 4: 1000}
+            weights = {2: 10, 3: 100, self.n_in_a_row: 1000}
             consider_open_ends = True
             directions_to_check = directions
         else:
-            weights = {2: 10, 3: 100, 4: 1000}
+            weights = {2: 10, 3: 100, self.n_in_a_row: 1000}
             consider_open_ends = True
             directions_to_check = directions
-            # possibly add advanced weighting?
 
         for dr, dc in directions_to_check:
-            for shift in range(-3, 1):
+            for shift in range(-self.n_in_a_row + 1, 1):
                 count = 0
                 blocked = False
-                for i in range(4):
+                for i in range(self.n_in_a_row):
                     r, c = row + (shift + i) * dr, col + (shift + i) * dc
                     if 0 <= r < len(board) and 0 <= c < len(board[0]):
                         if board[r][c] == player:
@@ -142,7 +146,7 @@ class Position:
                     if consider_open_ends:
                         open_ends = 0
                         before_r, before_c = row + (shift - 1) * dr, col + (shift - 1) * dc
-                        after_r, after_c = row + (shift + 4) * dr, col + (shift + 4) * dc
+                        after_r, after_c = row + (shift + self.n_in_a_row) * dr, col + (shift + self.n_in_a_row) * dc
 
                         if (0 <= before_r < len(board) and 0 <= before_c < len(board[0]) 
                             and board[before_r][before_c] != -player):
@@ -165,6 +169,3 @@ class Position:
                     align_score += score_add
 
         return align_score
-
-
-

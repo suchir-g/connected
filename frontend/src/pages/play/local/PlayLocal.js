@@ -1,6 +1,6 @@
 import React, { use, useState } from "react";
 import Board from "../../../components/board/Board";
-import { getBestMove as apiGetBestMove } from "../../../config/api"; 
+import { getBestMove as apiGetBestMove } from "../../../config/api";
 import { useTheme } from "../../../contexts/ThemeContext";
 
 const PlayLocal = () => {
@@ -8,13 +8,13 @@ const PlayLocal = () => {
 
   const darkMode = useTheme().darkMode;
 
-  const [board, setBoard] = useState(initialBoard); 
-  const [currentPlayer, setCurrentPlayer] = useState(1); 
+  const [board, setBoard] = useState(initialBoard);
+  const [currentPlayer, setCurrentPlayer] = useState(1);
   const [winner, setWinner] = useState(null);
   const [isDraw, setIsDraw] = useState(false);
   const [highlightedColumns, setHighlightedColumns] = useState([]);
   const [isFetchingSuggestion, setIsFetchingSuggestion] = useState(false);
-  const [lastMove, setLastMove] = useState({row: null, column: null});
+  const [lastMove, setLastMove] = useState({ row: null, column: null });
 
   const initializeGame = () => {
     setBoard(initialBoard);
@@ -29,13 +29,12 @@ const PlayLocal = () => {
       return;
     }
 
-    
     const row = findEmptyRow(board, column);
     if (row === -1) {
       alert("fulll col");
       return;
     }
-    console.log(row, column)
+    console.log(row, column);
 
     const updatedBoard = board.map((row) => [...row]);
     updatedBoard[row][column] = currentPlayer;
@@ -147,7 +146,7 @@ const PlayLocal = () => {
       <h1 className="my-4">Play Locally</h1>
       <div className="row">
         <div className="col">
-        <Board
+          <Board
             board={board}
             highlightedColumns={highlightedColumns}
             onColumnClick={handleMakeMove}
@@ -155,7 +154,22 @@ const PlayLocal = () => {
           />
         </div>
       </div>
-        <div style={{borderRadius: "50%", width: "50px", height: "50px", backgroundColor: currentPlayer == 1 ? "red" : "yellow", border: "4px solid black", boxShadow:`0px 0px 20px ${currentPlayer == 1 ? "#eb4034a8" : "#ffe419a8"}`}}></div>
+      <div className="row">
+        <div className="col d-flex justify-content-center mt-3">
+          <div
+            style={{
+              borderRadius: "50%",
+              width: "50px",
+              height: "50px",
+              backgroundColor: currentPlayer == 1 ? "red" : "yellow",
+              border: "4px solid black",
+              boxShadow: `0px 0px 20px ${
+                currentPlayer == 1 ? "#eb4034a8" : "#ffe419a8"
+              }`,
+            }}
+          ></div>
+        </div>
+      </div>
       <div className="row mt-4">
         <div className="col d-flex justify-content-center">
           <button
@@ -166,21 +180,24 @@ const PlayLocal = () => {
             Start or Reset Game
           </button>
           <button
-          onClick={handleSuggestMove}
-          disabled={isFetchingSuggestion || winner !== null || isDraw}
-          className="btn btn-success mx-2 shadow"
-        >
-          {isFetchingSuggestion ? "Fetching Suggestion..." : "Suggest AI Move"}
-        </button>
+            onClick={handleSuggestMove}
+            disabled={isFetchingSuggestion || winner !== null || isDraw}
+            className="btn btn-success mx-2 shadow"
+          >
+            {isFetchingSuggestion
+              ? "Fetching Suggestion..."
+              : "Suggest AI Move"}
+          </button>
         </div>
       </div>
       <div className="row mt-4">
-        <div className="col d-flex justify-content-center"></div>
-      <div className="status">
-        {winner === 1 && <p>Player 1 wins </p>}
-        {winner === -1 && <p>Player 2 wins</p>}
-        {isDraw && <p> DRAW</p>}
-      </div>
+        <div className="col d-flex justify-content-center">
+          <div className="status">
+            {winner === 1 && <p>Player 1 wins </p>}
+            {winner === -1 && <p>Player 2 wins</p>}
+            {isDraw && <p> DRAW</p>}
+          </div>
+        </div>
       </div>
     </div>
   );

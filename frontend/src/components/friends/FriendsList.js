@@ -10,15 +10,11 @@ import {
 } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import {useTheme} from "../../contexts/ThemeContext";
-
 
 const FriendsList = () => {
   const { currentUser } = useAuth();
   const [friends, setFriends] = useState([]);
   const [error, setError] = useState("");
-
-  const darkMode = useTheme().darkMode;
 
   const fetchFriends = async () => {
     try {
@@ -70,22 +66,21 @@ const FriendsList = () => {
   }, [currentUser]);
 
   return (
-    <div className="container mt-4">
-  <h2 className="mb-4">Friends List</h2>
-  {error && <div className="alert alert-danger">{error}</div>}
-  {friends.length > 0 ? (
-    <ul className="list-group">
-      {friends.map((friend, index) => (
-        <li key={index} className="list-group-item border-secondary d-flex justify-content-between align-items-center">
-          <span>{friend.username}</span>
-          <Link to={`/profile/${friend.uid}`} className="btn btn-primary btn-sm">View Profile</Link>
-        </li>
-      ))}
-    </ul>
-  ) : (
-    <p className="text-muted">You have no friends yet.</p>
-  )}
-</div>
+    <div>
+      <h3>My Friends</h3>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {friends.length > 0 ? (
+        <ul>
+          {friends.map((friend) => (
+            <li key={friend.uid}>
+              <Link to={`/player/${friend.username}`}>{friend.username}</Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>You have no friends yet.</p>
+      )}
+    </div>
   );
 };
 
