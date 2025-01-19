@@ -8,6 +8,15 @@ const Board = ({
   latestMove = null,
   onColumnClick,
 }) => {
+  console.log("Board props:", {
+    rows,
+    cols,
+    board,
+    highlightedColumns,
+    latestMove,
+    onColumnClick,
+  });
+
   if (
     !Array.isArray(board) ||
     board.length !== rows ||
@@ -20,8 +29,8 @@ const Board = ({
     <div
       className="board"
       style={{
-        gridTemplateColumns: `repeat(${cols}, auto)`, // Dynamic grid based on column count
-        gridTemplateRows: `repeat(${rows}, auto)`, // Dynamic grid based on row count
+        gridTemplateColumns: `repeat(${cols}, auto)`,
+        gridTemplateRows: `repeat(${rows}, auto)`,
       }}
     >
       {board.map((row, rowIndex) => (

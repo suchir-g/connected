@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import Board from "../../../components/board/Board";
-import {
-  startGame as apiStartGame,
-  makeMove as apiMakeMove,
-  setDifficulty as apiSetDifficulty,
-} from "../../../config/api";
+import { apiMakeMove } from "../../../config/api";
 import { auth, db } from "../../../config/firebase";
 import { doc, collection, addDoc } from "firebase/firestore";
 import styles from "./PlayBot.module.css";
@@ -20,7 +16,7 @@ const difficultyLevels = [
 ];
 
 const PlayBot = () => {
-  const [board, setBoard] = useState([]);
+  const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0))); // Empty 6x7 board
   const [isLocked, setIsLocked] = useState(false);
   const [winner, setWinner] = useState(null);
   const [isDraw, setIsDraw] = useState(false);
@@ -29,6 +25,7 @@ const PlayBot = () => {
   const [moves, setMoves] = useState("");
   const movesRef = useRef("");
   const [searchParams] = useSearchParams();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const queryDifficulty = searchParams.get("difficulty");
@@ -37,40 +34,18 @@ const PlayBot = () => {
     } else {
       setDifficulty("medium");
     }
-
-    initializeGame();
+    resetGame();
   }, [searchParams]);
 
-  const initializeGame = async () => {
-    try {
-      setIsLocked(true);
-      const response = await apiStartGame();
-      const { board, current_player } = response.data;
-
-      if (
-        !Array.isArray(board) ||
-        board.length !== 6 ||
-        !board.every((row) => Array.isArray(row) && row.length === 7) ||
-        typeof current_player !== "number"
-      ) {
-        throw new Error("Invalid data received from the server.");
-      }
-
-      setBoard(board);
-      setWinner(null);
-      setIsDraw(false);
-      setHighlightedColumns([]);
-      setMoves("");
-      movesRef.current = "";
-      setIsLocked(false);
-    } catch (error) {
-      console.error("Error initializing game:", error);
-      alert("failed to initialize the game - please try again.");
-      setIsLocked(false);
-    }
+  const resetGame = () => {
+    setBoard(Array(6).fill(Array(7).fill(0))); // Reset to empty board
+    setWinner(null);
+    setIsDraw(false);
+    setHighlightedColumns([]);
+    setMoves("");
+    movesRef.current = "";
+    setIsLocked(false);
   };
-
-  //dsaisahsuai
 
   const applyMove = (currentBoard, column, player) => {
     const newBoard = currentBoard.map((row) => [...row]);
@@ -91,14 +66,14 @@ const PlayBot = () => {
     const playerMove = column + 1;
     movesRef.current += playerMove.toString();
     setMoves(movesRef.current);
-    console.log(`Updated Moves (Player Move): ${movesRef.current}`);
 
     const userMovedBoard = applyMove(board, column, 1);
     setBoard(userMovedBoard);
     setIsLocked(true);
 
     try {
-      const response = await apiMakeMove(column, board, 1);
+      const response = await apiMakeMove(column, board, 1, difficulty); // Pass difficulty dynamically
+      console.log(response.data);
       const {
         board: updatedBoard,
         current_player,
@@ -117,32 +92,25 @@ const PlayBot = () => {
           const aiMove = ai_move + 1;
           movesRef.current += aiMove.toString();
           setMoves(movesRef.current);
-          console.log(`Updated Moves (AI Move): ${movesRef.current}`);
         }
 
         if (gameWinner !== 0 || is_draw) {
           recordGameResult(gameWinner, is_draw);
+          setIsLocked(true);
+        } else {
+          setIsLocked(false);
         }
-
-        setIsLocked(false);
       }, 500);
     } catch (error) {
-      console.error("error making move:", error);
-      alert(error.response?.data?.error || "Error making move.");
+      console.error("Error making move:", error);
+      setError("Could not make move. " + error.message);
       setIsLocked(false);
     }
   };
 
-  const handleDifficultyChange = async (event) => {
+  const handleDifficultyChange = (event) => {
     const selectedDifficulty = event.target.value;
     setDifficulty(selectedDifficulty);
-    try {
-      const response = await apiSetDifficulty(selectedDifficulty);
-      console.log("Set Difficulty Response:", response.data);
-    } catch (error) {
-      console.error("Error setting difficulty:", error);
-      alert("Failed to set difficulty. Please try again.");
-    }
   };
 
   const recordGameResult = async (gameWinner, isDraw) => {
@@ -163,7 +131,6 @@ const PlayBot = () => {
       };
 
       await addDoc(gameSubCollection, gameData);
-      console.log("Game result recorded:", gameData);
     } catch (error) {
       console.error("Error recording game result:", error);
     }
@@ -171,6 +138,8 @@ const PlayBot = () => {
 
   return (
     <div className="container mt-4 text-center">
+      {error && <div className={styles.errorMsg}>{error}</div>}
+
       <h1 className="my-4">Play against Bot</h1>
       <div className="row">
         <div className="col">
@@ -184,11 +153,11 @@ const PlayBot = () => {
       <div className="row mt-4">
         <div className="col d-flex justify-content-center">
           <button
-            onClick={initializeGame}
+            onClick={resetGame}
             disabled={isLocked}
             className="btn btn-primary"
           >
-            Start or Reset Game
+            Reset Game
           </button>
         </div>
       </div>

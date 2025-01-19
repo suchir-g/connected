@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import Board from "../../../../components/board/Board";
-import {
-  startGame as apiStartGame,
-  makeMove as apiMakeMove,
-  setDifficulty as apiSetDifficulty,
-} from "../../../../config/api";
+import { apiMakeMove } from "../../../../config/api";
 import { auth, db } from "../../../../config/firebase";
 import { doc, collection, addDoc } from "firebase/firestore";
+import styles from "./PlayVariants.module.css";
 
 const difficultyLevels = [
   "very_easy",
@@ -19,69 +16,38 @@ const difficultyLevels = [
 ];
 
 const PlayVariants = () => {
-  const [board, setBoard] = useState([]);
+  const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0))); // Default 6x7
   const [isLocked, setIsLocked] = useState(false);
   const [winner, setWinner] = useState(null);
   const [isDraw, setIsDraw] = useState(false);
   const [highlightedColumns, setHighlightedColumns] = useState([]);
   const [difficulty, setDifficulty] = useState("medium");
-  const [variant, setVariant] = useState("classic");
-  const [customRows, setCustomRows] = useState(6);
-  const [customCols, setCustomCols] = useState(7);
   const [moves, setMoves] = useState("");
   const movesRef = useRef("");
   const [searchParams] = useSearchParams();
+  const [error, setError] = useState(null);
+  const [rows, setRows] = useState(6); // Default rows
+  const [cols, setCols] = useState(7); // Default columns
+  const [connectNumber, setConnectNumber] = useState(4); // Default Connect 4
 
   useEffect(() => {
     const queryDifficulty = searchParams.get("difficulty");
-
     if (difficultyLevels.includes(queryDifficulty)) {
       setDifficulty(queryDifficulty);
     } else {
       setDifficulty("medium");
     }
+    resetGame(rows, cols);
+  }, [searchParams, rows, cols]); // Reset game when rows or cols change
 
-    initializeGame();
-  }, [searchParams]);
-
-  const initializeGame = async () => {
-    try {
-      setIsLocked(true);
-      let rows = customRows;
-      let cols = customCols;
-
-      // Adjust rows and columns for 5 in a Row variant
-      if (variant === "5_in_a_row") {
-        rows = 8; // Set rows to 8 for 5 in a Row
-        cols = 9; // Set columns to 9 for 5 in a Row
-      }
-
-      // Ensure the row and column values are within the 5 to 10 range
-      if (rows < 5 || rows > 10 || cols < 5 || cols > 10) {
-        alert("Rows and columns must be between 5 and 10.");
-        setIsLocked(false);
-        return;
-      }
-
-      const response = await apiStartGame(variant, rows, cols);
-      const { board, current_player } = response.data;
-
-      if (!Array.isArray(board) || !board.every((row) => Array.isArray(row))) {
-        throw new Error("Invalid data received from the server.");
-      }
-
-      setBoard(board);
-      setWinner(null);
-      setIsDraw(false);
-      setHighlightedColumns([]);
-      setMoves("");
-      movesRef.current = "";
-      setIsLocked(false);
-    } catch (error) {
-      console.error("Error initializing game:", error);
-      alert("Failed to initialize the game - please try again.");
-      setIsLocked(false);
-    }
+  const resetGame = (rows, cols) => {
+    setBoard(Array(rows).fill(Array(cols).fill(0))); // Reset board based on size
+    setWinner(null);
+    setIsDraw(false);
+    setHighlightedColumns([]);
+    setMoves("");
+    movesRef.current = "";
+    setIsLocked(false);
   };
 
   const applyMove = (currentBoard, column, player) => {
@@ -109,7 +75,14 @@ const PlayVariants = () => {
     setIsLocked(true);
 
     try {
-      const response = await apiMakeMove(column, board, 1, variant);
+      const response = await apiMakeMove(
+        column,
+        board,
+        1,
+        difficulty,
+        connectNumber
+      ); // Pass connectNumber dynamically
+      console.log(response.data);
       const {
         board: updatedBoard,
         current_player,
@@ -132,32 +105,24 @@ const PlayVariants = () => {
 
         if (gameWinner !== 0 || is_draw) {
           recordGameResult(gameWinner, is_draw);
+          setIsLocked(true);
+        } else {
+          setIsLocked(false);
         }
-
-        setIsLocked(false);
       }, 500);
     } catch (error) {
       console.error("Error making move:", error);
-      alert(error.response?.data?.error || "Error making move.");
+      setError("Could not make move. " + error.message);
       setIsLocked(false);
     }
   };
 
-  const handleDifficultyChange = async (event) => {
+  const handleDifficultyChange = (event) => {
     const selectedDifficulty = event.target.value;
     setDifficulty(selectedDifficulty);
-    try {
-      await apiSetDifficulty(selectedDifficulty, variant);
-    } catch (error) {
-      console.error("Error setting difficulty:", error);
-      alert("Failed to set difficulty. Please try again.");
-    }
   };
-
-  const handleVariantChange = (event) => {
-    const selectedVariant = event.target.value;
-    setVariant(selectedVariant);
-    initializeGame(); // Trigger the game initialization when variant changes
+  const handleConnectNumberChange = (event) => {
+    setConnectNumber(Number(event.target.value));
   };
 
   const recordGameResult = async (gameWinner, isDraw) => {
@@ -172,16 +137,12 @@ const PlayVariants = () => {
       const gameData = {
         timestamp: new Date(),
         difficulty,
-        variant,
-        rows: variant === "5_in_a_row" ? 8 : customRows,
-        cols: variant === "5_in_a_row" ? 9 : customCols,
         moves: movesRef.current,
         result: isDraw ? "draw" : gameWinner === 1 ? "win" : "loss",
         bestMoves: [],
       };
 
       await addDoc(gameSubCollection, gameData);
-      console.log("Game result recorded:", gameData);
     } catch (error) {
       console.error("Error recording game result:", error);
     }
@@ -189,29 +150,34 @@ const PlayVariants = () => {
 
   return (
     <div className="container mt-4 text-center">
-      <h1 className="my-4">Play Variants against Bot</h1>
+      {error && <div className={styles.errorMsg}>{error}</div>}
+
+      <h1 className="my-4">Play against Bot - Variants</h1>
+
       <div className="row">
         <div className="col">
           <Board
+            rows={rows}
+            cols={cols}
             board={board}
-            rows={variant === "5_in_a_row" ? 8 : customRows} // Passing the correct row count
-            cols={variant === "5_in_a_row" ? 9 : customCols} // Passing the correct column count
             highlightedColumns={highlightedColumns}
             onColumnClick={handleMakeMove}
           />
         </div>
       </div>
+
       <div className="row mt-4">
         <div className="col d-flex justify-content-center">
           <button
-            onClick={initializeGame}
+            onClick={() => resetGame(rows, cols)} // Reset game with current board size
             disabled={isLocked}
             className="btn btn-primary"
           >
-            Start or Reset Game
+            Reset Game
           </button>
         </div>
       </div>
+
       <div className="row mt-4">
         <div className="col d-flex justify-content-center">
           <div className="d-flex align-items-center">
@@ -222,7 +188,7 @@ const PlayVariants = () => {
               id="difficulty"
               value={difficulty}
               onChange={handleDifficultyChange}
-              className="form-select w-auto me-4"
+              className="form-select w-auto"
             >
               {difficultyLevels.map((level) => (
                 <option key={level} value={level}>
@@ -233,62 +199,59 @@ const PlayVariants = () => {
                 </option>
               ))}
             </select>
-            <label htmlFor="variant" className="me-2">
-              Game Variant:
-            </label>
-            <select
-              id="variant"
-              value={variant}
-              onChange={handleVariantChange}
-              className="form-select w-auto"
-            >
-              <option value="classic">Classic</option>
-              <option value="5_in_a_row">5 in a Row (8x9)</option>
-              <option value="custom">Custom</option>
-            </select>
           </div>
         </div>
       </div>
-      {variant === "custom" && (
-        <div className="row mt-3">
-          <div className="col d-flex justify-content-center">
-            <div className="d-flex align-items-center">
-              <label htmlFor="rows" className="me-2">
-                Rows:
-              </label>
-              <input
-                id="rows"
-                type="number"
-                value={customRows}
-                onChange={(e) =>
-                  setCustomRows(
-                    Math.max(5, Math.min(10, Number(e.target.value)))
-                  )
-                }
-                min="5"
-                max="10"
-                className="form-control w-auto me-4"
-              />
-              <label htmlFor="cols" className="me-2">
-                Columns:
-              </label>
-              <input
-                id="cols"
-                type="number"
-                value={customCols}
-                onChange={(e) =>
-                  setCustomCols(
-                    Math.max(5, Math.min(10, Number(e.target.value)))
-                  )
-                }
-                min="5"
-                max="10"
-                className="form-control w-auto"
-              />
-            </div>
+
+      <div className="row mt-4">
+        <div className="col d-flex justify-content-center">
+          <div className="d-flex align-items-center">
+            <label htmlFor="rows" className="me-2">
+              Rows:
+            </label>
+            <input
+              type="number"
+              id="rows"
+              value={rows}
+              onChange={(e) => setRows(Number(e.target.value))}
+              className="form-control w-auto"
+              min="6"
+              max="9"
+            />
+            <label htmlFor="cols" className="ms-3 me-2">
+              Columns:
+            </label>
+            <input
+              type="number"
+              id="cols"
+              value={cols}
+              onChange={(e) => setCols(Number(e.target.value))}
+              className="form-control w-auto"
+              min="6"
+              max="9"
+            />
           </div>
         </div>
-      )}
+      </div>
+
+      <div className="row mt-4">
+        <div className="col d-flex justify-content-center">
+          <div className="d-flex align-items-center">
+            <label htmlFor="connectNumber" className="me-2">
+              Connect:
+            </label>
+            <input
+              type="number"
+              id="connectNumber"
+              value={connectNumber}
+              onChange={handleConnectNumberChange}
+              className="form-control w-auto"
+              min="4"
+              max="9"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
