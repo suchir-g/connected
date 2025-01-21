@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import Board from "../../../components/board/Board";
-import { apiMakeMove } from "../../../config/api";
+import { getBestMove } from "../../../config/api";
 import { auth, db } from "../../../config/firebase";
 import { doc, collection, addDoc } from "firebase/firestore";
 import styles from "./PlayBot.module.css";
@@ -59,51 +59,49 @@ const PlayBot = () => {
   };
 
   const handleMakeMove = async (column) => {
-    if (isLocked || winner !== null || isDraw) {
-      return;
-    }
+    if (isLocked || winner !== null || isDraw) return;
 
-    const playerMove = column + 1;
-    movesRef.current += playerMove.toString();
-    setMoves(movesRef.current);
-
+    // Apply the player's move
     const userMovedBoard = applyMove(board, column, 1);
     setBoard(userMovedBoard);
+    movesRef.current += (column + 1).toString();
+    setMoves(movesRef.current);
+
+    // Check if the player wins after their move
+    if (winner === "Player") return;
+
     setIsLocked(true);
 
     try {
-      const response = await apiMakeMove(column, board, 1, difficulty); // Pass difficulty dynamically
-      console.log(response.data);
-      const {
-        board: updatedBoard,
-        current_player,
-        winner: gameWinner,
-        is_draw,
-        ai_move,
-      } = response.data;
+      // Fetch the AI's best move and outcome
+      const response = await getBestMove(
+        userMovedBoard,
+        -1,
+        "connect-4",
+        difficulty
+      );
+      const { best_move: aiMove, board: updatedBoard, outcome } = response.data;
 
-      setTimeout(() => {
-        setBoard(updatedBoard);
-        setWinner(gameWinner !== 0 ? gameWinner : null);
-        setIsDraw(is_draw);
-        setHighlightedColumns([]);
+      console.log(updatedBoard);
+      setBoard(updatedBoard);
 
-        if (ai_move !== undefined && ai_move !== null) {
-          const aiMove = ai_move + 1;
-          movesRef.current += aiMove.toString();
-          setMoves(movesRef.current);
-        }
+      // Update game state
+      if (outcome === 1) {
+        setWinner("Player");
+      } else if (outcome === -1) {
+        setIsDraw(true);
+      } else if (aiMove !== null) {
+        movesRef.current += (aiMove + 1).toString();
+        setMoves(movesRef.current);
+      }
 
-        if (gameWinner !== 0 || is_draw) {
-          recordGameResult(gameWinner, is_draw);
-          setIsLocked(true);
-        } else {
-          setIsLocked(false);
-        }
-      }, 500);
+      if (outcome !== 0) {
+        recordGameResult(outcome, outcome === -1);
+      }
     } catch (error) {
-      console.error("Error making move:", error);
-      setError("Could not make move. " + error.message);
+      console.error("Error fetching AI move:", error);
+      setError("Could not fetch AI move.");
+    } finally {
       setIsLocked(false);
     }
   };
@@ -113,7 +111,7 @@ const PlayBot = () => {
     setDifficulty(selectedDifficulty);
   };
 
-  const recordGameResult = async (gameWinner, isDraw) => {
+  const recordGameResult = async (gameOutcome, isDraw) => {
     if (!auth.currentUser) {
       console.error("User not authenticated");
       return;
@@ -126,7 +124,7 @@ const PlayBot = () => {
         timestamp: new Date(),
         difficulty,
         moves: movesRef.current,
-        result: isDraw ? "draw" : gameWinner === 1 ? "win" : "loss",
+        result: isDraw ? "draw" : gameOutcome === 1 ? "win" : "loss",
         bestMoves: [],
       };
 

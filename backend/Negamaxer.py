@@ -3,7 +3,7 @@ import random
 from zobristHashing import init_zobrist, compute_zobrist_hash
 
 class Negamaxer:
-    def __init__(self, difficulty='medium', opening_book_file='opening_book.pkl', win_condition=4):
+    def __init__(self, difficulty='medium', opening_book_file='opening_book.pkl', mode='connect-4'):
         self.difficulty_settings = {
             'very_easy': 1,
             'easy': 1,
@@ -14,7 +14,7 @@ class Negamaxer:
         }
         self.max_depth = self.difficulty_settings.get(difficulty, 3)
         self.difficulty = difficulty
-        self.win_condition = win_condition  # Adjustable win condition (e.g., 4-in-a-row or 5-in-a-row)
+        self.mode = mode
 
         if difficulty == 'expert':
             try:
@@ -24,14 +24,15 @@ class Negamaxer:
                 self.opening_book = {}
                 print("No opening book found. Now playing without one.")
 
-            self.zobrist_table = init_zobrist(rows=6, cols=7)  
-            self.transposition_table = {}  # for caching negamax results
+            self.zobrist_table = init_zobrist(rows=position.ROWS, cols=position.COLS)  # Adjusted for default Connect-4
+            self.transposition_table = {}  # For caching negamax results
         else:
             self.opening_book = None
             self.zobrist_table = None
             self.transposition_table = None
 
     def choose_move(self, position, player):
+        print(f"Choosing move for player {player} with difficulty {self.difficulty}")
         if self.difficulty == 'expert' and self.opening_book is not None:
             board_key = str(position.array_board)
             if board_key in self.opening_book:
@@ -60,7 +61,7 @@ class Negamaxer:
         for move in valid_moves:
             new_position = position.copy()
             new_position.drop_piece(move, player)
-            score = -self.negamax(new_position, -player, self.max_depth, -float('inf'), float('inf')) 
+            score = -self.negamax(new_position, -player, self.max_depth, -float('inf'), float('inf'))
             if score > best_score:
                 best_score = score
                 best_move = move
@@ -87,7 +88,7 @@ class Negamaxer:
             best_score = max(best_score, score)
             alpha = max(alpha, score)
             if alpha >= beta:
-                break 
+                break
 
         if self.difficulty == 'expert' and self.zobrist_table is not None:
             self.transposition_table[tt_key] = best_score
@@ -97,7 +98,7 @@ class Negamaxer:
     def evaluate(self, position, player):
         winner = position.check_winner()
         if winner == player:
-            return 10000 
+            return 10000
         elif winner == -player:
             return -10000
 

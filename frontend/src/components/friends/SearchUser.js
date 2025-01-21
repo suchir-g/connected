@@ -123,27 +123,31 @@ const SearchUser = () => {
   };
 
   return (
-    <div>
-      <h3>Search Users</h3>
-      <input
-        type="text"
-        placeholder="Enter username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-      />
-      <button onClick={handleSearch}>Search</button>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <ul>
+    <div className="container mt-4">
+      <h3 className="mb-4">Search Users</h3>
+      <div className="input-group mb-3">
+        <input
+          type="text"
+          placeholder="Enter username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="form-control"
+        />
+        <button onClick={handleSearch} className="btn btn-primary">
+          Search
+        </button>
+      </div>
+      {error && <div className="alert alert-danger">{error}</div>}
+      <ul className="list-group">
         {results.map((user) => (
-          <li key={user.id}>
-            <Link to={`/player/${user.username}`}>
-              {user.username}
-              {friends.some((friend) => friend.uid === user.id) && (
-                <span style={{ marginLeft: "8px", color: "green" }}>
-                  Friend
-                </span>
-              )}
-            </Link>
+          <li
+            key={user.id}
+            className="list-group-item d-flex justify-content-between align-items-center"
+          >
+            <Link to={`/player/${user.username}`}>{user.username}</Link>
+            {friends.some((friend) => friend.uid === user.id) && (
+              <span className="badge bg-success">Friend</span>
+            )}
           </li>
         ))}
       </ul>

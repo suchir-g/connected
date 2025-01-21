@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { auth } from "../../config/firebase"; 
+import { auth } from "../../config/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -9,7 +9,6 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const { setCurrentUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const signInEmailPassword = async () => {
@@ -20,8 +19,6 @@ const Login = () => {
         password
       );
 
-      setCurrentUser(userCredential.user);
-
       navigate("/");
     } catch (err) {
       setError(err.message);
@@ -29,25 +26,47 @@ const Login = () => {
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-      />
-
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-      />
-
-      <button onClick={signInEmailPassword}>Sign In</button>
+    <div className="container mt-5" style={{ minHeight: "100vh" }}>
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <h2 className="card-title text-center mb-4">Login</h2>
+              {error && <div className="alert alert-danger">{error}</div>}
+              <div className="mb-3">
+                <label htmlFor="email" className="form-label">
+                  Email address
+                </label>
+                <input
+                  type="email"
+                  className="form-control"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="password" className="form-label">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  className="form-control"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <button
+                className="btn btn-primary w-100"
+                onClick={signInEmailPassword}
+              >
+                Login
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -85,45 +85,58 @@ const Settings = () => {
   };
 
   return (
-    <div>
-      <h2>Profile</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {success && <p style={{ color: "green" }}>{success}</p>}
+    <div className="container mt-5">
+      <h2 className="mb-4">Profile</h2>
+      {error && <div className="alert alert-danger">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
 
-      <div>
+      <div className="mb-4">
         <h3>Change Password</h3>
-        <input
-          type="password"
-          placeholder="Current Password"
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="New Password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-        />
-        <button onClick={handleChangePassword}>Change Password</button>
+        <div className="form-group">
+          <input
+            type="password"
+            className="form-control mb-2"
+            placeholder="Current Password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+          />
+          <input
+            type="password"
+            className="form-control mb-2"
+            placeholder="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <button className="btn btn-primary" onClick={handleChangePassword}>
+            Change Password
+          </button>
+        </div>
       </div>
 
       <hr />
 
-      <div>
+      <div className="mb-4">
         <h3>Delete Account</h3>
-        <input
-          type="password"
-          placeholder="Confirm with Password"
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-        />
-        <button onClick={handleDeleteAccount}>Delete Account</button>
+        <div className="form-group">
+          <input
+            type="password"
+            className="form-control mb-2"
+            placeholder="Confirm with Password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+          />
+          <button className="btn btn-danger" onClick={handleDeleteAccount}>
+            Delete Account
+          </button>
+        </div>
       </div>
 
       <hr />
 
-      <div>
-        <button onClick={handleSignOut}>Sign Out</button>
+      <div className="mb-4">
+        <button className="btn btn-secondary" onClick={handleSignOut}>
+          Sign Out
+        </button>
       </div>
       <ToggleThemeButton />
     </div>

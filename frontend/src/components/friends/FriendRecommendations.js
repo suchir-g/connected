@@ -101,7 +101,6 @@ const FriendRecommendations = () => {
           })
         );
 
-
         const filteredFriendsData = friendsData.filter(Boolean);
 
         for (let i = 0; i < filteredFriendsData.length - 1; i++) {
@@ -136,7 +135,10 @@ const FriendRecommendations = () => {
               <div className="card-body d-flex flex-column">
                 <h5 className="card-title">{recommendation.username}</h5>
                 <p className="card-text">{recommendation.bio}</p>
-                <Link to={`/profile/${recommendation.uid}`} className="btn btn-primary mt-auto">
+                <Link
+                  to={`/profile/${recommendation.uid}`}
+                  className="btn btn-primary mt-auto"
+                >
                   View Profile
                 </Link>
               </div>
