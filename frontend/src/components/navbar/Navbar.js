@@ -13,8 +13,8 @@ const Navbar = () => {
       className={`navbar navbar-expand-lg navbar-dark bg-dark ${styles["navbar-dark-theme"]}`}
     >
       <div className="container-fluid">
-        <NavLink className={`navbar-brand ${styles.navLink}`} to="/dashboard">
-          Connected
+        <NavLink className={`navbar-brand fw-bold ${styles.navLink}`} to="/dashboard">
+          CONNECTED
         </NavLink>
 
         <button
@@ -63,6 +63,15 @@ const Navbar = () => {
                         activeClassName={styles.active}
                       >
                         Play Bot
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink
+                        className={`dropdown-item ${styles.navLink}`}
+                        to="/play/variants/bot"
+                        activeClassName={styles.active}
+                      >
+                        Play Variants
                       </NavLink>
                     </li>
                   </ul>

@@ -15,6 +15,7 @@ const PlayLocal = () => {
   const [highlightedColumns, setHighlightedColumns] = useState([]);
   const [isFetchingSuggestion, setIsFetchingSuggestion] = useState(false);
   const [lastMove, setLastMove] = useState({ row: null, column: null });
+  const [error, setError] = useState(null);
 
   const initializeGame = () => {
     setBoard(initialBoard);
@@ -135,17 +136,17 @@ const PlayLocal = () => {
       }
     } catch (error) {
       console.error("Error fetching AI suggestion:", error);
-      alert("Failed to fetch AI suggestion. Please try again.");
+      setError("Could not fetch AI suggestion.");
     }
 
     setIsFetchingSuggestion(false);
   };
 
   return (
-    <div className="container mt-4 text-center">
+    <div className={`container mt-4 text-center ${darkMode ? "bg-dark text-white" : ""}`} style={{minHeight: "100vh"}}>
       <h1 className="my-4">Play Locally</h1>
-      <div className="row">
-        <div className="col">
+      <div className="row justify-content-center">
+        <div className="col-md-8">
           <Board
             board={board}
             highlightedColumns={highlightedColumns}
@@ -154,24 +155,25 @@ const PlayLocal = () => {
           />
         </div>
       </div>
-      <div className="row">
-        <div className="col d-flex justify-content-center mt-3">
+      {error && <div className="alert alert-danger mt-3">{error}</div>}
+      <div className="row justify-content-center mt-3">
+        <div className="col-auto">
           <div
             style={{
               borderRadius: "50%",
               width: "50px",
               height: "50px",
-              backgroundColor: currentPlayer == 1 ? "red" : "yellow",
+              backgroundColor: currentPlayer === 1 ? "red" : "yellow",
               border: "4px solid black",
               boxShadow: `0px 0px 20px ${
-                currentPlayer == 1 ? "#eb4034a8" : "#ffe419a8"
+                currentPlayer === 1 ? "#eb4034a8" : "#ffe419a8"
               }`,
             }}
           ></div>
         </div>
       </div>
-      <div className="row mt-4">
-        <div className="col d-flex justify-content-center">
+      <div className="row justify-content-center mt-4">
+        <div className="col-auto">
           <button
             onClick={initializeGame}
             disabled={isFetchingSuggestion}
@@ -190,12 +192,12 @@ const PlayLocal = () => {
           </button>
         </div>
       </div>
-      <div className="row mt-4">
-        <div className="col d-flex justify-content-center">
+      <div className="row justify-content-center mt-4">
+        <div className="col-auto">
           <div className="status">
-            {winner === 1 && <p>Player 1 wins </p>}
-            {winner === -1 && <p>Player 2 wins</p>}
-            {isDraw && <p> DRAW</p>}
+            {winner === 1 && <p className="alert alert-success">Player 1 wins!</p>}
+            {winner === -1 && <p className="alert alert-success">Player 2 wins!</p>}
+            {isDraw && <p className="alert alert-secondary">It's a draw!</p>}
           </div>
         </div>
       </div>

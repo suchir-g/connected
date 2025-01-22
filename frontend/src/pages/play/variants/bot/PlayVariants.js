@@ -205,7 +205,7 @@ const PlayVariants = () => {
   };
 
   return (
-    <div className="container mt-4 text-center">
+    <div className="container mt-4 text-center" style={{minHeight: "100vh"}}>
       {error && <div className={styles.errorMsg}>{error}</div>}
 
       <h1 className="my-4">Play Variants against Bot</h1>
