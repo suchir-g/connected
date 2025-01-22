@@ -123,6 +123,9 @@ const PlayBot = () => {
       const gameData = {
         timestamp: new Date(),
         difficulty,
+        gameMode: "connect-4",
+        rows: 6,
+        cols: 7,
         moves: movesRef.current,
         result: isDraw ? "draw" : gameOutcome === 1 ? "win" : "loss",
         bestMoves: [],
@@ -135,8 +138,7 @@ const PlayBot = () => {
   };
 
   return (
-    <div className="container mt-4 text-center">
-      {error && <div className={styles.errorMsg}>{error}</div>}
+    <div className="container mt-4 text-center 100vh" style={{minHeight: "100vh"}}>
 
       <h1 className="my-4">Play against Bot</h1>
       <div className="row">
@@ -148,6 +150,8 @@ const PlayBot = () => {
           />
         </div>
       </div>
+      {error && <div className={`alert alert-danger mt-3`}>{error}</div>}
+
       <div className="row mt-4">
         <div className="col d-flex justify-content-center">
           <button

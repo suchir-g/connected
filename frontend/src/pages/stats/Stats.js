@@ -115,29 +115,35 @@ const Stats = () => {
 
   return (
     <div style={{ padding: "20px" }}>
-      <h2>Statistics</h2>
+      <h2 className="md-2">Statistics</h2>
       {error && <p style={{ color: "red" }}>{error}</p>}
       {loading && <p>Loading statistics...</p>}
 
       {!loading && statsData.length > 0 && (
         <>
-          <h3>Wins by Difficulty</h3>
-          <BarGraph
-            labels={statsData.map((data) => data.difficulty)}
-            values={statsData.map((data) => data.wins)}
-          />
-
-          <h3>Losses by Difficulty</h3>
-          <BarGraph
-            labels={statsData.map((data) => data.difficulty)}
-            values={statsData.map((data) => data.losses)}
-          />
-
-          <h3>Win-to-Loss Ratio by Difficulty</h3>
-          <BarGraph
-            labels={statsData.map((data) => data.difficulty)}
-            values={statsData.map((data) => data.ratio)}
-          />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
+            <div style={{ flex: "1 1 30%" }}>
+              <h4>Wins by Difficulty</h4>
+              <BarGraph
+                labels={statsData.map((data) => data.difficulty)}
+                values={statsData.map((data) => data.wins)}
+              />
+            </div>
+            <div style={{ flex: "1 1 30%" }}>
+              <h4>Losses by Difficulty</h4>
+              <BarGraph
+                labels={statsData.map((data) => data.difficulty)}
+                values={statsData.map((data) => data.losses)}
+              />
+            </div>
+            <div style={{ flex: "1 1 30%" }}>
+              <h4>Win-to-Loss Ratio by Difficulty</h4>
+              <BarGraph
+                labels={statsData.map((data) => data.difficulty)}
+                values={statsData.map((data) => data.ratio)}
+              />
+            </div>
+          </div>
         </>
       )}
 
@@ -151,27 +157,27 @@ const Stats = () => {
       {!loading && gameHistory.length > 0 && (
         <>
           <h3>Game History</h3>
-          <table border="1" cellPadding="10" cellSpacing="0" className="table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Result</th>
-                <th>Difficulty</th>
-                <th>Moves</th>
-                <th>Action</th>
+          <table border="1" cellPadding="10" cellSpacing="0" className="table" style={{ width: "100%", borderCollapse: "collapse", color: "inherit" }}>
+            <thead style={{color:"inherit"}}>
+              <tr style={{color:"inherit"}}>
+                <th style={{color:"inherit"}}>Date</th>
+                <th style={{color:"inherit"}}>Result</th>
+                <th style={{color:"inherit"}}>Difficulty</th>
+                <th style={{color:"inherit"}}>Moves</th>
+                <th style={{color:"inherit"}}>Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{color:"inherit"}}>
               {gameHistory.map((game, index) => (
-                <tr key={index}>
-                  <td>
+                <tr key={index} style={{color:"inherit"}}>
+                  <td style={{color:"inherit"}}>
                     {new Date(game.timestamp.seconds * 1000).toLocaleString()}
                   </td>
-                  <td>{game.result}</td>
-                  <td>{game.difficulty}</td>
-                  <td>{game.moves}</td>
-                  <td>
-                    <Link to={`/review/${currentUser.uid}/${game.id}`}>
+                  <td style={{color:"inherit"}}>{game.result}</td>
+                  <td style={{color:"inherit"}}>{game.difficulty}</td>
+                  <td style={{color:"inherit"}}>{game.moves}</td>
+                  <td style={{color:"inherit"}}>
+                    <Link to={`/review/${currentUser.uid}/${game.id}`} style={{color:"inherit"}}>
                       Review Game
                     </Link>
                   </td>
