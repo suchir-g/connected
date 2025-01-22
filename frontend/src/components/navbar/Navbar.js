@@ -13,7 +13,10 @@ const Navbar = () => {
       className={`navbar navbar-expand-lg navbar-dark bg-dark ${styles["navbar-dark-theme"]}`}
     >
       <div className="container-fluid">
-        <NavLink className={`navbar-brand fw-bold ${styles.navLink}`} to="/dashboard">
+        <NavLink
+          className={`navbar-brand fw-bold ${styles.navLink}`}
+          to="/dashboard"
+        >
           CONNECTED
         </NavLink>
 
