@@ -9,13 +9,16 @@ import {
 } from "firebase/auth";
 import { doc, deleteDoc } from "firebase/firestore";
 import ToggleThemeButton from "../../components/navbar/ToggleThemeButton";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const Settings = () => {
   const user = auth.currentUser;
+  const { darkMode } = useTheme(); // Access darkMode from ThemeContext
   const [newPassword, setNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [currentDeletePassword, setCurrentDeletePassword] = useState("");
 
   const handleChangePassword = async () => {
     setError("");
@@ -60,7 +63,7 @@ const Settings = () => {
 
       const credential = EmailAuthProvider.credential(
         user.email,
-        currentPassword
+        currentDeletePassword
       );
       await reauthenticateWithCredential(user, credential);
 
@@ -85,60 +88,141 @@ const Settings = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <h2 className="mb-4">Profile</h2>
-      {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+    <div className="container my-5">
+      <h2 className="mb-4 text-center">Profile Settings</h2>
 
-      <div className="mb-4">
-        <h3>Change Password</h3>
-        <div className="form-group">
-          <input
-            type="password"
-            className="form-control mb-2"
-            placeholder="Current Password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-          />
-          <input
-            type="password"
-            className="form-control mb-2"
-            placeholder="New Password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-          <button className="btn btn-primary" onClick={handleChangePassword}>
-            Change Password
+      {/* Display Error and Success Messages */}
+      {error && (
+        <div
+          className="alert alert-danger alert-dismissible fade show"
+          role="alert"
+        >
+          {error}
+          <button
+            type="button"
+            className="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+            onClick={() => setError("")}
+          ></button>
+        </div>
+      )}
+      {success && (
+        <div
+          className="alert alert-success alert-dismissible fade show"
+          role="alert"
+        >
+          {success}
+          <button
+            type="button"
+            className="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+            onClick={() => setSuccess("")}
+          ></button>
+        </div>
+      )}
+
+      {/* Change Password Section */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <h5 className="mb-0">Change Password</h5>
+        </div>
+        <div className="card-body">
+          <form>
+            <div className="mb-3">
+              <label htmlFor="currentPassword" className="form-label">
+                Current Password
+              </label>
+              <input
+                type="password"
+                id="currentPassword"
+                className="form-control"
+                placeholder="Enter your current password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <label htmlFor="newPassword" className="form-label">
+                New Password
+              </label>
+              <input
+                type="password"
+                id="newPassword"
+                className="form-control"
+                placeholder="Enter your new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <div id="passwordHelp" className="form-text">
+                Password must be at least 6 characters long.
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleChangePassword}
+            >
+              Change Password
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Delete Account Section */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <h5 className="mb-0">Delete Account</h5>
+        </div>
+        <div className="card-body">
+          <form>
+            <div className="mb-3">
+              <label htmlFor="confirmPassword" className="form-label">
+                Confirm with Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                className="form-control"
+                placeholder="Enter your password to confirm"
+                value={currentDeletePassword}
+                onChange={(e) => setCurrentDeletePassword(e.target.value)}
+                required
+              />
+              <div id="deleteHelp" className="form-text text-danger">
+                This action cannot be undone.
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleDeleteAccount}
+            >
+              Delete Account
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Sign Out Section */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <h5 className="mb-0">Sign Out</h5>
+        </div>
+        <div className="card-body">
+          <button className="btn btn-secondary" onClick={handleSignOut}>
+            Sign Out
           </button>
         </div>
       </div>
 
-      <hr />
-
-      <div className="mb-4">
-        <h3>Delete Account</h3>
-        <div className="form-group">
-          <input
-            type="password"
-            className="form-control mb-2"
-            placeholder="Confirm with Password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-          />
-          <button className="btn btn-danger" onClick={handleDeleteAccount}>
-            Delete Account
-          </button>
-        </div>
+      {/* Toggle Theme Button */}
+      <div className="text-center">
+        <ToggleThemeButton />
       </div>
-
-      <hr />
-
-      <div className="mb-4">
-        <button className="btn btn-secondary" onClick={handleSignOut}>
-          Sign Out
-        </button>
-      </div>
-      <ToggleThemeButton />
     </div>
   );
 };

@@ -10,14 +10,14 @@ const Footer = () => {
           <a href="/" className="px-3 text-white">
             Home
           </a>
-          <a href="/about" className="px-3 text-white">
-            About
+          <a href="/register" className="px-3 text-white">
+            Register
           </a>
-          <a href="/stats" className="px-3 text-white">
-            Services
+          <a href="https://synapse.education/" className="px-3 text-white">
+            Synapse Education
           </a>
-          <a href="/contact" className="px-3 text-white">
-            Contact
+          <a href="https://github.com/suchir-g" className="px-3 text-white">
+            My Github
           </a>
         </nav>
       </div>

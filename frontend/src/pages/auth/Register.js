@@ -1,8 +1,16 @@
 import React, { useState } from "react";
-import { useAuth } from "../../contexts/AuthContext";
-import { db } from "../../config/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../../config/firebase";
+import {
+  doc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -11,7 +19,8 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
+
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,17 +54,33 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await signup(trimmedEmail, password, trimmedUsername);
-      // Redirect to dashboard or another page
+      // Create user with email and password
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        trimmedEmail,
+        password
+      );
+      const user = userCredential.user;
+
+      // Create a Firestore document in the `players` collection
+      const playerRef = doc(db, "players", user.uid);
+      await setDoc(playerRef, {
+        uid: user.uid,
+        username: trimmedUsername,
+        email: trimmedEmail,
+        createdAt: new Date(),
+      });
+
+      navigate("/dashboard");
     } catch (error) {
-      setError("Failed to create an account.");
+      setError(`Failed to create an account. ${error.message}`);
     }
 
     setLoading(false);
   };
 
   const checkUsernameExists = async (username) => {
-    const usersRef = collection(db, "users");
+    const usersRef = collection(db, "players");
     const q = query(usersRef, where("username", "==", username));
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;

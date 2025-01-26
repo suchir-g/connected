@@ -248,67 +248,60 @@ const Dashboard = () => {
                 <div className="card-body">
                   <h5 className="card-title">Recent Games</h5>
                   {recentGames.length > 0 ? (
-                    <table className={`table table-responsive ${styles.table}`}>
-                      <thead>
-                        <tr>
-                          <th style={{ color: darkMode ? "white" : "black" }}>
-                            Date
-                          </th>
-                          <th style={{ color: darkMode ? "white" : "black" }}>
-                            Result
-                          </th>
-                          <th style={{ color: darkMode ? "white" : "black" }}>
-                            Difficulty
-                          </th>
-                          <th style={{ color: darkMode ? "white" : "black" }}>
-                            Moves
-                          </th>
-                          <th style={{ color: darkMode ? "white" : "black" }}>
-                            Action
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recentGames.map((game) => (
-                          <tr key={game.id}>
-                            <td
-                              style={{ color: darkMode ? "#8f8f8f" : "black" }}
-                            >
-                              {new Date(
-                                game.timestamp.seconds * 1000
-                              ).toLocaleString()}
-                            </td>
-                            <td
-                              style={{ color: darkMode ? "#8f8f8f" : "black" }}
-                            >
-                              {game.result.toUpperCase()}
-                            </td>
-                            <td
-                              style={{ color: darkMode ? "#8f8f8f" : "black" }}
-                            >
-                              {game.difficulty}
-                            </td>
-                            <td
-                              style={{ color: darkMode ? "#8f8f8f" : "black" }}
-                            >
-                              {game.moves}
-                            </td>
-                            <td
-                              style={{ color: darkMode ? "#8f8f8f" : "black" }}
-                            >
-                              <Link
-                                className="btn btn-primary btn-sm"
-                                to={`/review/${currentUser.uid}/${game.id}`}
-                              >
-                                Review
-                              </Link>
-                            </td>
+                    <div className="table-responsive">
+                      <table
+                        className={`table table-striped ${
+                          darkMode ? "table-dark" : "table-light"
+                        }`}
+                      >
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Result</th>
+                            <th>Difficulty</th>
+                            <th>Moves</th>
+                            <th>Action</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {recentGames.map((game) => (
+                            <tr key={game.id}>
+                              <td>
+                                {new Date(
+                                  game.timestamp.seconds * 1000
+                                ).toLocaleString()}
+                              </td>
+                              <td
+                                className={
+                                  game.result === "win"
+                                    ? "text-success"
+                                    : game.result === "loss"
+                                    ? "text-danger"
+                                    : ""
+                                }
+                              >
+                                {game.result.toUpperCase()}
+                              </td>
+                              <td>
+                                {game.difficulty.charAt(0).toUpperCase() +
+                                  game.difficulty.slice(1)}
+                              </td>
+                              <td>{game.moves}</td>
+                              <td>
+                                <Link
+                                  className="btn btn-primary btn-sm"
+                                  to={`/review/${currentUser.uid}/${game.id}`}
+                                >
+                                  Review
+                                </Link>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   ) : (
-                    <p>No recent games available.</p>
+                    <p className="text-center">No recent games available.</p>
                   )}
                 </div>
               </div>

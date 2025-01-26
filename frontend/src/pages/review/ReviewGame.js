@@ -1,12 +1,16 @@
+// ReviewGame.js
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "../../config/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import Board from "../../components/board/Board";
 import { getBestMove } from "../../config/api";
+import { useTheme } from "../../contexts/ThemeContext"; // Import useTheme
 
 const ReviewGame = () => {
   const { gameId, playerId } = useParams();
+  const { darkMode } = useTheme(); // Destructure darkMode from context
+
   const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0)));
   const [moves, setMoves] = useState([]);
   const [gameMode, setGameMode] = useState("connect-4");
@@ -33,7 +37,8 @@ const ReviewGame = () => {
           const parsedMoves = parseMoves(gameData.moves);
           setMoves(parsedMoves);
 
-          const difficulty = gameData.difficulty || "medium";
+          const gameDifficulty = gameData.difficulty || "medium";
+          setDifficulty(gameDifficulty);
 
           if (gameData.bestMoves && gameData.bestMoves.length > 0) {
             setPrecomputedBestMoves(gameData.bestMoves);
@@ -51,7 +56,7 @@ const ReviewGame = () => {
     };
 
     fetchGame();
-  }, [gameId, playerId]);
+  }, [gameId, playerId, gameMode]);
 
   const parseMoves = (moveString) => {
     const parsed = [];
@@ -153,16 +158,6 @@ const ReviewGame = () => {
     }
 
     setBoard(tempBoard);
-    fetchColumnScores(tempBoard, moveIndex % 2 === 0 ? 1 : -1);
-  };
-
-  const fetchColumnScores = async (board, currentPlayer) => {
-    try {
-      const response = await getBestMove(board, currentPlayer, gameMode);
-      setScores(response.data.column_scores || Array(7).fill(null));
-    } catch {
-      setScores(Array(7).fill(null));
-    }
   };
 
   const handleKeyDown = (e) => {
@@ -187,52 +182,114 @@ const ReviewGame = () => {
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moves, currentMoveIndex]);
 
   if (loading) {
-    return <p>Loading game...</p>;
+    return (
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "100vh" }}
+      >
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading game...</span>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <p style={{ color: "red" }}>{error}</p>;
+    return (
+      <div className="container mt-4">
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      </div>
+    );
   }
 
   if (evaluating) {
-    return <p>Computing evaluation...</p>;
+    return (
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "100vh" }}
+      >
+        <div className="spinner-border text-warning" role="status">
+          <span className="visually-hidden">Computing evaluation...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Review Game</h2>
-      <p>Game Mode: {gameMode.replace("-", " ").toUpperCase()}</p>
-      <Board
-        board={board}
-        highlightedColumns={[precomputedBestMoves[currentMoveIndex]]}
-        latestMove={latestMove}
-      />
+    <div className="container py-4">
+      {/* Header Card */}
       <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "10px",
-        }}
+        className={`card mb-4 shadow-sm border-${darkMode ? "white" : "dark"}`}
       >
-        {scores.map((score, index) => (
-          <div key={index} style={{ textAlign: "center" }}>
-            <p>Column {index + 1}</p>
-            <p>{score !== null ? score : "N/A"}</p>
+        <div className="card-body">
+          <div className="row align-items-center">
+            <div className="col-md-8">
+              <h2 className="card-title">Review Game</h2>
+              <h6 className="card-subtitle mb-2 text-warning">
+                Game Mode: {gameMode.replace("-", " ").toUpperCase()}
+              </h6>
+            </div>
+            <div className="col-md-4 text-md-end text-center mt-3 mt-md-0">
+              <button
+                className={`btn btn-primary me-2 ${
+                  currentMoveIndex === 0 ? "disabled" : ""
+                }`}
+                onClick={() => {
+                  if (currentMoveIndex > 0) {
+                    setCurrentMoveIndex(currentMoveIndex - 1);
+                    renderBoardAtMove(currentMoveIndex - 1);
+                  }
+                }}
+              >
+                <i className="bi bi-arrow-left"></i> Previous Move
+              </button>
+              <button
+                className={`btn btn-primary ${
+                  currentMoveIndex === moves.length - 1 ? "disabled" : ""
+                }`}
+                onClick={() => {
+                  if (currentMoveIndex < moves.length - 1) {
+                    setCurrentMoveIndex(currentMoveIndex + 1);
+                    renderBoardAtMove(currentMoveIndex + 1);
+                  }
+                }}
+              >
+                Next Move <i className="bi bi-arrow-right"></i>
+              </button>
+            </div>
           </div>
-        ))}
+        </div>
       </div>
-      <p>
-        Best move for this turn:{" "}
-        {precomputedBestMoves[currentMoveIndex] !== null
-          ? precomputedBestMoves[currentMoveIndex] + 1
-          : "Not available"}
-      </p>
-      <p>
-        Move {currentMoveIndex + 1} of {moves.length}
-      </p>
+
+      {/* Board Display Card */}
+      <div
+        className={`card mb-4 shadow-sm border-${darkMode ? "white" : "dark"}`}
+      >
+        <div className="card-body text-center">
+          <Board
+            board={board}
+            highlightedColumns={[precomputedBestMoves[currentMoveIndex]]}
+            latestMove={latestMove}
+          />
+          <div className="mt-3">
+            <strong>Best Move for this turn:</strong>{" "}
+            {precomputedBestMoves[currentMoveIndex] !== null
+              ? precomputedBestMoves[currentMoveIndex] + 1
+              : "Not available"}
+          </div>
+          <div className="mt-2">
+            <strong>
+              Move {currentMoveIndex + 1} of {moves.length}
+            </strong>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

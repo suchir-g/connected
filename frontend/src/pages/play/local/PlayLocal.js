@@ -190,14 +190,14 @@ const PlayLocal = () => {
           <button
             onClick={initializeGame}
             disabled={isFetchingSuggestion}
-            className="btn btn-primary mx-2 shadow"
+            className="btn btn-primary mx-2 my-2 shadow"
           >
             Start or Reset Game
           </button>
           <button
             onClick={handleSuggestMove}
             disabled={isFetchingSuggestion || winner !== null || isDraw}
-            className="btn btn-success mx-2 shadow"
+            className="btn btn-success mx-2 my-2 shadow"
           >
             {isFetchingSuggestion
               ? "Fetching Suggestion..."

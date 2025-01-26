@@ -1,107 +1,440 @@
-import React, { useState, useEffect } from "react";
+// src/components/PositionTrainer.js
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import Board from "../../components/board/Board";
 import { getBestMove, generateRandomBoard } from "../../config/api";
+import {
+  checkWinner,
+  isDrawCondition,
+  applyMove,
+} from "../../utilities/gameState";
+import { auth, db } from "../../config/firebase";
+import { doc, collection, addDoc } from "firebase/firestore";
+
+const DIFFICULTY_LEVELS = [
+  "very_easy",
+  "easy",
+  "medium",
+  "hard",
+  "very_hard",
+  "expert",
+];
+
+const GAME_MODES = ["connect-4", "popout"];
 
 const PositionTrainer = () => {
+  const [gameMode, setGameMode] = useState("connect-4");
+  const [difficulty, setDifficulty] = useState("medium");
+  const [rows, setRows] = useState(6);
+  const [cols, setCols] = useState(7);
+  const [actionMode, setActionMode] = useState("place");
   const [board, setBoard] = useState([]);
   const [feedback, setFeedback] = useState("");
-  const [currentPlayer, setCurrentPlayer] = useState(1);
   const [trainingType, setTrainingType] = useState("early");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [moveMade, setMoveMade] = useState(false);
+  const [userMove, setUserMove] = useState(null);
+  const [aiBestMove, setAiBestMove] = useState(null);
+
+  // This tracks the total number of moves that were used to generate the board
+  // We'll store this in Firestore as "moves"
+  const [randomMoves, setRandomMoves] = useState(0);
+
+  // If you still need them for debugging or internal logic:
+  const movesRef = useRef("");
+
   const [searchParams] = useSearchParams();
+  const [currentPlayer, setCurrentPlayer] = useState(1);
 
-  const generateTrainingPosition = async (type) => {
-    setLoading(true);
-    setTrainingType(type);
-    try {
-      const randomMoves =
-        type === "early"
-          ? 6 + Math.floor(Math.random() * 4)
-          : 20 + Math.floor(Math.random() * 5);
+  /**
+   * Ensures grid defaults (6x7) for Connect-4 or Popout.
+   */
+  const setDefaultGrid = useCallback((mode) => {
+    setRows(6);
+    setCols(7);
+    setActionMode("place");
+  }, []);
 
-      console.log(`Generating ${type} game position with ${randomMoves} moves`);
+  /**
+   * 1) Function that saves minimal data to Firestore.
+   *    Must be declared BEFORE handlePlayerMove (so the latter can see it).
+   */
+  const recordTrainingResult = useCallback(
+    async (isCorrect, userMoveIndex, aiMove) => {
+      if (!auth.currentUser) {
+        console.error("User not authenticated");
+        return;
+      }
 
-      const response = await generateRandomBoard(randomMoves);
-      console.log("API Response for Board Generation:", response.data);
+      try {
+        let resultString;
+        if (isCorrect === true) {
+          resultString = "correct";
+        } else if (isCorrect === false) {
+          resultString = "incorrect";
+        } else {
+          // e.g., if there's a draw or immediate userWin
+          resultString = "draw";
+        }
 
-      if (response.data && response.data.board) {
-        setBoard(response.data.board);
+        // The AI move might be negative if it's a popout, store as-is:
+        const bestMoveStored = aiMove !== null ? aiMove : null;
+
+        const trainingData = {
+          timestamp: new Date(),
+          gameMode,
+          result: resultString,
+          moves: randomMoves, // number of moves used to generate the board
+          aiBestMove: bestMoveStored,
+        };
+
+        const trainingSubCollection = collection(
+          doc(db, "players", auth.currentUser.uid),
+          "trainingSessions"
+        );
+        await addDoc(trainingSubCollection, trainingData);
+      } catch (err) {
+        console.error("Error recording training result:", err);
+      }
+    },
+    [gameMode, randomMoves]
+  );
+
+  /**
+   * 2) Handle player's move, referencing recordTrainingResult
+   */
+  const handlePlayerMove = useCallback(
+    async (column) => {
+      if (loading || error || moveMade) return;
+
+      try {
+        // 1) Check if column is full
+        if (board[0][column] !== 0) {
+          setFeedback(`Column ${column + 1} is full. Choose another column.`);
+          return;
+        }
+
+        // 2) Apply user's move
+        const updatedBoard = applyMove(
+          board,
+          column,
+          1, // Player is "1"
+          gameMode,
+          rows,
+          cols,
+          actionMode
+        );
+        setBoard(updatedBoard);
         setFeedback("");
 
-        const player = randomMoves % 2 === 0 ? 1 : -1;
-        setCurrentPlayer(player);
-      } else {
-        throw new Error("invalid board data from API.");
-      }
-    } catch (error) {
-      setFeedback("Failed to generate training position. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Track the user move choice for local logic
+        const moveNotation =
+          actionMode === "place" ? `${column + 1}` : `-${column + 1}`;
+        movesRef.current += moveNotation;
 
-  useEffect(() => {
-    const type = searchParams.get("type") || "early";
-    setTrainingType(type);
+        setMoveMade(true);
+        setUserMove(column);
 
-    generateTrainingPosition(type);
-  }, [searchParams]);
+        // 3) Check immediate win or draw for user
+        if (checkWinner(updatedBoard, 1, gameMode)) {
+          setFeedback("Congratulations! You win!");
+          await recordTrainingResult(true, column, null);
+          return;
+        }
+        if (isDrawCondition(updatedBoard)) {
+          setFeedback("It's a draw!");
+          await recordTrainingResult(null, column, null);
+          return;
+        }
 
-  const handlePlayerMove = async (column) => {
-    try {
-      const expertMove = await getBestMove(board, currentPlayer);
-      if (column === expertMove.data.best_move) {
-        setFeedback(`Well done! Right column!`);
-      } else {
-        setFeedback(
-          `WRONG. You chose column ${column + 1} - best move was column ${
-            expertMove.data.best_move + 1
-          }.`
+        // 4) Get best AI move
+        setLoading(true);
+        const aiMoveResponse = await getBestMove(
+          updatedBoard,
+          -1, // AI is "-1"
+          gameMode,
+          difficulty
         );
+
+        if (
+          aiMoveResponse.data &&
+          typeof aiMoveResponse.data.best_move === "number"
+        ) {
+          const aiMoveVal = aiMoveResponse.data.best_move;
+          setAiBestMove(aiMoveVal);
+
+          // Compare player's move vs AI's recommended
+          let aiMoveAction = "place";
+          let aiMoveColumn = aiMoveVal;
+          if (aiMoveVal < 0) {
+            aiMoveAction = "popout";
+            aiMoveColumn = -aiMoveVal; // e.g., -3 => popout col 3
+          }
+
+          if (actionMode === aiMoveAction && aiMoveColumn === column) {
+            setFeedback("Well done! You chose the best move!");
+            await recordTrainingResult(true, column, aiMoveVal);
+          } else {
+            let bestMoveDescription = "";
+            if (aiMoveAction === "place") {
+              bestMoveDescription = `place in column ${aiMoveColumn + 1}`;
+            } else {
+              bestMoveDescription = `popout from column ${aiMoveColumn + 1}`;
+            }
+
+            setFeedback(
+              `Wrong move. You chose to ${actionMode} column ${
+                column + 1
+              }, but the best move was to ${bestMoveDescription}.`
+            );
+            await recordTrainingResult(false, column, aiMoveVal);
+          }
+        } else {
+          throw new Error("Invalid AI move data from API.");
+        }
+      } catch (err) {
+        console.error("Error during player move:", err);
+        setError(
+          "An error occurred while processing your move. Please try again."
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error evaluating move:", error);
-      setFeedback("Failed to evaluate your move. Please try again.");
+    },
+    [
+      loading,
+      error,
+      moveMade,
+      board,
+      actionMode,
+      gameMode,
+      rows,
+      cols,
+      difficulty,
+      recordTrainingResult, // make sure recordTrainingResult is in the dependency array
+    ]
+  );
+
+  /**
+   * 3) Generate a brand new training position from your backend
+   */
+  const generateTrainingPosition = useCallback(
+    async (type) => {
+      setLoading(true);
+      setError(null);
+      setFeedback("");
+      setMoveMade(false);
+      setUserMove(null);
+      setAiBestMove(null);
+      movesRef.current = "";
+
+      try {
+        let moveCount;
+        if (type === "early") {
+          const evenMovesEarly = [6, 8];
+          moveCount =
+            evenMovesEarly[Math.floor(Math.random() * evenMovesEarly.length)];
+        } else {
+          const evenMovesLate = [20, 22, 24];
+          moveCount =
+            evenMovesLate[Math.floor(Math.random() * evenMovesLate.length)];
+        }
+
+        console.log(`Generating ${type} game position with ${moveCount} moves`);
+
+        const response = await generateRandomBoard(
+          moveCount,
+          gameMode,
+          difficulty
+        );
+        console.log("API Response for Board Generation:", response.data);
+
+        if (response.data && Array.isArray(response.data.board)) {
+          const formattedBoard = response.data.board.map((row) => [...row]);
+          setBoard(formattedBoard);
+          setFeedback("");
+          setCurrentPlayer(1);
+
+          // Store the randomMoves so we can save it in Firestore
+          setRandomMoves(moveCount);
+        } else {
+          throw new Error("Invalid board data from API.");
+        }
+      } catch (err) {
+        console.error("Error generating training position:", err);
+        setError("Failed to generate training position. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [gameMode, difficulty]
+  );
+
+  /**
+   * 4) On first load or param changes, read queries from URL
+   */
+  useEffect(() => {
+    const queryDifficulty = searchParams.get("difficulty");
+    const queryMode = searchParams.get("mode");
+    const type = searchParams.get("type") || "early";
+
+    if (DIFFICULTY_LEVELS.includes(queryDifficulty)) {
+      setDifficulty(queryDifficulty);
+    } else {
+      setDifficulty("medium");
     }
+
+    if (GAME_MODES.includes(queryMode)) {
+      setGameMode(queryMode);
+      setDefaultGrid(queryMode);
+    } else {
+      setGameMode("connect-4");
+      setDefaultGrid("connect-4");
+    }
+
+    setTrainingType(type);
+    generateTrainingPosition(type);
+  }, [searchParams, setDefaultGrid, generateTrainingPosition]);
+
+  // Handlers for changing difficulty/game mode
+  const handleDifficultyChange = (event) => {
+    setDifficulty(event.target.value);
   };
 
+  const handleGameModeChange = (event) => {
+    const selectedMode = event.target.value;
+    setGameMode(selectedMode);
+    setDefaultGrid(selectedMode);
+    setActionMode("place");
+    generateTrainingPosition(trainingType);
+  };
+
+  const handleTrainingTypeChange = (type) => {
+    setTrainingType(type);
+    generateTrainingPosition(type);
+  };
+
+  // ------------------------------------------------------------------
+  // Render the Trainer
+  // ------------------------------------------------------------------
   return (
-    <div className="container mt-4" style={{minHeight: "100vh"}}>
-      <h1 className="text-center">
-        {trainingType === "early" ? "Early Game Trainer" : "Late Game Trainer"}
-      </h1>
+    <div
+      className="container mt-4 text-center"
+      style={{ minHeight: "100vh", padding: "20px" }}
+    >
+      {error && <div className="alert alert-danger">{error}</div>}
 
-      {loading ? (
-        <p className="text-center">Loading training position...</p>
-      ) : (
-        <>
-          <p className="text-center">
-            {currentPlayer === 1 ? (
-              <span style={{ color: "red" }}> Player 1's Move (Red)</span>
-            ) : (
-              <span style={{ color: "gold" }}> Player 2's Move (Yellow)</span>
-            )}
-          </p>
+      <h1 className="my-4">Position Trainer</h1>
 
-          <Board board={board} onColumnClick={handlePlayerMove} />
-          <p className="text-center mt-3">{feedback}</p>
-          <div className="d-flex justify-content-center mt-4">
+      <div className="row mb-4">
+        <div className="col d-flex justify-content-center">
+          {["early", "late"].map((type) => (
             <button
-              className="btn btn-primary me-3"
-              onClick={() => generateTrainingPosition("early")}
+              key={type}
+              className={`btn btn-${
+                trainingType === type ? "primary" : "secondary"
+              } me-2`}
+              onClick={() => handleTrainingTypeChange(type)}
+              disabled={loading || moveMade}
             >
-              Early Game Training
+              {type === "early" ? "Early Game Training" : "Late Game Training"}
             </button>
+          ))}
+        </div>
+      </div>
+
+      <p>{userMove === null && "Make your move by clicking on a column."}</p>
+
+      <div style={{ position: "relative", display: "inline-block" }}>
+        <Board
+          rows={rows}
+          cols={cols}
+          board={board}
+          highlightedColumns={[]}
+          onColumnClick={handlePlayerMove}
+          disabled={moveMade || loading}
+        />
+      </div>
+
+      <p className="mt-3">{feedback}</p>
+
+      <div className="row mt-4">
+        <div className="col d-flex justify-content-center flex-wrap">
+          <div className="me-3 mb-2">
+            <label htmlFor="difficulty" className="me-2">
+              AI Difficulty:
+            </label>
+            <select
+              id="difficulty"
+              value={difficulty}
+              onChange={handleDifficultyChange}
+              className="form-select w-auto"
+              disabled={moveMade}
+            >
+              {DIFFICULTY_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level
+                    .split("_")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="me-3 mb-2">
+            <label htmlFor="gameMode" className="me-2">
+              Game Mode:
+            </label>
+            <select
+              id="gameMode"
+              value={gameMode}
+              onChange={handleGameModeChange}
+              className="form-select w-auto"
+              disabled={moveMade}
+            >
+              {GAME_MODES.map((mode) => (
+                <option key={mode} value={mode}>
+                  {mode
+                    .split("-")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {gameMode === "popout" && (
+            <div className="me-3 mb-2">
+              <label htmlFor="actionMode" className="me-2">
+                Action Mode:
+              </label>
+              <select
+                id="actionMode"
+                value={actionMode}
+                onChange={(e) => setActionMode(e.target.value)}
+                className="form-select w-auto"
+                disabled={moveMade}
+              >
+                <option value="place">Place</option>
+                <option value="popout">Popout</option>
+              </select>
+            </div>
+          )}
+
+          <div className="mb-2">
             <button
               className="btn btn-secondary"
-              onClick={() => generateTrainingPosition("late")}
+              onClick={() => generateTrainingPosition(trainingType)}
+              disabled={loading}
             >
-              Late Game Training
+              Reset Training Position
             </button>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 };

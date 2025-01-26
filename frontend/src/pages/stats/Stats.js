@@ -4,10 +4,11 @@ import { db } from "../../config/firebase";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { AuthContext } from "../../contexts/AuthContext";
 import BarGraph from "../../components/graphs/BarGraph";
-import LineGraph from "../../components/graphs/LineGraph";
+import LineGraph from "../../components/graphs/LineGraph"; // Still imported if needed
 import Loading from "../../components/loading/Loading";
 import { useTheme } from "../../contexts/ThemeContext";
 
+// Difficulty labels for main game stats
 const difficultyLabels = [
   "very_easy",
   "Easy",
@@ -17,6 +18,7 @@ const difficultyLabels = [
   "Expert",
 ];
 
+// Game mode labels for main game stats
 const gameModeLabels = [
   "connect-4",
   "connect-5",
@@ -27,23 +29,33 @@ const gameModeLabels = [
 
 const Stats = () => {
   const { currentUser } = useContext(AuthContext);
+  const { darkMode } = useTheme();
+
+  // ----- Main game stats -----
   const [statsData, setStatsData] = useState([]);
   const [variantStats, setVariantStats] = useState([]);
   const [gameHistory, setGameHistory] = useState([]);
+
+  // ----- Training data stats -----
+  const [trainingData, setTrainingData] = useState([]);
+  const [trainingStats, setTrainingStats] = useState({
+    totalCorrect: 0,
+    totalWrong: 0,
+    correctnessByMoves: {}, // { moveCount: { correct, wrong } }
+  });
+
+  // ----- Error/loading states -----
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const { darkMode } = useTheme();
-
+  // ----- Pagination for main game history -----
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Calculate the current page's data
+  // Calculate pagination indices
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentData = gameHistory.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Calculate total pages
   const totalPages = Math.ceil(gameHistory.length / itemsPerPage);
 
   // Handle page change
@@ -53,6 +65,9 @@ const Stats = () => {
     }
   };
 
+  //------------------------------------------------------------------
+  // 1) Fetch the main game history (subcollection "games")
+  //------------------------------------------------------------------
   useEffect(() => {
     if (!currentUser) {
       setError("User not authenticated.");
@@ -92,7 +107,6 @@ const Stats = () => {
               ratio: losses === 0 ? wins : wins / losses,
             };
           });
-
           setStatsData(stats);
 
           // Stats by variant
@@ -111,7 +125,6 @@ const Stats = () => {
               ratio: losses === 0 ? wins : wins / losses,
             };
           });
-
           setVariantStats(variants);
         } else {
           setError("No games found.");
@@ -130,6 +143,106 @@ const Stats = () => {
     fetchGameHistory();
   }, [currentUser]);
 
+  //------------------------------------------------------------------
+  // 2) Fetch the training sessions (subcollection "trainingSessions")
+  //------------------------------------------------------------------
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const fetchTrainingData = async () => {
+      try {
+        const trainingRef = collection(
+          db,
+          "players",
+          currentUser.uid,
+          "trainingSessions"
+        );
+        const trainingQuery = query(trainingRef, orderBy("timestamp", "desc"));
+        const trainingSnapshot = await getDocs(trainingQuery);
+
+        if (!trainingSnapshot.empty) {
+          const trainingDocs = trainingSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setTrainingData(trainingDocs);
+
+          // Aggregate stats
+          const { totalCorrect, totalWrong, correctnessByMoves } =
+            aggregateTrainingStats(trainingDocs);
+          setTrainingStats({
+            totalCorrect,
+            totalWrong,
+            correctnessByMoves,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching training data:", err);
+      }
+    };
+
+    fetchTrainingData();
+  }, [currentUser]);
+
+  //------------------------------------------------------------------
+  // 3) Aggregate training stats
+  //------------------------------------------------------------------
+  const aggregateTrainingStats = (trainingDocs) => {
+    let totalCorrect = 0;
+    let totalWrong = 0;
+    const correctnessByMoves = {};
+
+    trainingDocs.forEach((doc) => {
+      /**
+       * trainingDoc fields:
+       *   { result: "correct" | "incorrect" | "draw", moves, aiBestMove, ... }
+       */
+      const { result, moves } = doc;
+      const moveCount = moves || 0;
+
+      // Tally correctness
+      if (result === "correct") {
+        totalCorrect++;
+        if (!correctnessByMoves[moveCount]) {
+          correctnessByMoves[moveCount] = { correct: 0, wrong: 0 };
+        }
+        correctnessByMoves[moveCount].correct++;
+      } else if (result === "incorrect") {
+        totalWrong++;
+        if (!correctnessByMoves[moveCount]) {
+          correctnessByMoves[moveCount] = { correct: 0, wrong: 0 };
+        }
+        correctnessByMoves[moveCount].wrong++;
+      }
+      // ignore "draw" for correctness
+    });
+
+    return { totalCorrect, totalWrong, correctnessByMoves };
+  };
+
+  //------------------------------------------------------------------
+  // 4) Prepare training data for graphs
+  //------------------------------------------------------------------
+  const moveCounts = Object.keys(trainingStats.correctnessByMoves)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  const correctCountsForMoves = moveCounts.map(
+    (count) => trainingStats.correctnessByMoves[count].correct
+  );
+  const wrongCountsForMoves = moveCounts.map(
+    (count) => trainingStats.correctnessByMoves[count].wrong
+  );
+
+  // For ratio, we use "correct / wrong" or "correct" if wrong === 0
+  const correctRatiosForMoves = moveCounts.map((count) => {
+    const { correct, wrong } = trainingStats.correctnessByMoves[count];
+    return wrong === 0 ? correct : correct / wrong;
+  });
+
+  //------------------------------------------------------------------
+  // 5) Prepare daily win-loss ratio for main game stats
+  //------------------------------------------------------------------
   const winLossCumulative = gameHistory.reduce(
     (acc, game) => {
       const date = new Date(game.timestamp.seconds * 1000)
@@ -165,12 +278,16 @@ const Stats = () => {
     return losses === 0 ? wins : wins / losses;
   });
 
+  //------------------------------------------------------------------
+  // 6) Render
+  //------------------------------------------------------------------
   return (
     <div className="container mt-4">
       <h2 className="text-center">Statistics</h2>
       {error && <p className="text-danger">{error}</p>}
       {loading && <Loading />}
 
+      {/* ================= Main Game Stats (Daily Win/Loss Ratio) ================= */}
       {!loading && dailyLabels.length > 0 && (
         <div
           style={{
@@ -188,8 +305,10 @@ const Stats = () => {
         </div>
       )}
 
+      {/* ================= Accordeon for Original, Variants, and Training ================= */}
       {!loading && (
         <div className="accordion" id="statsAccordion">
+          {/* --- Original --- */}
           <div className="accordion-item">
             <h2 className="accordion-header" id="headingOriginal">
               <button
@@ -236,6 +355,8 @@ const Stats = () => {
               </div>
             </div>
           </div>
+
+          {/* --- Variants --- */}
           <div className="accordion-item">
             <h2 className="accordion-header" id="headingVariants">
               <button
@@ -282,46 +403,142 @@ const Stats = () => {
               </div>
             </div>
           </div>
+
+          {/* --- Training Data --- */}
+          <div className="accordion-item">
+            <h2 className="accordion-header" id="headingTraining">
+              <button
+                className="accordion-button"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseTraining"
+                aria-expanded="true"
+                aria-controls="collapseTraining"
+              >
+                Training
+              </button>
+            </h2>
+            <div
+              id="collapseTraining"
+              className="accordion-collapse collapse show"
+              aria-labelledby="headingTraining"
+              data-bs-parent="#statsAccordion"
+            >
+              <div className="accordion-body">
+                {/* Only show if we have training data */}
+                {trainingData.length > 0 ? (
+                  <>
+                    <div className="row my-3">
+                      <div className="col-md-6 col-sm-12 text-center">
+                        <h4>Total Correct</h4>
+                        <p style={{ fontSize: "1.5rem" }}>
+                          {trainingStats.totalCorrect}
+                        </p>
+                      </div>
+                      <div className="col-md-6 col-sm-12 text-center">
+                        <h4>Total Wrong</h4>
+                        <p style={{ fontSize: "1.5rem" }}>
+                          {trainingStats.totalWrong}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-4 col-sm-12">
+                        <h4>Correct by Moves</h4>
+                        <BarGraph
+                          labels={moveCounts}
+                          values={correctCountsForMoves}
+                          color="green"
+                        />
+                      </div>
+                      <div className="col-md-4 col-sm-12">
+                        <h4>Wrong by Moves</h4>
+                        <BarGraph
+                          labels={moveCounts}
+                          values={wrongCountsForMoves}
+                          color="red"
+                        />
+                      </div>
+                      <div className="col-md-4 col-sm-12">
+                        <h4>Win to Loss Ratio by Moves</h4>
+                        <BarGraph
+                          labels={moveCounts.map((count) => count.toString())}
+                          values={correctRatiosForMoves}
+                          color="blue"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p>No training data available.</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
+      {/* ================= Game History Table (Paginated) ================= */}
       {!loading && gameHistory.length > 0 && (
         <>
-          <h3>Game History</h3>
-          <table
-            className={`table table-striped table-hover ${
-              darkMode ? "table-dark" : ""
-            }`}
-          >
-            <thead className="thead-dark">
-              <tr>
-                <th scope="col">Date</th>
-                <th scope="col">Result</th>
-                <th scope="col">Difficulty</th>
-                <th scope="col">Moves</th>
-                <th scope="col">Game Mode</th>
-                <th scope="col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentData.map((game, index) => (
-                <tr key={index}>
-                  <td>
-                    {new Date(game.timestamp.seconds * 1000).toLocaleString()}
-                  </td>
-                  <td>{game.result}</td>
-                  <td>{game.difficulty}</td>
-                  <td>{game.moves}</td>
-                  <td>{game.gameMode}</td>
-                  <td>
-                    <Link to={`/review/${currentUser.uid}/${game.id}`}>
-                      Review Game
-                    </Link>
-                  </td>
+          <h3 className="mt-5 mb-3">Game History</h3>
+          <div className="table-responsive">
+            <table
+              className={`table table-striped table-hover ${
+                darkMode ? "table-dark" : ""
+              }`}
+            >
+              <thead className={darkMode ? "table-dark" : "table-light"}>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col">Result</th>
+                  <th scope="col">Difficulty</th>
+                  <th scope="col">Moves</th>
+                  <th scope="col">Game Mode</th>
+                  <th scope="col">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {currentData.map((game) => (
+                  <tr key={game.id}>
+                    <td>
+                      {new Date(game.timestamp.seconds * 1000).toLocaleString()}
+                    </td>
+                    <td
+                      className={
+                        game.result === "win"
+                          ? "text-success"
+                          : game.result === "loss"
+                          ? "text-danger"
+                          : ""
+                      }
+                    >
+                      {game.result.charAt(0).toUpperCase() +
+                        game.result.slice(1)}
+                    </td>
+                    <td>
+                      {game.difficulty
+                        ? game.difficulty.charAt(0).toUpperCase() +
+                          game.difficulty.slice(1)
+                        : "N/A"}
+                    </td>
+                    <td>{game.moves}</td>
+                    <td>
+                      {(game.gameMode || "").replace("-", " ").toUpperCase()}
+                    </td>
+                    <td>
+                      <Link to={`/review/${currentUser.uid}/${game.id}`}>
+                        Review Game
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Controls */}
           <div className="d-flex justify-content-center my-3">
             <button
               className="btn btn-primary me-2"
@@ -344,6 +561,7 @@ const Stats = () => {
         </>
       )}
 
+      {/* If no stats data or game history */}
       {!loading && statsData.length === 0 && gameHistory.length === 0 && (
         <p>No statistics available. Play a game to start tracking!</p>
       )}

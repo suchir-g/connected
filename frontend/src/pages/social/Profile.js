@@ -7,32 +7,63 @@ import {
   where,
   getDocs,
   orderBy,
-  limit,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import BarGraph from "../../components/graphs/BarGraph";
-import LineGraph from "../../components/graphs/LineGraph";
 import AddFriend from "../../components/friends/AddFriend";
 import { AuthContext } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import Loading from "../../components/loading/Loading";
 
 const difficultyLabels = [
-  "very_Easy",
-  "Easy",
-  "Medium",
-  "Hard",
+  "very_easy",
+  "easy",
+  "medium",
+  "hard",
   "very_hard",
-  "Expert",
+  "expert",
 ];
 
 const Profile = () => {
   const { username } = useParams(); // Get username from URL
   const [playerData, setPlayerData] = useState(null);
+  const [allGames, setAllGames] = useState([]);
   const [recentGames, setRecentGames] = useState([]);
+  const [currentUsername, setCurrentUsername] = useState(""); // Current user's username from Firestore
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const { currentUser } = useContext(AuthContext);
   const { darkMode } = useTheme();
+
+  useEffect(() => {
+    const fetchCurrentUserUsername = async () => {
+      try {
+        // Only attempt fetch if there's a logged-in user
+        if (currentUser?.uid) {
+          // Build a doc ref using the UID as the doc ID in "players" collection
+          const userDocRef = doc(db, "players", currentUser.uid);
+          const docSnap = await getDoc(userDocRef);
+
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setCurrentUsername(data.username || "");
+          } else {
+            setError("No user document found in 'players' for this UID.");
+          }
+        } else {
+          setError("No authenticated user found.");
+        }
+      } catch (err) {
+        console.error("Error fetching current user's username:", err);
+        setError("Failed to fetch current user information.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCurrentUserUsername();
+  }, [currentUser]);
 
   useEffect(() => {
     if (!username) {
@@ -56,6 +87,7 @@ const Profile = () => {
         if (playerSnapshot.empty) {
           setError("Player not found.");
           setPlayerData(null);
+          setAllGames([]);
           setRecentGames([]);
           setLoading(false);
           return;
@@ -67,11 +99,7 @@ const Profile = () => {
         setPlayerData(playerInfo);
 
         const gamesRef = collection(db, "players", playerId, "games");
-        const gamesQuery = query(
-          gamesRef,
-          orderBy("timestamp", "desc"),
-          limit(5)
-        );
+        const gamesQuery = query(gamesRef, orderBy("timestamp", "desc"));
         const gamesSnapshot = await getDocs(gamesQuery);
 
         if (!gamesSnapshot.empty) {
@@ -79,11 +107,14 @@ const Profile = () => {
             id: doc.id,
             ...doc.data(),
           }));
-          setRecentGames(games);
+          setAllGames(games);
+          setRecentGames(games.slice(0, 5));
         } else {
+          setAllGames([]);
           setRecentGames([]);
         }
       } catch (err) {
+        console.error("Error fetching profile:", err);
         setError("Failed to fetch profile. Please try again later.");
       } finally {
         setLoading(false);
@@ -94,23 +125,22 @@ const Profile = () => {
   }, [username]);
 
   const getStats = () => {
-    if (!recentGames || recentGames.length === 0) return [];
+    if (!allGames || allGames.length === 0) return [];
 
     return difficultyLabels.map((label) => {
-      const wins = recentGames.filter(
-        (game) =>
-          game.result === "win" && game.difficulty === label.toLowerCase()
+      const normalizedLabel = label.toLowerCase();
+      const wins = allGames.filter(
+        (game) => game.result === "win" && game.difficulty === normalizedLabel
       ).length;
-      const losses = recentGames.filter(
-        (game) =>
-          game.result === "loss" && game.difficulty === label.toLowerCase()
+      const losses = allGames.filter(
+        (game) => game.result === "loss" && game.difficulty === normalizedLabel
       ).length;
       return { label, wins, losses };
     });
   };
 
   const statsData = getStats();
-
+  console.log(currentUser.uid);
   return (
     <div
       className={`container mt-4 ${darkMode ? "bg-dark text-white" : ""}`}
@@ -121,7 +151,7 @@ const Profile = () => {
     >
       <div className="text-center mb-4">
         <h2>
-          {username} {username === currentUser?.displayName && "(You)"}
+          {username} {username === currentUsername && "(You)"}
         </h2>
       </div>
       {error && <p className="text-danger">{error}</p>}
@@ -130,7 +160,13 @@ const Profile = () => {
       {!loading && playerData && (
         <>
           <div className="text-center mb-4">
-            <AddFriend targetUsername={username} />
+            {username !== currentUsername ? (
+              <AddFriend targetUsername={username} />
+            ) : (
+              <Link className="btn btn-secondary" to="/settings">
+                Settings
+              </Link>
+            )}
           </div>
 
           <div className="mb-4">
@@ -153,7 +189,7 @@ const Profile = () => {
                   </thead>
                   <tbody>
                     {recentGames.map((game, idx) => (
-                      <tr key={idx}>
+                      <tr key={game.id || idx}>
                         <td>
                           {new Date(
                             game.timestamp.seconds * 1000
@@ -171,7 +207,17 @@ const Profile = () => {
                           {game.result.charAt(0).toUpperCase() +
                             game.result.slice(1)}
                         </td>
-                        <td>{game.difficulty || "N/A"}</td>
+                        <td>
+                          {game.difficulty
+                            ? game.difficulty
+                                .split("_")
+                                .map(
+                                  (word) =>
+                                    word.charAt(0).toUpperCase() + word.slice(1)
+                                )
+                                .join(" ")
+                            : "N/A"}
+                        </td>
                         <td>{game.gameMode || "N/A"}</td>
                         <td>{game.moves || "No moves"}</td>
                       </tr>
@@ -185,9 +231,10 @@ const Profile = () => {
           </div>
 
           <div className="mb-4">
-            <h3>Wins and Losses by Difficulty</h3>
+            <h3>Performance Metrics</h3>
             <div className="row">
-              <div className="col-md-6">
+              <div className="col-md-4">
+                Wins by difficulty
                 <BarGraph
                   labels={statsData.map((stat) => stat.label)}
                   values={statsData.map((stat) => stat.wins)}
@@ -195,7 +242,21 @@ const Profile = () => {
                   color="green"
                 />
               </div>
-              <div className="col-md-6">
+              <div className="col-md-4">
+                Win To Loss Ratios
+                <BarGraph
+                  labels={statsData.map((stat) => stat.label)}
+                  values={statsData.map((stat) =>
+                    stat.losses === 0
+                      ? stat.wins
+                      : parseFloat((stat.wins / stat.losses).toFixed(2))
+                  )}
+                  title="Win-to-Loss Ratio"
+                  color="blue"
+                />
+              </div>
+              <div className="col-md-4">
+                Losses by difficulty
                 <BarGraph
                   labels={statsData.map((stat) => stat.label)}
                   values={statsData.map((stat) => stat.losses)}
@@ -205,27 +266,7 @@ const Profile = () => {
               </div>
             </div>
           </div>
-
-          <div className="mb-4">
-            <h3>Win-to-Loss Ratio</h3>
-            <LineGraph
-              labels={statsData.map((stat) => stat.label)}
-              values={statsData.map((stat) =>
-                stat.losses === 0 ? stat.wins : stat.wins / stat.losses
-              )}
-              title="Win-to-Loss Ratio by Difficulty"
-              color="blue"
-            />
-          </div>
         </>
-      )}
-
-      {username === currentUser?.displayName && (
-        <div className="text-center mt-4">
-          <Link to="/settings" className="btn btn-primary">
-            Profile Settings
-          </Link>
-        </div>
       )}
     </div>
   );

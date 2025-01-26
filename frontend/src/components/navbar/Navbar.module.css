@@ -2,8 +2,8 @@
     color: #747474; /* Muted color for non-active links */
   }
   
-  .navLink.active {
-    color: #e0e0e0; /* Color for active link */
+  .active {
+    font-weight: bolder;
   }
   
   /* Navbar Specific Styles */

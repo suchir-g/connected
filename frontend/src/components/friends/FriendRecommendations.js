@@ -136,7 +136,7 @@ const FriendRecommendations = () => {
                 <h5 className="card-title">{recommendation.username}</h5>
                 <p className="card-text">{recommendation.bio}</p>
                 <Link
-                  to={`/profile/${recommendation.uid}`}
+                  to={`/player/${recommendation.username}`}
                   className="btn btn-primary mt-auto"
                 >
                   View Profile

@@ -138,3 +138,7 @@ textarea {
   background-color: var(--bs-dark) !important;
   border-color: var(--bs-dark) !important;
 }
+
+.btn {
+  color: white !important;
+}

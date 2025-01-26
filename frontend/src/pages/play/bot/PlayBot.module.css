@@ -1,17 +1,28 @@
-.winning-column {
-    background-color: yellow;
-    animation: blink 1s infinite;
+/* PlayBot.css */
+
+.board-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* Ensure the board scales with the container */
+.board-container canvas,
+.board-container svg {
+  width: 100% !important;
+  height: auto !important;
+}
+
+/* Optional: Set a max height to prevent overflow */
+.board-container {
+  max-height: 80vh;
+  overflow: auto;
+}
+
+/* Adjust the size based on viewport width */
+@media (max-width: 768px) {
+  .board-container {
+    padding: 15px;
   }
-  
-  @keyframes blink {
-    0% { background-color: yellow; }
-    50% { background-color: red; }
-    100% { background-color: yellow; }
-  }
-  
-  .winner-message {
-    font-size: 2em;
-    color: green;
-    text-align: center;
-    margin-top: 20px;
-  }
+}

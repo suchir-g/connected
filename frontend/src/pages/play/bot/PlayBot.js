@@ -4,7 +4,11 @@ import Board from "../../../components/board/Board";
 import { getBestMove } from "../../../config/api";
 import { auth, db } from "../../../config/firebase";
 import { doc, collection, addDoc } from "firebase/firestore";
-import styles from "./PlayBot.module.css";
+import {
+  checkWinner,
+  isDrawCondition,
+  applyMove,
+} from "../../../utilities/gameState";
 
 const difficultyLevels = [
   "very_easy",
@@ -15,79 +19,259 @@ const difficultyLevels = [
   "expert",
 ];
 
+const gameModes = ["connect-4", "connect-5", "popout", "anti", "colour-switch"];
+
 const PlayBot = () => {
-  const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0))); // Empty 6x7 board
+  // Correct initial board setup using Array.from
+  const [board, setBoard] = useState(() =>
+    Array.from({ length: 6 }, () => Array(7).fill(0))
+  );
   const [isLocked, setIsLocked] = useState(false);
   const [winner, setWinner] = useState(null);
   const [isDraw, setIsDraw] = useState(false);
   const [highlightedColumns, setHighlightedColumns] = useState([]);
   const [difficulty, setDifficulty] = useState("medium");
-  const [playerGoesFirst, setPlayerGoesFirst] = useState(true); // New state
+  const [gameMode, setGameMode] = useState("connect-4");
+  const [rows, setRows] = useState(6);
+  const [cols, setCols] = useState(7);
+  const [actionMode, setActionMode] = useState("place");
   const [moves, setMoves] = useState("");
+  const [totalMoves, setTotalMoves] = useState(0); // Tracks the number of moves
+  const [firstPlayer, setFirstPlayer] = useState("player"); // State for selecting the first player
   const movesRef = useRef("");
   const [searchParams] = useSearchParams();
   const [error, setError] = useState(null);
 
+  // Effect to handle searchParams changes
   useEffect(() => {
     const queryDifficulty = searchParams.get("difficulty");
+    const queryMode = searchParams.get("mode");
+
     if (difficultyLevels.includes(queryDifficulty)) {
       setDifficulty(queryDifficulty);
     } else {
       setDifficulty("medium");
     }
-    resetGame();
+
+    if (gameModes.includes(queryMode)) {
+      setGameMode(queryMode);
+      setActionMode("place");
+      setDefaultGrid(queryMode);
+    } else {
+      setGameMode("connect-4");
+      setDefaultGrid("connect-4");
+    }
+    // Removed resetGame from here
   }, [searchParams]);
 
-  const resetGame = () => {
-    setBoard(Array(6).fill(Array(7).fill(0))); // Reset to empty board
+  // Effect to handle firstPlayer changes
+  useEffect(() => {
+    resetGame();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstPlayer]);
+
+  // Effect to reset game when rows or cols change
+  useEffect(() => {
+    resetGame();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, cols]);
+
+  const setDefaultGrid = (mode) => {
+    if (mode === "connect-5") {
+      setRows(8);
+      setCols(9);
+    } else {
+      setRows(6);
+      setCols(7);
+    }
+  };
+
+  const resetGame = async () => {
+    const newBoard = Array.from({ length: rows }, () => Array(cols).fill(0));
+    setBoard(newBoard);
     setWinner(null);
     setIsDraw(false);
     setHighlightedColumns([]);
     setMoves("");
     movesRef.current = "";
+    setTotalMoves(0); // Reset move counter
     setIsLocked(false);
+    setError(null); // Clear any previous errors
 
-    // AI makes the first move if player goes second
-    if (!playerGoesFirst) {
-      makeAIMove(Array(6).fill(Array(7).fill(0)));
-    }
-  };
+    // If the bot is set to play first, make the bot's move
+    if (firstPlayer === "bot") {
+      setIsLocked(true);
+      try {
+        const response = await getBestMove(
+          newBoard,
+          -1, // AI always plays as -1
+          gameMode,
+          difficulty
+        );
+        const {
+          best_move: aiMove,
+          board: updatedBoardAI,
+          outcome,
+        } = response.data;
 
-  const applyMove = (currentBoard, column, player) => {
-    const newBoard = currentBoard.map((row) => [...row]);
-    for (let row = newBoard.length - 1; row >= 0; row--) {
-      if (newBoard[row][column] === 0) {
-        newBoard[row][column] = player;
-        return newBoard;
+        let finalBoard = updatedBoardAI;
+
+        // Handle board flipping for "colour-switch" mode
+        if (gameMode === "colour-switch" && (totalMoves + 1) % 3 === 0) {
+          finalBoard = flipBoardColors(updatedBoardAI);
+        }
+
+        setBoard(finalBoard);
+
+        // Update moves history
+        if (aiMove !== null) {
+          const aiMoveNotation = aiMove < 0 ? `${aiMove}` : `${aiMove + 1}`;
+          movesRef.current += aiMoveNotation;
+          setMoves(movesRef.current);
+        }
+
+        // Check if the AI wins
+        if (checkWinner(finalBoard, -1, gameMode)) {
+          setWinner("AI");
+          recordGameResult(-1, false);
+          setIsLocked(false);
+          return;
+        }
+
+        // Check for a draw
+        if (isDrawCondition(finalBoard)) {
+          setIsDraw(true);
+          recordGameResult(-1, true);
+          setIsLocked(false);
+          return;
+        }
+
+        setTotalMoves((prev) => prev + 1);
+      } catch (error) {
+        console.error("Error fetching AI move:", error);
+        setError("Could not fetch AI move.");
+      } finally {
+        setIsLocked(false);
       }
     }
-    return currentBoard;
   };
 
-  const makeAIMove = async (currentBoard) => {
+  const flipBoardColors = (board) => {
+    return board.map((row) =>
+      row.map((cell) => (cell === 1 ? -1 : cell === -1 ? 1 : 0))
+    );
+  };
+
+  const handleMakeMove = async (column) => {
+    if (isLocked || winner !== null || isDraw) return;
+
+    // Validation for popout mode
+    if (actionMode === "popout") {
+      const columnIsEmpty = board.every((row) => row[column] === 0);
+      if (columnIsEmpty) {
+        setError("Cannot popout from an empty column.");
+        return;
+      }
+    }
+
+    // Apply the player's move
+    const updatedBoard = applyMove(
+      board,
+      column,
+      1, // Player always plays as 1
+      gameMode,
+      rows,
+      cols,
+      actionMode
+    );
+    setBoard(updatedBoard);
+
+    // Clear any previous error message
+    setError(null);
+
+    // Update move history and total moves
+    const moveNotation =
+      actionMode === "place" ? (column + 1).toString() : `-${column + 1}`;
+    movesRef.current += moveNotation;
+    setMoves(movesRef.current);
+    setTotalMoves((prev) => prev + 1);
+
+    // Check if the player wins
+    if (
+      (checkWinner(updatedBoard, 1, gameMode) && gameMode !== "anti") ||
+      (checkWinner(updatedBoard, -1, gameMode) && gameMode === "anti")
+    ) {
+      setWinner("Player");
+      recordGameResult(1, false);
+      return;
+    }
+
+    // Check if the AI wins (for 'anti' mode)
+    if (
+      (checkWinner(updatedBoard, -1, gameMode) && gameMode !== "anti") ||
+      (checkWinner(updatedBoard, 1, gameMode) && gameMode === "anti")
+    ) {
+      setWinner("AI");
+      recordGameResult(-1, false);
+      return;
+    }
+
+    // Check for a draw
+    if (isDrawCondition(updatedBoard)) {
+      setIsDraw(true);
+      recordGameResult(-1, true);
+      return;
+    }
+
+    setIsLocked(true);
+
     try {
+      // Fetch the AI's best move and outcome
       const response = await getBestMove(
-        currentBoard,
-        -1,
-        "connect-4",
+        updatedBoard,
+        -1, // AI always plays as -1
+        gameMode,
         difficulty
       );
-      const { best_move: aiMove, board: updatedBoard, outcome } = response.data;
+      const {
+        best_move: aiMove,
+        board: updatedBoardAI,
+        outcome,
+      } = response.data;
 
-      setBoard(updatedBoard);
+      let finalBoard = updatedBoardAI;
 
-      if (outcome === 1) {
-        setWinner("Player");
-      } else if (outcome === -1) {
-        setIsDraw(true);
-      } else if (aiMove !== null) {
-        movesRef.current += (aiMove + 1).toString();
+      // Handle board flipping for "colour-switch" mode
+      if (gameMode === "colour-switch" && (totalMoves + 1) % 3 === 0) {
+        finalBoard = flipBoardColors(updatedBoardAI);
+      }
+
+      setBoard(finalBoard);
+
+      // Update moves history
+      if (aiMove !== null) {
+        const aiMoveNotation = aiMove < 0 ? `${aiMove}` : `${aiMove + 1}`;
+        movesRef.current += aiMoveNotation;
         setMoves(movesRef.current);
       }
 
-      if (outcome !== 0) {
-        recordGameResult(outcome, outcome === -1);
+      // Check if the AI wins
+      if (checkWinner(finalBoard, -1, gameMode)) {
+        setWinner("AI");
+        recordGameResult(-1, false);
+        setIsLocked(false);
+        return;
       }
+
+      // Check for a draw
+      if (isDrawCondition(finalBoard)) {
+        setIsDraw(true);
+        recordGameResult(-1, true);
+        setIsLocked(false);
+        return;
+      }
+
+      setTotalMoves((prev) => prev + 1);
     } catch (error) {
       console.error("Error fetching AI move:", error);
       setError("Could not fetch AI move.");
@@ -96,32 +280,21 @@ const PlayBot = () => {
     }
   };
 
-  const handleMakeMove = async (column) => {
-    if (isLocked || winner !== null || isDraw) return;
-
-    // Apply the player's move
-    const userMovedBoard = applyMove(board, column, 1);
-    setBoard(userMovedBoard);
-    movesRef.current += (column + 1).toString();
-    setMoves(movesRef.current);
-
-    // Check if the player wins after their move
-    if (winner === "Player") return;
-
-    setIsLocked(true);
-
-    // AI's turn
-    await makeAIMove(userMovedBoard);
-  };
-
   const handleDifficultyChange = (event) => {
-    const selectedDifficulty = event.target.value;
-    setDifficulty(selectedDifficulty);
+    setDifficulty(event.target.value);
   };
 
-  const handleTurnChange = (event) => {
-    const goesFirst = event.target.value === "player";
-    setPlayerGoesFirst(goesFirst);
+  const handleGameModeChange = (event) => {
+    const selectedMode = event.target.value;
+    setGameMode(selectedMode);
+    setActionMode("place");
+    setDefaultGrid(selectedMode);
+    // Removed resetGame from here
+  };
+
+  const handleFirstPlayerChange = (event) => {
+    setFirstPlayer(event.target.value);
+    // The game will reset automatically due to the useEffect listening to firstPlayer changes
   };
 
   const recordGameResult = async (gameOutcome, isDraw) => {
@@ -136,9 +309,9 @@ const PlayBot = () => {
       const gameData = {
         timestamp: new Date(),
         difficulty,
-        gameMode: "connect-4",
-        rows: 6,
-        cols: 7,
+        gameMode,
+        rows,
+        cols,
         moves: movesRef.current,
         result: isDraw ? "draw" : gameOutcome === 1 ? "win" : "loss",
         bestMoves: [],
@@ -152,32 +325,62 @@ const PlayBot = () => {
 
   return (
     <div className="container mt-4 text-center" style={{ minHeight: "100vh" }}>
+      {error && <div className="alert alert-warning">{error}</div>}
+
       <h1 className="my-4">Play against Bot</h1>
-      <div className="row">
-        <div className="col">
+
+      <div className="d-flex justify-content-center">
+        <div className="board-container">
           <Board
+            rows={rows}
+            cols={cols}
             board={board}
             highlightedColumns={highlightedColumns}
             onColumnClick={handleMakeMove}
           />
         </div>
       </div>
-      {error && <div className={`alert alert-danger mt-3`}>{error}</div>}
 
+      {/* First Player Selection */}
       <div className="row mt-4">
         <div className="col d-flex justify-content-center">
-          <button
-            onClick={resetGame}
-            disabled={isLocked}
-            className="btn btn-primary"
+          <label htmlFor="firstPlayer" className="me-2 align-self-center">
+            First Player:
+          </label>
+          <select
+            id="firstPlayer"
+            value={firstPlayer}
+            onChange={handleFirstPlayerChange}
+            className="form-select w-auto"
+            disabled={totalMoves > 0}
           >
-            Reset Game
-          </button>
+            <option value="player">Player</option>
+            <option value="bot">Bot</option>
+          </select>
         </div>
       </div>
+
+      {/* Action Mode Selection for Popout */}
+      {gameMode === "popout" && (
+        <div className="row mt-4">
+          <div className="col d-flex justify-content-center">
+            <label className="me-2 align-self-center">Action Mode:</label>
+            <select
+              value={actionMode}
+              onChange={(e) => setActionMode(e.target.value)}
+              className="form-select w-auto"
+            >
+              <option value="place">Place</option>
+              <option value="popout">Popout</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Difficulty and Game Mode Selection */}
       <div className="row mt-4">
-        <div className="col d-flex justify-content-center">
-          <div className="d-flex align-items-center">
+        <div className="col-md-6 d-flex justify-content-center mb-3 mb-md-0">
+          <div>
             <label htmlFor="difficulty" className="me-2">
               AI Difficulty:
             </label>
@@ -185,8 +388,8 @@ const PlayBot = () => {
               id="difficulty"
               value={difficulty}
               onChange={handleDifficultyChange}
-              className="form-select w-auto"
-              disabled={!board.every((row) => row.every((cell) => cell === 0))}
+              className="form-select d-inline-block w-auto"
+              disabled={totalMoves > 0}
             >
               {difficultyLevels.map((level) => (
                 <option key={level} value={level}>
@@ -199,25 +402,48 @@ const PlayBot = () => {
             </select>
           </div>
         </div>
-      </div>
-      <div className="row mt-4">
-        <div className="col d-flex justify-content-center">
-          <div className="d-flex align-items-center">
-            <label htmlFor="turn" className="me-2">
-              Who goes first?
+        <div className="col-md-6 d-flex justify-content-center">
+          <div>
+            <label htmlFor="gameMode" className="me-2">
+              Game Mode:
             </label>
             <select
-              id="turn"
-              value={playerGoesFirst ? "player" : "bot"}
-              onChange={handleTurnChange}
-              className="form-select w-auto"
+              id="gameMode"
+              value={gameMode}
+              onChange={handleGameModeChange}
+              className="form-select d-inline-block w-auto"
             >
-              <option value="player">Player</option>
-              <option value="bot">Bot</option>
+              {gameModes.map((mode) => (
+                <option key={mode} value={mode}>
+                  {mode
+                    .split("-")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")}
+                </option>
+              ))}
             </select>
           </div>
         </div>
       </div>
+
+      {/* Reset Game Button */}
+      <div className="row mt-4">
+        <div className="col d-flex justify-content-center">
+          <button
+            onClick={resetGame}
+            disabled={isLocked}
+            className="btn btn-primary"
+          >
+            Reset Game
+          </button>
+        </div>
+      </div>
+
+      {/* Display Winner or Draw Message */}
+      {winner && (
+        <div className="alert alert-success mt-4">Winner: {winner}</div>
+      )}
+      {isDraw && <div className="alert alert-warning mt-4">It's a draw!</div>}
     </div>
   );
 };

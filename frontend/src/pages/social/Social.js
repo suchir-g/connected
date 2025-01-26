@@ -6,22 +6,34 @@ import FriendRecommendations from "../../components/friends/FriendRecommendation
 
 const Social = () => {
   return (
-    <div className="container mt-4" style={{ minHeight: "100vw" }}>
-      <h2>Social</h2>
-      <div className="row">
-        <div className="col-md-4">
-          <FriendsList />
+    <div className="container mt-4" style={{ minHeight: "100vh" }}>
+      <h2 className="mb-4">Social</h2>
+
+      {/* Row for FriendsList, FriendRequests, and SearchUser */}
+      <div className="row g-3">
+        <div className="col-lg-4 col-md-6">
+          <div className="p-3 border rounded-3 h-100">
+            <FriendsList />
+          </div>
         </div>
-        <div className="col-md-4">
-          <FriendRequests />
+        <div className="col-lg-4 col-md-6">
+          <div className="p-3 border rounded-3 h-100">
+            <FriendRequests />
+          </div>
         </div>
-        <div className="col-md-4">
-          <SearchUser />
+        <div className="col-lg-4 col-md-6">
+          <div className="p-3 border rounded-3 h-100">
+            <SearchUser />
+          </div>
         </div>
       </div>
-      <div className="row">
-        <div className="col-md-4">
-          <FriendRecommendations />
+
+      {/* Row for FriendRecommendations */}
+      <div className="row g-3 mt-3">
+        <div className="col-lg-4 col-md-6">
+          <div className="p-3 border rounded-3 h-100">
+            <FriendRecommendations />
+          </div>
         </div>
       </div>
     </div>

@@ -3,8 +3,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from Position import Position
 from Negamaxer import Negamaxer
+import random
 
-# Set up logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
@@ -32,6 +32,33 @@ def validate_board(board, game_mode):
                 return False
 
     return True
+
+def simulate_board(moves):
+    while True:
+        # initialises a 2d empty array (weird python syntax but it's just a list of lists)
+        board = [[0 for _ in range(7)] for _ in range(6)]
+        current_player = 1
+
+        for _ in range(moves):
+            # randomly select a valid column
+            valid_columns = [col for col in range(7) if board[0][col] == 0]
+            if not valid_columns:
+                break 
+            column = random.choice(valid_columns)
+
+            # drop piece in the selected column
+            for row in range(5, -1, -1):
+                if board[row][column] == 0:
+                    board[row][column] = current_player
+                    break
+
+            # alternate between players
+            current_player = -current_player
+
+        game_position = Position(array_board=board)
+        if game_position.check_winner() is None:
+            return board  # return the valid board if there's no winner
+
 
 @app.route('/bestmove', methods=['POST'])
 def best_move():
@@ -123,6 +150,17 @@ def best_move():
     except Exception as e:
         logging.exception("An unexpected error occurred while processing the request.")
         return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/generate-board', methods=['POST'])
+def generate_board():
+    data = request.get_json()
+    moves = data.get('moves', 0)
+
+    if not isinstance(moves, int) or moves < 0:
+        return jsonify({"error": "invalid moves parameter"}), 400
+
+    board = simulate_board(moves)
+    return jsonify({"board": board})
 
 if __name__ == '__main__':
     logging.info("Starting the Flask application on port 5000")

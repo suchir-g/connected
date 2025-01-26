@@ -5,7 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/footer/Footer";
 
-import Landing from "./pages/landing/Landing";
+import Landing from "./pages/landing/LandingPage";
 import Dashboard from "./pages/dashboard/Dashboard";
 
 import Register from "./pages/auth/Register";
@@ -26,8 +26,7 @@ import ReviewGame from "./pages/review/ReviewGame";
 import SearchUser from "./components/friends/SearchUser";
 
 import Loading from "./components/loading/Loading";
-import PlayVariants from "./pages/play/variants/bot/PlayVariants";
-
+import NotFound from "./pages/404";
 const App = () => {
   return (
     <div className="mainContainer">
@@ -83,14 +82,6 @@ const App = () => {
             }
           />
           <Route
-            path="/play/variants/bot"
-            element={
-              <ProtectedRoute>
-                <PlayVariants />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/stats"
             element={
               <ProtectedRoute>
@@ -98,6 +89,7 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
       </Router>
