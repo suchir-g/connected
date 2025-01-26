@@ -6,7 +6,7 @@ import FriendRecommendations from "../../components/friends/FriendRecommendation
 
 const Social = () => {
   return (
-    <div className="container mt-4">
+    <div className="container mt-4" style={{ minHeight: "100vw" }}>
       <h2>Social</h2>
       <div className="row">
         <div className="col-md-4">

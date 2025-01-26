@@ -9,43 +9,41 @@ const ReviewGame = () => {
   const { gameId, playerId } = useParams();
   const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0)));
   const [moves, setMoves] = useState([]);
+  const [gameMode, setGameMode] = useState("connect-4");
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [precomputedBestMoves, setPrecomputedBestMoves] = useState([]);
   const [latestMove, setLatestMove] = useState(null);
-  const [scores, setScores] = useState(Array(7).fill(null)); // Store scores for each column
+  const [scores, setScores] = useState(Array(7).fill(null));
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
   const [error, setError] = useState("");
+  const [difficulty, setDifficulty] = useState("medium");
 
   useEffect(() => {
     const fetchGame = async () => {
       try {
-        console.log("Fetching game data...");
         setLoading(true);
         const gameRef = doc(db, "players", playerId, "games", gameId);
         const gameSnap = await getDoc(gameRef);
 
         if (gameSnap.exists()) {
           const gameData = gameSnap.data();
-          console.log("Game data fetched successfully:", gameData);
+          setGameMode(gameData.gameMode || "connect-4");
 
-          const moves = gameData.moves
-            .split("")
-            .map((move) => parseInt(move, 10) - 1);
-          setMoves(moves);
+          const parsedMoves = parseMoves(gameData.moves);
+          setMoves(parsedMoves);
 
-          if (gameData.bestMoves.length > 0) {
-            console.log("Using precomputed best moves:", gameData.bestMoves);
+          const difficulty = gameData.difficulty || "medium";
+
+          if (gameData.bestMoves && gameData.bestMoves.length > 0) {
             setPrecomputedBestMoves(gameData.bestMoves);
           } else {
-            console.log("Best moves not precomputed. Precomputing now...");
-            await precomputeBestMoves(moves, gameRef);
+            await precomputeBestMoves(parsedMoves, gameMode, gameRef);
           }
         } else {
           setError("Game not found.");
         }
       } catch (err) {
-        console.error("Error fetching game data:", err);
         setError("Failed to fetch game. Please try again later.");
       } finally {
         setLoading(false);
@@ -55,83 +53,114 @@ const ReviewGame = () => {
     fetchGame();
   }, [gameId, playerId]);
 
-  const precomputeBestMoves = async (moves, gameRef) => {
+  const parseMoves = (moveString) => {
+    const parsed = [];
+    let isNegative = false;
+
+    for (const char of moveString) {
+      if (char === "-") {
+        isNegative = true;
+      } else {
+        const move = parseInt(char, 10);
+        if (!isNaN(move)) {
+          parsed.push(isNegative ? -move : move - 1); // Convert to 0-based index
+          isNegative = false;
+        }
+      }
+    }
+
+    return parsed;
+  };
+
+  const flipBoardColors = (board) => {
+    return board.map((row) =>
+      row.map((cell) => (cell === 1 ? -1 : cell === -1 ? 1 : 0))
+    );
+  };
+
+  const precomputeBestMoves = async (moves, gameMode, gameRef) => {
     setEvaluating(true);
-    let tempBoard = Array(6)
-      .fill(0)
-      .map(() => Array(7).fill(0));
+    let tempBoard = Array(6).fill(Array(7).fill(0));
     const bestMoves = [];
 
     for (let i = 0; i < moves.length; i++) {
       const player = i % 2 === 0 ? 1 : -1;
-      const opponent = -player;
+
+      if (gameMode === "colour-switch" && i > 0 && i % 3 === 0) {
+        tempBoard = flipBoardColors(tempBoard);
+      }
 
       try {
-        console.log(
-          `Fetching best move for player ${opponent} at move index ${i}...`
+        const response = await getBestMove(
+          tempBoard,
+          player,
+          gameMode,
+          difficulty
         );
-        const response = await getBestMove(tempBoard, opponent);
-        console.log(`Best move fetched: ${response.data.best_move}`);
         bestMoves.push(response.data.best_move);
       } catch (err) {
-        console.error(`Error fetching best move at move index ${i}:`, err);
         bestMoves.push(null);
       }
 
-      tempBoard = applyMove(tempBoard, moves[i], player);
+      tempBoard = applyMove(tempBoard, moves[i], player, gameMode);
     }
 
     try {
-      console.log("Saving precomputed best moves to Firestore:", bestMoves);
       await updateDoc(gameRef, { bestMoves });
-      console.log("Best moves saved successfully.");
       setPrecomputedBestMoves(bestMoves);
     } catch (err) {
-      console.error("Error saving best moves to Firestore:", err);
+      console.error("Error saving best moves:", err);
     }
 
     setEvaluating(false);
   };
 
-  const applyMove = (board, column, player) => {
+  const applyMove = (board, move, player, mode) => {
     const newBoard = board.map((row) => [...row]);
     let latestRow = null;
 
-    for (let row = newBoard.length - 1; row >= 0; row--) {
-      if (newBoard[row][column] === 0) {
-        newBoard[row][column] = player;
-        latestRow = row;
-        break;
+    if (mode === "popout" && move < 0) {
+      const colIndex = Math.abs(move) - 1;
+      for (let row = newBoard.length - 1; row > 0; row--) {
+        newBoard[row][colIndex] = newBoard[row - 1][colIndex];
+      }
+      newBoard[0][colIndex] = 0;
+    } else {
+      for (let row = newBoard.length - 1; row >= 0; row--) {
+        if (newBoard[row][move] === 0) {
+          newBoard[row][move] = player;
+          latestRow = row;
+          break;
+        }
       }
     }
 
-    setLatestMove({ row: latestRow, column });
+    setLatestMove({ row: latestRow, column: move });
     return newBoard;
   };
 
   const renderBoardAtMove = (moveIndex) => {
-    let tempBoard = Array(6)
-      .fill(0)
-      .map(() => Array(7).fill(0));
+    let tempBoard = Array(6).fill(Array(7).fill(0));
+
     for (let i = 0; i <= moveIndex; i++) {
       const player = i % 2 === 0 ? 1 : -1;
-      tempBoard = applyMove(tempBoard, moves[i], player);
+
+      if (gameMode === "colour-switch" && i > 0 && i % 3 === 0) {
+        tempBoard = flipBoardColors(tempBoard);
+      }
+
+      tempBoard = applyMove(tempBoard, moves[i], player, gameMode);
     }
+
     setBoard(tempBoard);
-    fetchColumnScores(tempBoard, currentMoveIndex % 2 === 0 ? 1 : -1);
+    fetchColumnScores(tempBoard, moveIndex % 2 === 0 ? 1 : -1);
   };
 
   const fetchColumnScores = async (board, currentPlayer) => {
     try {
-      console.log("Fetching column scores...");
-      const response = await getBestMove(board, currentPlayer);
-      console.log(
-        "Column scores fetched successfully:",
-        response.data.column_scores
-      );
+      const response = await getBestMove(board, currentPlayer, gameMode);
       setScores(response.data.column_scores || Array(7).fill(null));
-    } catch (err) {
-      console.error("Error fetching column scores:", err);
+    } catch {
       setScores(Array(7).fill(null));
     }
   };
@@ -175,6 +204,7 @@ const ReviewGame = () => {
   return (
     <div style={{ padding: "20px" }}>
       <h2>Review Game</h2>
+      <p>Game Mode: {gameMode.replace("-", " ").toUpperCase()}</p>
       <Board
         board={board}
         highlightedColumns={[precomputedBestMoves[currentMoveIndex]]}

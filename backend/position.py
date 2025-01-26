@@ -1,32 +1,20 @@
 from typing import Optional, List
 
 class Position:
-	def __init__(self,
-				 rows: int = 6,
-				 cols: int = 7,
-				 mode: str = "connect-4",  # New parameter for game mode
-				 array_board: Optional[List[List[int]]] = None,
+	def __init__(self, rows: int = 6, cols: int = 7, mode: str = "connect-4", array_board: Optional[List[List[int]]] = None,
 				 p1_bitboard: int = 0,
 				 p2_bitboard: int = 0):
 		self.mode = mode
 		self.ROWS = rows
 		self.COLS = cols
 
-		# Set n_in_a_row based on the mode
-		if mode == "connect-4":
-			self.n_in_a_row = 4
-		elif mode == "connect-5":
+		if mode == "connect-5":
 			self.n_in_a_row = 5
 			self.ROWS = 8
 			self.COLS = 9
-		elif mode == "var-grid":
-			self.n_in_a_row = min(rows, cols)  # Default n_in_a_row for variable grid
-		elif mode == "no-grav":
-			self.n_in_a_row = 4  # No gravity, still use 4 by default
 		else:
-			raise ValueError(f"Invalid game mode: {mode}")
+			self.n_in_a_row = 4
 
-		# Initialize the board
 		if array_board is None:
 			self.array_board = [[0] * self.COLS for _ in range(self.ROWS)]
 			for c in range(self.COLS):
@@ -77,10 +65,41 @@ class Position:
 				else:
 					self.p2_bitboard |= (1 << idx)
 
-				print(f"Piece dropped at row {row}, col {col}")  # Debug log
 				return True
-		print(f"Column {col} is full.")  # Debug log
 		return False
+
+	def popout_piece(self, col: int) -> bool:
+		if col < 0 or col >= self.COLS:
+			return False  # Invalid column
+
+		# Traverse bottom to top in the column
+		for row in range(self.ROWS - 1, -1, -1):
+			if self.array_board[row][col] != 0:
+				# Remove the player's piece
+				self.array_board[row][col] = 0
+
+				# Shift all pieces above downward
+				for r in range(row, 0, -1):
+					self.array_board[r][col] = self.array_board[r - 1][col]
+				self.array_board[0][col] = 0  # Topmost cell is now empty
+
+				# Update bitboards
+				self.update_bitboards()
+				return True
+
+		return False  # No valid piece to pop
+
+	def update_bitboards(self):
+		self.p1_bitboard = 0
+		self.p2_bitboard = 0
+		for r in range(self.ROWS):
+			for c in range(self.COLS):
+				idx = c * self.ROWS + r
+				if self.array_board[r][c] == 1:
+					self.p1_bitboard |= (1 << idx)
+				elif self.array_board[r][c] == -1:
+					self.p2_bitboard |= (1 << idx)
+
 
 	def get_valid_moves(self) -> List[int]:
 		valid = []

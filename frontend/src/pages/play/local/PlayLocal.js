@@ -1,4 +1,4 @@
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import Board from "../../../components/board/Board";
 import { getBestMove as apiGetBestMove } from "../../../config/api";
 import { useTheme } from "../../../contexts/ThemeContext";
@@ -17,6 +17,10 @@ const PlayLocal = () => {
   const [lastMove, setLastMove] = useState({ row: null, column: null });
   const [error, setError] = useState(null);
 
+  // Define gameMode and difficulty
+  const gameMode = "connect-4"; // Supported game mode
+  const difficulty = "medium"; // You can set this based on your requirements
+
   const initializeGame = () => {
     setBoard(initialBoard);
     setCurrentPlayer(1);
@@ -32,7 +36,7 @@ const PlayLocal = () => {
 
     const row = findEmptyRow(board, column);
     if (row === -1) {
-      alert("fulll col");
+      alert("Full column");
       return;
     }
     console.log(row, column);
@@ -65,7 +69,7 @@ const PlayLocal = () => {
         return row;
       }
     }
-    return -1; //full col
+    return -1; // Full column
   };
 
   const checkGameStatus = (board, row, column, player) => {
@@ -83,17 +87,16 @@ const PlayLocal = () => {
 
   const isWinningMove = (board, row, column, player) => {
     const directions = [
-      { dr: 0, dc: 1 }, // dr = change in r, cd = change in c
-      { dr: 1, dc: 0 },
-      { dr: 1, dc: 1 },
-      { dr: 1, dc: -1 },
+      { dr: 0, dc: 1 }, // Horizontal
+      { dr: 1, dc: 0 }, // Vertical
+      { dr: 1, dc: 1 }, // Diagonal down-right
+      { dr: 1, dc: -1 }, // Diagonal down-left
     ];
 
     for (let { dr, dc } of directions) {
       let count = 1;
 
       count += countConsecutive(board, row, column, dr, dc, player);
-
       count += countConsecutive(board, row, column, -dr, -dc, player);
 
       if (count >= 4) {
@@ -126,11 +129,16 @@ const PlayLocal = () => {
     setIsFetchingSuggestion(true);
 
     try {
-      const response = await apiGetBestMove(board, currentPlayer);
-      const { best_column } = response.data;
+      const response = await apiGetBestMove(
+        board,
+        currentPlayer,
+        gameMode,
+        difficulty
+      );
+      const { best_move } = response.data;
 
-      if (best_column !== -1) {
-        setHighlightedColumns([best_column]);
+      if (best_move !== -1) {
+        setHighlightedColumns([best_move]);
       } else {
         setHighlightedColumns([]);
       }
@@ -143,7 +151,12 @@ const PlayLocal = () => {
   };
 
   return (
-    <div className={`container mt-4 text-center ${darkMode ? "bg-dark text-white" : ""}`} style={{minHeight: "100vh"}}>
+    <div
+      className={`container mt-4 text-center ${
+        darkMode ? "bg-dark text-white" : ""
+      }`}
+      style={{ minHeight: "100vh" }}
+    >
       <h1 className="my-4">Play Locally</h1>
       <div className="row justify-content-center">
         <div className="col-md-8">
@@ -195,8 +208,12 @@ const PlayLocal = () => {
       <div className="row justify-content-center mt-4">
         <div className="col-auto">
           <div className="status">
-            {winner === 1 && <p className="alert alert-success">Player 1 wins!</p>}
-            {winner === -1 && <p className="alert alert-success">Player 2 wins!</p>}
+            {winner === 1 && (
+              <p className="alert alert-success">Player 1 wins!</p>
+            )}
+            {winner === -1 && (
+              <p className="alert alert-success">Player 2 wins!</p>
+            )}
             {isDraw && <p className="alert alert-secondary">It's a draw!</p>}
           </div>
         </div>

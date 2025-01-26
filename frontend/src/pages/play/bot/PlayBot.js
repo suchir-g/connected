@@ -22,6 +22,7 @@ const PlayBot = () => {
   const [isDraw, setIsDraw] = useState(false);
   const [highlightedColumns, setHighlightedColumns] = useState([]);
   const [difficulty, setDifficulty] = useState("medium");
+  const [playerGoesFirst, setPlayerGoesFirst] = useState(true); // New state
   const [moves, setMoves] = useState("");
   const movesRef = useRef("");
   const [searchParams] = useSearchParams();
@@ -45,6 +46,11 @@ const PlayBot = () => {
     setMoves("");
     movesRef.current = "";
     setIsLocked(false);
+
+    // AI makes the first move if player goes second
+    if (!playerGoesFirst) {
+      makeAIMove(Array(6).fill(Array(7).fill(0)));
+    }
   };
 
   const applyMove = (currentBoard, column, player) => {
@@ -58,34 +64,18 @@ const PlayBot = () => {
     return currentBoard;
   };
 
-  const handleMakeMove = async (column) => {
-    if (isLocked || winner !== null || isDraw) return;
-
-    // Apply the player's move
-    const userMovedBoard = applyMove(board, column, 1);
-    setBoard(userMovedBoard);
-    movesRef.current += (column + 1).toString();
-    setMoves(movesRef.current);
-
-    // Check if the player wins after their move
-    if (winner === "Player") return;
-
-    setIsLocked(true);
-
+  const makeAIMove = async (currentBoard) => {
     try {
-      // Fetch the AI's best move and outcome
       const response = await getBestMove(
-        userMovedBoard,
+        currentBoard,
         -1,
         "connect-4",
         difficulty
       );
       const { best_move: aiMove, board: updatedBoard, outcome } = response.data;
 
-      console.log(updatedBoard);
       setBoard(updatedBoard);
 
-      // Update game state
       if (outcome === 1) {
         setWinner("Player");
       } else if (outcome === -1) {
@@ -106,9 +96,32 @@ const PlayBot = () => {
     }
   };
 
+  const handleMakeMove = async (column) => {
+    if (isLocked || winner !== null || isDraw) return;
+
+    // Apply the player's move
+    const userMovedBoard = applyMove(board, column, 1);
+    setBoard(userMovedBoard);
+    movesRef.current += (column + 1).toString();
+    setMoves(movesRef.current);
+
+    // Check if the player wins after their move
+    if (winner === "Player") return;
+
+    setIsLocked(true);
+
+    // AI's turn
+    await makeAIMove(userMovedBoard);
+  };
+
   const handleDifficultyChange = (event) => {
     const selectedDifficulty = event.target.value;
     setDifficulty(selectedDifficulty);
+  };
+
+  const handleTurnChange = (event) => {
+    const goesFirst = event.target.value === "player";
+    setPlayerGoesFirst(goesFirst);
   };
 
   const recordGameResult = async (gameOutcome, isDraw) => {
@@ -138,8 +151,7 @@ const PlayBot = () => {
   };
 
   return (
-    <div className="container mt-4 text-center 100vh" style={{minHeight: "100vh"}}>
-
+    <div className="container mt-4 text-center" style={{ minHeight: "100vh" }}>
       <h1 className="my-4">Play against Bot</h1>
       <div className="row">
         <div className="col">
@@ -174,6 +186,7 @@ const PlayBot = () => {
               value={difficulty}
               onChange={handleDifficultyChange}
               className="form-select w-auto"
+              disabled={!board.every((row) => row.every((cell) => cell === 0))}
             >
               {difficultyLevels.map((level) => (
                 <option key={level} value={level}>
@@ -183,6 +196,24 @@ const PlayBot = () => {
                     .join(" ")}
                 </option>
               ))}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div className="row mt-4">
+        <div className="col d-flex justify-content-center">
+          <div className="d-flex align-items-center">
+            <label htmlFor="turn" className="me-2">
+              Who goes first?
+            </label>
+            <select
+              id="turn"
+              value={playerGoesFirst ? "player" : "bot"}
+              onChange={handleTurnChange}
+              className="form-select w-auto"
+            >
+              <option value="player">Player</option>
+              <option value="bot">Bot</option>
             </select>
           </div>
         </div>

@@ -5,6 +5,8 @@ import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { AuthContext } from "../../contexts/AuthContext";
 import BarGraph from "../../components/graphs/BarGraph";
 import LineGraph from "../../components/graphs/LineGraph";
+import Loading from "../../components/loading/Loading";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const difficultyLabels = [
   "very_easy",
@@ -15,12 +17,41 @@ const difficultyLabels = [
   "Expert",
 ];
 
+const gameModeLabels = [
+  "connect-4",
+  "connect-5",
+  "popout",
+  "anti",
+  "colour-switch",
+];
+
 const Stats = () => {
   const { currentUser } = useContext(AuthContext);
   const [statsData, setStatsData] = useState([]);
+  const [variantStats, setVariantStats] = useState([]);
   const [gameHistory, setGameHistory] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const { darkMode } = useTheme();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Calculate the current page's data
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentData = gameHistory.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(gameHistory.length / itemsPerPage);
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    if (page > 0 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   useEffect(() => {
     if (!currentUser) {
@@ -37,11 +68,12 @@ const Stats = () => {
 
         if (!gamesSnapshot.empty) {
           const games = gamesSnapshot.docs.map((doc) => ({
-            id: doc.id, 
+            id: doc.id,
             ...doc.data(),
           }));
           setGameHistory(games);
 
+          // Stats by difficulty
           const stats = difficultyLabels.map((label) => {
             const wins = games.filter(
               (game) =>
@@ -62,9 +94,29 @@ const Stats = () => {
           });
 
           setStatsData(stats);
+
+          // Stats by variant
+          const variants = gameModeLabels.map((mode) => {
+            const wins = games.filter(
+              (game) => game.result === "win" && game.gameMode === mode
+            ).length;
+            const losses = games.filter(
+              (game) => game.result === "loss" && game.gameMode === mode
+            ).length;
+
+            return {
+              variant: mode.replace("-", " ").toUpperCase(),
+              wins,
+              losses,
+              ratio: losses === 0 ? wins : wins / losses,
+            };
+          });
+
+          setVariantStats(variants);
         } else {
           setError("No games found.");
           setStatsData([]);
+          setVariantStats([]);
           setGameHistory([]);
         }
       } catch (err) {
@@ -80,9 +132,9 @@ const Stats = () => {
 
   const winLossCumulative = gameHistory.reduce(
     (acc, game) => {
-      const date = new Date(game.timestamp.seconds * 1000) 
+      const date = new Date(game.timestamp.seconds * 1000)
         .toISOString()
-        .split("T")[0]; 
+        .split("T")[0];
       const isWin = game.result === "win";
       const isLoss = game.result === "loss";
 
@@ -107,77 +159,162 @@ const Stats = () => {
     }
   );
 
-  const dailyLabels = Object.keys(winLossCumulative.dailyStats).sort(); 
+  const dailyLabels = Object.keys(winLossCumulative.dailyStats).sort();
   const dailyRatios = dailyLabels.map((date) => {
     const { wins, losses } = winLossCumulative.dailyStats[date];
-    return losses === 0 ? wins : wins / losses; 
+    return losses === 0 ? wins : wins / losses;
   });
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2 className="md-2">Statistics</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {loading && <p>Loading statistics...</p>}
-
-      {!loading && statsData.length > 0 && (
-        <>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
-            <div style={{ flex: "1 1 30%" }}>
-              <h4>Wins by Difficulty</h4>
-              <BarGraph
-                labels={statsData.map((data) => data.difficulty)}
-                values={statsData.map((data) => data.wins)}
-              />
-            </div>
-            <div style={{ flex: "1 1 30%" }}>
-              <h4>Losses by Difficulty</h4>
-              <BarGraph
-                labels={statsData.map((data) => data.difficulty)}
-                values={statsData.map((data) => data.losses)}
-              />
-            </div>
-            <div style={{ flex: "1 1 30%" }}>
-              <h4>Win-to-Loss Ratio by Difficulty</h4>
-              <BarGraph
-                labels={statsData.map((data) => data.difficulty)}
-                values={statsData.map((data) => data.ratio)}
-              />
-            </div>
-          </div>
-        </>
-      )}
+    <div className="container mt-4">
+      <h2 className="text-center">Statistics</h2>
+      {error && <p className="text-danger">{error}</p>}
+      {loading && <Loading />}
 
       {!loading && dailyLabels.length > 0 && (
-        <>
-          <h3>Cumulative Win-to-Loss Ratio Over Time (Per Day)</h3>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            marginBottom: "20px",
+          }}
+        >
+          <hr />
+          <h4 className="text-center">
+            Cumulative Win-to-Loss Ratio Over Time
+          </h4>
           <LineGraph labels={dailyLabels} values={dailyRatios} />
-        </>
+        </div>
+      )}
+
+      {!loading && (
+        <div className="accordion" id="statsAccordion">
+          <div className="accordion-item">
+            <h2 className="accordion-header" id="headingOriginal">
+              <button
+                className="accordion-button"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseOriginal"
+                aria-expanded="true"
+                aria-controls="collapseOriginal"
+              >
+                Original
+              </button>
+            </h2>
+            <div
+              id="collapseOriginal"
+              className="accordion-collapse collapse show"
+              aria-labelledby="headingOriginal"
+              data-bs-parent="#statsAccordion"
+            >
+              <div className="accordion-body">
+                <div className="row">
+                  <div className="col-md-4 col-sm-12">
+                    <h4>Wins by Difficulty</h4>
+                    <BarGraph
+                      labels={statsData.map((data) => data.difficulty)}
+                      values={statsData.map((data) => data.wins)}
+                    />
+                  </div>
+                  <div className="col-md-4 col-sm-12">
+                    <h4>Losses by Difficulty</h4>
+                    <BarGraph
+                      labels={statsData.map((data) => data.difficulty)}
+                      values={statsData.map((data) => data.losses)}
+                    />
+                  </div>
+                  <div className="col-md-4 col-sm-12">
+                    <h4>Win-to-Loss Ratio by Difficulty</h4>
+                    <BarGraph
+                      labels={statsData.map((data) => data.difficulty)}
+                      values={statsData.map((data) => data.ratio)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="accordion-item">
+            <h2 className="accordion-header" id="headingVariants">
+              <button
+                className="accordion-button"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseVariants"
+                aria-expanded="true"
+                aria-controls="collapseVariants"
+              >
+                Variants
+              </button>
+            </h2>
+            <div
+              id="collapseVariants"
+              className="accordion-collapse collapse show"
+              aria-labelledby="headingVariants"
+              data-bs-parent="#statsAccordion"
+            >
+              <div className="accordion-body">
+                <div className="row">
+                  <div className="col-md-4 col-sm-12">
+                    <h4>Wins by Variant</h4>
+                    <BarGraph
+                      labels={variantStats.map((data) => data.variant)}
+                      values={variantStats.map((data) => data.wins)}
+                    />
+                  </div>
+                  <div className="col-md-4 col-sm-12">
+                    <h4>Losses by Variant</h4>
+                    <BarGraph
+                      labels={variantStats.map((data) => data.variant)}
+                      values={variantStats.map((data) => data.losses)}
+                    />
+                  </div>
+                  <div className="col-md-4 col-sm-12">
+                    <h4>Win-to-Loss Ratio by Variant</h4>
+                    <BarGraph
+                      labels={variantStats.map((data) => data.variant)}
+                      values={variantStats.map((data) => data.ratio)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {!loading && gameHistory.length > 0 && (
         <>
           <h3>Game History</h3>
-          <table border="1" cellPadding="10" cellSpacing="0" className="table" style={{ width: "100%", borderCollapse: "collapse", color: "inherit" }}>
-            <thead style={{color:"inherit"}}>
-              <tr style={{color:"inherit"}}>
-                <th style={{color:"inherit"}}>Date</th>
-                <th style={{color:"inherit"}}>Result</th>
-                <th style={{color:"inherit"}}>Difficulty</th>
-                <th style={{color:"inherit"}}>Moves</th>
-                <th style={{color:"inherit"}}>Action</th>
+          <table
+            className={`table table-striped table-hover ${
+              darkMode ? "table-dark" : ""
+            }`}
+          >
+            <thead className="thead-dark">
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Result</th>
+                <th scope="col">Difficulty</th>
+                <th scope="col">Moves</th>
+                <th scope="col">Game Mode</th>
+                <th scope="col">Action</th>
               </tr>
             </thead>
-            <tbody style={{color:"inherit"}}>
-              {gameHistory.map((game, index) => (
-                <tr key={index} style={{color:"inherit"}}>
-                  <td style={{color:"inherit"}}>
+            <tbody>
+              {currentData.map((game, index) => (
+                <tr key={index}>
+                  <td>
                     {new Date(game.timestamp.seconds * 1000).toLocaleString()}
                   </td>
-                  <td style={{color:"inherit"}}>{game.result}</td>
-                  <td style={{color:"inherit"}}>{game.difficulty}</td>
-                  <td style={{color:"inherit"}}>{game.moves}</td>
-                  <td style={{color:"inherit"}}>
-                    <Link to={`/review/${currentUser.uid}/${game.id}`} style={{color:"inherit"}}>
+                  <td>{game.result}</td>
+                  <td>{game.difficulty}</td>
+                  <td>{game.moves}</td>
+                  <td>{game.gameMode}</td>
+                  <td>
+                    <Link to={`/review/${currentUser.uid}/${game.id}`}>
                       Review Game
                     </Link>
                   </td>
@@ -185,6 +322,25 @@ const Stats = () => {
               ))}
             </tbody>
           </table>
+          <div className="d-flex justify-content-center my-3">
+            <button
+              className="btn btn-primary me-2"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <span className="align-self-center">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              className="btn btn-primary ms-2"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
         </>
       )}
 
@@ -196,4 +352,3 @@ const Stats = () => {
 };
 
 export default Stats;
-  

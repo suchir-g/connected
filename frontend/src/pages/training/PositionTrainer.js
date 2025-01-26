@@ -67,7 +67,7 @@ const PositionTrainer = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4" style={{minHeight: "100vh"}}>
       <h1 className="text-center">
         {trainingType === "early" ? "Early Game Trainer" : "Late Game Trainer"}
       </h1>

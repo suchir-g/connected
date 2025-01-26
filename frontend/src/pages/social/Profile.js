@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { db } from "../../config/firebase";
 import {
   collection,
@@ -12,9 +12,9 @@ import {
 import BarGraph from "../../components/graphs/BarGraph";
 import LineGraph from "../../components/graphs/LineGraph";
 import AddFriend from "../../components/friends/AddFriend";
-import FriendRequests from "../../components/friends/FriendRequests";
-import FriendsList from "../../components/friends/FriendsList";
 import { AuthContext } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
+import Loading from "../../components/loading/Loading";
 
 const difficultyLabels = [
   "very_Easy",
@@ -26,12 +26,13 @@ const difficultyLabels = [
 ];
 
 const Profile = () => {
-  const { username } = useParams(); // get username from URL
+  const { username } = useParams(); // Get username from URL
   const [playerData, setPlayerData] = useState(null);
   const [recentGames, setRecentGames] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const { currentUser } = useContext(AuthContext);
+  const { darkMode } = useTheme();
 
   useEffect(() => {
     if (!username) {
@@ -42,7 +43,6 @@ const Profile = () => {
 
     const fetchPlayerData = async () => {
       setLoading(true);
-      console.log("Fetching player data for:", username);
 
       try {
         const normalizedUsername = username.trim().toLowerCase();
@@ -54,7 +54,6 @@ const Profile = () => {
         const playerSnapshot = await getDocs(playerQuery);
 
         if (playerSnapshot.empty) {
-          console.error("player not found:", username);
           setError("Player not found.");
           setPlayerData(null);
           setRecentGames([]);
@@ -66,7 +65,6 @@ const Profile = () => {
         const playerId = playerDoc.id;
         const playerInfo = playerDoc.data();
         setPlayerData(playerInfo);
-        console.log("Player data fetched:", playerInfo);
 
         const gamesRef = collection(db, "players", playerId, "games");
         const gamesQuery = query(
@@ -82,13 +80,10 @@ const Profile = () => {
             ...doc.data(),
           }));
           setRecentGames(games);
-          console.log("Recent games fetched:", games);
         } else {
-          console.log("No games found for player:", username);
           setRecentGames([]);
         }
       } catch (err) {
-        console.error("Error fetching player data:", err);
         setError("Failed to fetch profile. Please try again later.");
       } finally {
         setLoading(false);
@@ -99,12 +94,9 @@ const Profile = () => {
   }, [username]);
 
   const getStats = () => {
-    if (!recentGames || recentGames.length === 0) {
-      console.log("No recent games available for stats calculation.");
-      return [];
-    }
+    if (!recentGames || recentGames.length === 0) return [];
 
-    const stats = difficultyLabels.map((label) => {
+    return difficultyLabels.map((label) => {
       const wins = recentGames.filter(
         (game) =>
           game.result === "win" && game.difficulty === label.toLowerCase()
@@ -115,82 +107,125 @@ const Profile = () => {
       ).length;
       return { label, wins, losses };
     });
-
-    console.log("Stats calculated:", stats);
-    return stats;
   };
 
   const statsData = getStats();
 
   return (
-    <div style={{ padding: "20px" }}>
-      {username === currentUser?.username && (
-        <a href="/.settings" className="btn btn-primary mt-3">
-          Profile Settings
-        </a>
-      )}
-      <h2>{username}</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {loading && <p>Loading profile...</p>}
+    <div
+      className={`container mt-4 ${darkMode ? "bg-dark text-white" : ""}`}
+      style={{
+        minHeight: "100vh",
+        padding: "20px",
+      }}
+    >
+      <div className="text-center mb-4">
+        <h2>
+          {username} {username === currentUser?.displayName && "(You)"}
+        </h2>
+      </div>
+      {error && <p className="text-danger">{error}</p>}
+      {loading && <Loading />}
 
       {!loading && playerData && (
         <>
-          <AddFriend targetUsername={username} />
-      <br />
+          <div className="text-center mb-4">
+            <AddFriend targetUsername={username} />
+          </div>
 
-          <h3>Recent Games</h3>
-          {recentGames.length > 0 ? (
-            <table border="1" cellPadding="10">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Result</th>
-                  <th>Difficulty</th>
-                  <th>Moves</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentGames.map((game, idx) => (
-                  <tr key={idx}>
-                    <td>
-                      {new Date(game.timestamp.seconds * 1000).toLocaleString()}
-                    </td>
-                    <td>{game.result}</td>
-                    <td>{game.difficulty}</td>
-                    <td>{game.moves}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No recent games.</p>
-          )}
-
-          <h3>Wins and Losses by Difficulty</h3>
-          <BarGraph
-            labels={statsData.map((stat) => stat.label)}
-            values={statsData.map((stat) => stat.wins)}
-            title="Wins by Difficulty"
-            color="green"
-          />
-          <BarGraph
-            labels={statsData.map((stat) => stat.label)}
-            values={statsData.map((stat) => stat.losses)}
-            title="Losses by Difficulty"
-            color="red"
-          />
-
-          <h3>Win-to-Loss Ratio</h3>
-          <LineGraph
-            labels={statsData.map((stat) => stat.label)}
-            values={statsData.map((stat) =>
-              stat.losses === 0 ? stat.wins : stat.wins / stat.losses
+          <div className="mb-4">
+            <h3>Recent Games</h3>
+            {recentGames.length > 0 ? (
+              <div className="table-responsive">
+                <table
+                  className={`table table-striped table-hover ${
+                    darkMode ? "table-dark" : ""
+                  }`}
+                >
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Result</th>
+                      <th>Difficulty</th>
+                      <th>Gamemode</th>
+                      <th>Moves</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentGames.map((game, idx) => (
+                      <tr key={idx}>
+                        <td>
+                          {new Date(
+                            game.timestamp.seconds * 1000
+                          ).toLocaleString()}
+                        </td>
+                        <td
+                          className={
+                            game.result === "win"
+                              ? "text-success"
+                              : game.result === "draw"
+                              ? "text-warning"
+                              : "text-danger"
+                          }
+                        >
+                          {game.result.charAt(0).toUpperCase() +
+                            game.result.slice(1)}
+                        </td>
+                        <td>{game.difficulty || "N/A"}</td>
+                        <td>{game.gameMode || "N/A"}</td>
+                        <td>{game.moves || "No moves"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p>No recent games.</p>
             )}
-            title="Win-to-Loss Ratio by Difficulty"
-            color="blue"
-          />
+          </div>
 
+          <div className="mb-4">
+            <h3>Wins and Losses by Difficulty</h3>
+            <div className="row">
+              <div className="col-md-6">
+                <BarGraph
+                  labels={statsData.map((stat) => stat.label)}
+                  values={statsData.map((stat) => stat.wins)}
+                  title="Wins by Difficulty"
+                  color="green"
+                />
+              </div>
+              <div className="col-md-6">
+                <BarGraph
+                  labels={statsData.map((stat) => stat.label)}
+                  values={statsData.map((stat) => stat.losses)}
+                  title="Losses by Difficulty"
+                  color="red"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <h3>Win-to-Loss Ratio</h3>
+            <LineGraph
+              labels={statsData.map((stat) => stat.label)}
+              values={statsData.map((stat) =>
+                stat.losses === 0 ? stat.wins : stat.wins / stat.losses
+              )}
+              title="Win-to-Loss Ratio by Difficulty"
+              color="blue"
+            />
+          </div>
         </>
+      )}
+
+      {username === currentUser?.displayName && (
+        <div className="text-center mt-4">
+          <Link to="/settings" className="btn btn-primary">
+            Profile Settings
+          </Link>
+        </div>
       )}
     </div>
   );

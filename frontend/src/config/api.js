@@ -19,8 +19,9 @@ const validateBoard = (board, gameMode) => {
   const modeDimensions = {
     "connect-4": { rows: 6, cols: 7 },
     "connect-5": { rows: 8, cols: 9 },
-    "var-grid": { rows: [4, 10], cols: [4, 10] }, // Dynamic dimensions between 4 and 10
-    "no-grav": { rows: [4, 10], cols: [4, 10] }, // Dynamic dimensions between 4 and 10
+    popout: { rows: 6, cols: 7 }, // Popout uses fixed dimensions of 6x7
+    anti: { rows: 6, cols: 7 }, // Anti uses the same dimensions as Connect-4
+    "colour-switch": { rows: 6, cols: 7 }, // Colour-switch also uses 6x7
   };
 
   const dimensions = modeDimensions[gameMode];
@@ -43,22 +44,7 @@ const validateBoard = (board, gameMode) => {
     );
   }
 
-  // Validate dynamic dimensions (e.g., var-grid, no-grav)
-  if (Array.isArray(dimensions.rows) && Array.isArray(dimensions.cols)) {
-    const [minRows, maxRows] = dimensions.rows;
-    const [minCols, maxCols] = dimensions.cols;
-
-    if (rows < minRows || rows > maxRows) return false;
-    return board.every(
-      (row) =>
-        Array.isArray(row) &&
-        row.length >= minCols &&
-        row.length <= maxCols &&
-        row.every((cell) => [-1, 0, 1].includes(cell))
-    );
-  }
-
-  return false;
+  return false; // Fallback for unsupported configurations
 };
 
 // Make a move
@@ -72,6 +58,7 @@ export const apiMakeMove = (column, board, currentPlayer, difficulty) =>
     })
   );
 
+// Get the best move
 export const getBestMove = (board, currentPlayer, gameMode, difficulty) => {
   if (!validateBoard(board, gameMode)) {
     throw new Error("Invalid board format");
@@ -94,8 +81,8 @@ export const generateRandomBoard = (moves) =>
   handleRequest(() => axios.post(`${API_BASE}/generate-board`, { moves }));
 
 // Get column scores
-export const getColumnScores = (board, currentPlayer) => {
-  if (!validateBoard(board)) {
+export const getColumnScores = (board, currentPlayer, gameMode) => {
+  if (!validateBoard(board, gameMode)) {
     throw new Error("Invalid board format");
   }
   if (![1, -1].includes(currentPlayer)) {
@@ -105,6 +92,7 @@ export const getColumnScores = (board, currentPlayer) => {
     axios.post(`${API_BASE}/column-scores`, {
       board,
       current_player: currentPlayer,
+      game_mode: gameMode,
     })
   );
 };

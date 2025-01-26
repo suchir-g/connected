@@ -22,7 +22,7 @@ const difficultyLevels = [
   "expert",
 ];
 
-const MOVE_LENGTH_THRESHOLD = 20; 
+const MOVE_LENGTH_THRESHOLD = 20;
 
 const Dashboard = () => {
   const { currentUser } = useContext(AuthContext);
@@ -38,7 +38,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const darkMode = useTheme().darkMode;
-  console.log("DARK MODE:",darkMode);
+  console.log("DARK MODE:", darkMode);
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!currentUser) return;
@@ -54,8 +54,8 @@ const Dashboard = () => {
         }));
 
         const totalGamesCount = games.length;
-        setRecentGames(games.slice(0, 5)); 
-        setTotalGamesCount(totalGamesCount); 
+        setRecentGames(games.slice(0, 5));
+        setTotalGamesCount(totalGamesCount);
 
         const winCount = games.filter((game) => game.result === "win").length;
         const lossCount = games.filter((game) => game.result === "loss").length;
@@ -98,7 +98,7 @@ const Dashboard = () => {
           last20Games.length > 0 ? totalMoves / last20Games.length : 0;
         setAverageMoveLength(averageMoveLength);
 
-        let lastSuccessfulDifficulty = "very_easy"; 
+        let lastSuccessfulDifficulty = "very_easy";
         let nextRecommendedDifficulty = "very_easy";
 
         for (let i = difficultyLevels.length - 1; i >= 0; i--) {
@@ -164,7 +164,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {averageMoveLength > MOVE_LENGTH_THRESHOLD && (
+          {averageMoveLength > MOVE_LENGTH_THRESHOLD ? (
             <div className="row g-3 mb-4">
               <div className="col-md-12">
                 <button
@@ -175,11 +175,22 @@ const Dashboard = () => {
                 </button>
               </div>
             </div>
+          ) : (
+            <div className="row g-3 mb-4">
+              <div className="col-md-12">
+                <button
+                  className="btn btn-warning w-100"
+                  onClick={() => navigate("/trainer?type=early")}
+                >
+                  Practice Early Game Positions
+                </button>
+              </div>
+            </div>
           )}
 
           <div className="row g-3 mb-4">
             <div className="col-lg-6 col-md-12">
-              <div className="card" style={{"border": "1px solid #808080"}}>
+              <div className="card" style={{ border: "1px solid #808080" }}>
                 <div className="card-body text-center">
                   <h5 className="card-title">Total Games Played</h5>
                   <p className="card-text fs-2">{totalGamesCount}</p>
@@ -187,7 +198,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="col-lg-6 col-md-12">
-              <div className="card"  style={{"border": "1px solid #808080"}}>
+              <div className="card" style={{ border: "1px solid #808080" }}>
                 <div className="card-body text-center">
                   <h5 className="card-title">Win/Loss Ratio</h5>
                   <p className="card-text fs-2">
@@ -202,7 +213,7 @@ const Dashboard = () => {
 
           <div className="row g-3 mb-4">
             <div className="col-lg-6 col-md-12">
-              <div className="card"  style={{"border": "1px solid #808080"}}>
+              <div className="card" style={{ border: "1px solid #808080" }}>
                 <div className="card-body">
                   <h5 className="card-title text-center">Daily Win Ratio</h5>
                   <div className="graph-container">
@@ -216,7 +227,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="col-lg-6 col-md-12">
-              <div className="card"  style={{"border": "1px solid #808080"}}>
+              <div className="card" style={{ border: "1px solid #808080" }}>
                 <div className="card-body">
                   <h5 className="card-title text-center">Wins vs Losses</h5>
                   <div className="graph-container">
@@ -233,32 +244,58 @@ const Dashboard = () => {
 
           <div className="row g-3">
             <div className="col-md-12">
-              <div className="card"  style={{"border": "1px solid #808080"}}>
+              <div className="card" style={{ border: "1px solid #808080" }}>
                 <div className="card-body">
                   <h5 className="card-title">Recent Games</h5>
                   {recentGames.length > 0 ? (
                     <table className={`table table-responsive ${styles.table}`}>
                       <thead>
                         <tr>
-                          <th style={{color: darkMode ? "white" : "black"}}>Date</th>
-                          <th style={{color: darkMode ? "white" : "black"}}>Result</th>
-                          <th style={{color: darkMode ? "white" : "black"}}>Difficulty</th>
-                          <th style={{color: darkMode ? "white" : "black"}}>Moves</th>
-                          <th style={{color: darkMode ? "white" : "black"}}>Action</th>
+                          <th style={{ color: darkMode ? "white" : "black" }}>
+                            Date
+                          </th>
+                          <th style={{ color: darkMode ? "white" : "black" }}>
+                            Result
+                          </th>
+                          <th style={{ color: darkMode ? "white" : "black" }}>
+                            Difficulty
+                          </th>
+                          <th style={{ color: darkMode ? "white" : "black" }}>
+                            Moves
+                          </th>
+                          <th style={{ color: darkMode ? "white" : "black" }}>
+                            Action
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {recentGames.map((game) => (
                           <tr key={game.id}>
-                            <td style={{color: darkMode ? "#8f8f8f" : "black"}}>
+                            <td
+                              style={{ color: darkMode ? "#8f8f8f" : "black" }}
+                            >
                               {new Date(
                                 game.timestamp.seconds * 1000
                               ).toLocaleString()}
                             </td>
-                            <td style={{color: darkMode ? "#8f8f8f" : "black"}}>{game.result.toUpperCase()}</td>
-                            <td style={{color: darkMode ? "#8f8f8f" : "black"}}>{game.difficulty}</td>
-                            <td style={{color: darkMode ? "#8f8f8f" : "black"}}>{game.moves}</td>
-                            <td style={{color: darkMode ? "#8f8f8f" : "black"}}>
+                            <td
+                              style={{ color: darkMode ? "#8f8f8f" : "black" }}
+                            >
+                              {game.result.toUpperCase()}
+                            </td>
+                            <td
+                              style={{ color: darkMode ? "#8f8f8f" : "black" }}
+                            >
+                              {game.difficulty}
+                            </td>
+                            <td
+                              style={{ color: darkMode ? "#8f8f8f" : "black" }}
+                            >
+                              {game.moves}
+                            </td>
+                            <td
+                              style={{ color: darkMode ? "#8f8f8f" : "black" }}
+                            >
                               <Link
                                 className="btn btn-primary btn-sm"
                                 to={`/review/${currentUser.uid}/${game.id}`}

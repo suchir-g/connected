@@ -71,3 +71,8 @@
 .cell.latest-move {
   border: 4px solid rgb(0, 0, 0);
 }
+
+/* Popout Highlight */
+.cell.popout-highlighted {
+  box-shadow: 0 0 10px 5px rgba(255, 0, 0, 0.7); /* Red glow */
+}

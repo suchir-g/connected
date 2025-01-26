@@ -11,45 +11,25 @@ app = Flask(__name__)
 CORS(app)
 
 def validate_board(board, game_mode):
-    print(board, game_mode)
     mode_dimensions = {
         'connect-4': (6, 7),
         'connect-5': (8, 9),
-        'var-grid': None,
-        'no-grav': None
+        'popout': (6, 7),
+        'anti': (6, 7),
+        'colour-switch': (6, 7),
     }
-
     if game_mode not in mode_dimensions:
-        logging.warning(f"Unsupported game mode: {game_mode}")
         return False
 
-    expected_dims = mode_dimensions.get(game_mode)
+    expected_dims = mode_dimensions[game_mode]
+    rows, cols = expected_dims
+    if len(board) != rows or any(len(row) != cols for row in board):
+        return False
 
-    if expected_dims:
-        rows, cols = expected_dims
-        if len(board) != rows:
-            logging.warning(f"Invalid number of rows for {game_mode}: {len(board)} (expected {rows})")
-            return False
-        for row in board:
-            if not isinstance(row, list) or len(row) != cols:
-                logging.warning(f"Invalid row length for {game_mode}: {len(row)} (expected {cols})")
-                return False
-    else:
-        # For variable grid modes, check dynamic dimensions
-        if len(board) < 4 or len(board) > 10:
-            return False
-        for row in board:
-            if len(row) < 4 or len(row) > 10:
-                return False
-
-    # Validate cell values
     for row in board:
         for cell in row:
             if cell not in [1, -1, 0]:
                 return False
-
-    return True
-
 
     return True
 
@@ -87,11 +67,16 @@ def best_move():
         winner = game_position.check_winner()
         if winner is not None:
             logging.info(f"Game already over. Winner: {winner}")
+            
+            if game_mode == "anti":
+                return jsonify({'best_move': None, 'board': board, 'outcome': current_player * -1}), 200
+            
             return jsonify({
                 'best_move': None,
                 'board': game_position.array_board,  # Include the final board state
                 'outcome': winner
             }), 200
+        
 
         if game_position.is_draw():
             logging.info("Game is a draw.")
@@ -108,8 +93,19 @@ def best_move():
             logging.error("Failed to calculate the best move!")
             return jsonify({'error': "Couldn't calculate the best move!"}), 500
 
-        # Apply the AI's move to the board
-        game_position.drop_piece(best_col, current_player)
+        # Handle the move based on the game mode
+        if game_mode == "popout" and best_col < 0:
+            # Handle popout move (negative column)
+            success = game_position.popout_piece(abs(best_col))
+            if not success:
+                logging.error(f"Popout failed for column {abs(best_col)}")
+                return jsonify({'error': 'Invalid popout move'}), 400
+        else:
+            # Standard drop move
+            success = game_position.drop_piece(best_col, current_player)
+            if not success:
+                logging.error(f"Drop failed for column {best_col}")
+                return jsonify({'error': 'Invalid drop move'}), 400
 
         # Check for a winner or draw after the AI's move
         outcome = game_position.check_winner()
@@ -117,7 +113,7 @@ def best_move():
             outcome = 0 if not game_position.is_draw() else -1  # 0 for ongoing, -1 for draw
 
         logging.info(f"Best move: {best_col}, Outcome: {outcome}")
-        logging.info(f"sending board {game_position.array_board}")
+        logging.debug(f"Updated board: {game_position.array_board}")
         return jsonify({
             'best_move': best_col,
             'board': game_position.array_board,  # Return updated board
@@ -127,7 +123,6 @@ def best_move():
     except Exception as e:
         logging.exception("An unexpected error occurred while processing the request.")
         return jsonify({'error': 'Internal server error'}), 500
-
 
 if __name__ == '__main__':
     logging.info("Starting the Flask application on port 5000")

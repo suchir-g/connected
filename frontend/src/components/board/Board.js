@@ -36,17 +36,36 @@ const Board = ({
       {board.map((row, rowIndex) => (
         <div key={rowIndex} className="board-row">
           {row.map((cell, colIndex) => {
-            const isHighlighted = highlightedColumns.includes(colIndex);
+            // Determine if the column is highlighted
+            const isHighlighted = highlightedColumns.some((highlighted) => {
+              // Popout moves are negative values
+              if (highlighted < 0) {
+                return Math.abs(highlighted) - 1 === colIndex; // Popout column
+              }
+              return highlighted === colIndex; // Regular column
+            });
+
+            // Determine if the column is a popout move
+            const isPopoutMove = highlightedColumns.includes(
+              -(colIndex + 1) // Popout column representation
+            );
+
+            // Determine if this cell is the latest move
             const isLatestMove =
               latestMove &&
               latestMove.row === rowIndex &&
               latestMove.column === colIndex;
 
+            // Apply appropriate cell classes
             let cellClass = "cell";
             if (cell === 1) cellClass += " player1";
             else if (cell === -1) cellClass += " player2";
 
-            if (isHighlighted) cellClass += " highlighted";
+            if (isHighlighted) {
+              cellClass += isPopoutMove
+                ? " popout-highlighted"
+                : " highlighted";
+            }
             if (isLatestMove) cellClass += " latest-move";
 
             return (
