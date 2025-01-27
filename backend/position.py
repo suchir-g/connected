@@ -70,24 +70,21 @@ class Position:
 
 	def popout_piece(self, col: int) -> bool:
 		if col < 0 or col >= self.COLS:
-			return False  # Invalid column
+			return False  
 
-		# Traverse bottom to top in the column
+		# traverse bottom to top in the column
 		for row in range(self.ROWS - 1, -1, -1):
 			if self.array_board[row][col] != 0:
-				# Remove the player's piece
 				self.array_board[row][col] = 0
 
-				# Shift all pieces above downward
 				for r in range(row, 0, -1):
 					self.array_board[r][col] = self.array_board[r - 1][col]
-				self.array_board[0][col] = 0  # Topmost cell is now empty
+				self.array_board[0][col] = 0 
 
-				# Update bitboards
 				self.update_bitboards()
 				return True
 
-		return False  # No valid piece to pop
+		return False  
 
 	def update_bitboards(self):
 		self.p1_bitboard = 0
@@ -109,23 +106,23 @@ class Position:
 		return valid
 
 	def check_winner(self) -> Optional[int]:
-		directions = [(1, 0), (0, 1), (1, 1), (1, -1)]  # Down, right, diagonal-right-down, diagonal-right-up
+		directions = [(1, 0), (0, 1), (1, 1), (1, -1)]  
 		for r in range(self.ROWS):
 			for c in range(self.COLS):
 				val = self.array_board[r][c]
 				if val == 0:
-					continue  # Skip empty cells
+					continue  
 				for dr, dc in directions:
 					count = 0
-					for i in range(self.n_in_a_row):  # Check n_in_a_row in the current direction
+					for i in range(self.n_in_a_row): 
 						rr, cc = r + dr * i, c + dc * i
 						if 0 <= rr < self.ROWS and 0 <= cc < self.COLS and self.array_board[rr][cc] == val:
 							count += 1
 						else:
 							break
 					if count == self.n_in_a_row:
-						return val  # Return the winner (1 or -1)
-		return None  # No winner
+						return val  
+		return None
 
 
 	def is_draw(self) -> bool:

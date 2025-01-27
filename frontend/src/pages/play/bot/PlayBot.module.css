@@ -1,4 +1,3 @@
-/* PlayBot.css */
 
 .board-container {
   width: 100%;
@@ -7,20 +6,17 @@
   box-sizing: border-box;
 }
 
-/* Ensure the board scales with the container */
 .board-container canvas,
 .board-container svg {
   width: 100% !important;
   height: auto !important;
 }
 
-/* Optional: Set a max height to prevent overflow */
 .board-container {
   max-height: 80vh;
   overflow: auto;
 }
 
-/* Adjust the size based on viewport width */
 @media (max-width: 768px) {
   .board-container {
     padding: 15px;

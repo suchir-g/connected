@@ -11,8 +11,8 @@ def compute_zobrist_hash(position, zobrist_table):
     for r in range(position.ROWS):
         for c in range(position.COLS):
             piece = position.array_board[r][c]
-            if piece == 1:  # Player 1
+            if piece == 1:  # player 1
                 h ^= zobrist_table[r][c][0]
-            elif piece == -1:  # Player 2
+            elif piece == -1:  # player 2
                 h ^= zobrist_table[r][c][1]
     return h

@@ -16,7 +16,7 @@ const getSelectedIndices = (length, count) => {
   return Array.from(new Set(indices));
 };
 
-const LineGraph = ({ labels = [], values = [], scale = 1 }) => {
+const LineGraph = ({ labels = [], values = [], scale = 1, color }) => {
   const canvasRef = useRef(null);
   const { darkMode } = useTheme();
 
@@ -91,7 +91,7 @@ const LineGraph = ({ labels = [], values = [], scale = 1 }) => {
       const y = canvas.height - padding - (value / maxValue) * height;
       ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = darkMode ? "#17a2b8" : "#007bff";
+    ctx.strokeStyle = (color ? color : (darkMode ? "#17a2b8" : "#007bff"));
     ctx.lineWidth = 2;
     ctx.stroke();
 

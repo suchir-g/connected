@@ -16,8 +16,8 @@ class Negamaxer:
         self.difficulty = difficulty
         self.mode = mode
 
-        rows = 6  # Default rows for Connect-4
-        cols = 7  # Default cols for Connect-4
+        rows = 6  
+        cols = 7  
 
         if mode == "connect-5":
             rows = 8
@@ -26,7 +26,7 @@ class Negamaxer:
             rows = 6
             cols = 7
 
-        if difficulty == 'expert' and mode == "connect-4":  # Restrict Zobrist hashing to Connect-4
+        if difficulty == 'expert' and mode == "connect-4": # only zobrist on expert connect 4
             try:
                 with open(opening_book_file, 'rb') as f:
                     self.opening_book = pickle.load(f)
@@ -35,7 +35,7 @@ class Negamaxer:
                 print("No opening book found. Now playing without one.")
 
             self.zobrist_table = init_zobrist(rows, cols)
-            self.transposition_table = {}  # For caching negamax results
+            self.transposition_table = {}  
         else:
             self.opening_book = None
             self.zobrist_table = None
@@ -44,8 +44,8 @@ class Negamaxer:
     def choose_move(self, position, player):
         print(f"Choosing move for player {player} with difficulty {self.difficulty}")
         
-        valid_moves = position.get_valid_moves()  # Normal drop moves
-        popout_moves = []  # Pop-out moves
+        valid_moves = position.get_valid_moves() 
+        popout_moves = []  
 
         if position.mode == "popout":
             popout_moves = [-col for col in range(position.COLS) if any(position.array_board[row][col] != 0 for row in range(position.ROWS))]
@@ -53,33 +53,30 @@ class Negamaxer:
         best_score = -float('inf')
         best_move = None
 
-        # Determine if color switch needs to be applied
-        total_moves = sum(row.count(0) for row in position.array_board)  # Count total empty cells
+        total_moves = sum(row.count(0) for row in position.array_board)  
         flip_colors = self.mode == "colour-switch" and (total_moves % 3 == 0)
 
-        # Evaluate drop moves
         for move in valid_moves:
             new_position = position.copy()
             new_position.drop_piece(move, player)
             if flip_colors:
-                player = -player  # Flip player for color-switch mode
+                player = -player
             score = -self.negamax(new_position, -player, self.max_depth, -float('inf'), float('inf'))
             if flip_colors:
-                player = -player  # Flip back after evaluation
+                player = -player  
             if score > best_score:
                 best_score = score
                 best_move = move
 
-        # Evaluate pop-out moves
         for move in popout_moves:
-            col = abs(move)  # Convert to positive column index for pop-out logic
+            col = abs(move)
             new_position = position.copy()
             if new_position.popout_piece(col):
                 if flip_colors:
-                    player = -player  # Flip player for color-switch mode
+                    player = -player  
                 score = -self.negamax(new_position, -player, self.max_depth, -float('inf'), float('inf'))
                 if flip_colors:
-                    player = -player  # Flip back after evaluation
+                    player = -player  
                 if score > best_score:
                     best_score = score
                     best_move = move
@@ -99,14 +96,11 @@ class Negamaxer:
 
         best_score = -float('inf')
 
-        # Determine if color switch needs to be applied
-        total_moves = sum(row.count(0) for row in position.array_board)  # Count total empty cells
+        total_moves = sum(row.count(0) for row in position.array_board) 
         flip_colors = self.mode == "colour-switch" and (total_moves % 3 == 0)
 
-        # Normal drop moves
         valid_moves = position.get_valid_moves()
 
-        # Pop-out moves (only in popout mode)
         popout_moves = []
         if position.mode == "popout":
             popout_moves = [
@@ -114,30 +108,28 @@ class Negamaxer:
                 if any(position.array_board[row][col] != 0 for row in range(position.ROWS))
             ]
 
-        # Evaluate normal drop moves
         for move in valid_moves:
             new_position = position.copy()
             new_position.drop_piece(move, player)
             if flip_colors:
-                player = -player  # Flip player for color-switch mode
+                player = -player  
             score = -self.negamax(new_position, -player, depth - 1, -beta, -alpha)
             if flip_colors:
-                player = -player  # Flip back after evaluation
+                player = -player  
             best_score = max(best_score, score)
             alpha = max(alpha, score)
             if alpha >= beta:
                 break
 
-        # Evaluate pop-out moves
         for move in popout_moves:
-            col = abs(move)  # Convert to positive column index for pop-out logic
+            col = abs(move)  
             new_position = position.copy()
             if new_position.popout_piece(col):
                 if flip_colors:
-                    player = -player  # Flip player for color-switch mode
+                    player = -player  
                 score = -self.negamax(new_position, -player, depth - 1, -beta, -alpha)
                 if flip_colors:
-                    player = -player  # Flip back after evaluation
+                    player = -player  
                 best_score = max(best_score, score)
                 alpha = max(alpha, score)
                 if alpha >= beta:
@@ -152,11 +144,11 @@ class Negamaxer:
         winner = position.check_winner()
         if winner == player:
             if position.mode == "anti":
-                return -10000  # In anti mode, winning is bad
+                return -10000  
             return 10000
         elif winner == -player:
             if position.mode == "anti":
-                return 10000  # In anti mode, opponent winning is good
+                return 10000  
             return -10000
 
         score = 0

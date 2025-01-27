@@ -264,7 +264,7 @@ const Stats = () => {
           <h4 className="text-center">
             Cumulative Win-to-Loss Ratio Over Time
           </h4>
-          <LineGraph labels={dailyLabels} values={dailyRatios} />
+          <LineGraph labels={dailyLabels} values={dailyRatios} color={"#20BF55"} />
         </div>
       )}
 

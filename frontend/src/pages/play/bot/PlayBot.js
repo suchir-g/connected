@@ -289,6 +289,7 @@ const PlayBot = () => {
         moves: movesRef.current,
         result: isDraw ? "draw" : gameOutcome === 1 ? "win" : "loss",
         bestMoves: [],
+        startPlayer: (firstPlayer == "player" ? 1 : -1)
       };
 
       await addDoc(gameSubCollection, gameData);
@@ -360,7 +361,7 @@ const PlayBot = () => {
               value={difficulty}
               onChange={handleDifficultyChange}
               className="form-select d-inline-block w-auto"
-              disabled={totalMoves > 0}
+              disabled={totalMoves > 1}
             >
               {difficultyLevels.map((level) => (
                 <option key={level} value={level}>

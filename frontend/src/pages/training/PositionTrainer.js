@@ -11,15 +11,6 @@ import {
 import { auth, db } from "../../config/firebase";
 import { doc, collection, addDoc } from "firebase/firestore";
 
-const DIFFICULTY_LEVELS = [
-  "very_easy",
-  "easy",
-  "medium",
-  "hard",
-  "very_hard",
-  "expert",
-];
-
 const GAME_MODES = ["connect-4", "popout"];
 
 const PositionTrainer = () => {

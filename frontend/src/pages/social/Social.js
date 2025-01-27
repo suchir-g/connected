@@ -9,7 +9,6 @@ const Social = () => {
     <div className="container mt-4" style={{ minHeight: "100vh" }}>
       <h2 className="mb-4">Social</h2>
 
-      {/* Row for FriendsList, FriendRequests, and SearchUser */}
       <div className="row g-3">
         <div className="col-lg-4 col-md-6">
           <div className="p-3 border rounded-3 h-100">
@@ -28,7 +27,6 @@ const Social = () => {
         </div>
       </div>
 
-      {/* Row for FriendRecommendations */}
       <div className="row g-3 mt-3">
         <div className="col-lg-4 col-md-6">
           <div className="p-3 border rounded-3 h-100">

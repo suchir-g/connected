@@ -62,7 +62,6 @@ def simulate_board(moves):
 
 @app.route('/bestmove', methods=['POST'])
 def best_move():
-    """Calculate the best move based on the current board and the game mode."""
     logging.info("Received request for /bestmove")
     data = request.get_json()
 
@@ -72,12 +71,11 @@ def best_move():
 
     board = data.get('board')
     current_player = data.get('current_player')
-    game_mode = data.get('game_mode', 'connect-4')  # Default to 'connect-4' if not provided
-    difficulty = data.get('difficulty', 'medium')  # Default to 'medium' if not provided
+    game_mode = data.get('game_mode', 'connect-4')  
+    difficulty = data.get('difficulty', 'medium')
 
     logging.debug(f"Request data: {data}")
 
-    # Validate board and player input
     if not validate_board(board, game_mode):
         logging.warning(f"Invalid board format: {board}")
         return jsonify({'error': 'Invalid board format'}), 400
@@ -87,10 +85,8 @@ def best_move():
         return jsonify({'error': 'Invalid current_player value - must be 1 or -1.'}), 400
 
     try:
-        # Initialize position and negamaxer
         game_position = Position(array_board=board, mode=game_mode)
 
-        # Check if the game is already over before making a move
         winner = game_position.check_winner()
         if winner is not None:
             logging.info(f"Game already over. Winner: {winner}")
@@ -100,7 +96,7 @@ def best_move():
             
             return jsonify({
                 'best_move': None,
-                'board': game_position.array_board,  # Include the final board state
+                'board': game_position.array_board, 
                 'outcome': winner
             }), 200
         
@@ -109,41 +105,36 @@ def best_move():
             logging.info("Game is a draw.")
             return jsonify({
                 'best_move': None,
-                'board': game_position.array_board,  # Include the final board state
-                'outcome': -1  # -1 indicates a draw
+                'board': game_position.array_board, 
+                'outcome': -1  
             }), 200
 
-        # Get the AI's move
         negamaxer = Negamaxer(difficulty=difficulty, mode=game_mode)
         best_col = negamaxer.choose_move(game_position, current_player)
         if best_col is None:
             logging.error("Failed to calculate the best move!")
             return jsonify({'error': "Couldn't calculate the best move!"}), 500
 
-        # Handle the move based on the game mode
         if game_mode == "popout" and best_col < 0:
-            # Handle popout move (negative column)
             success = game_position.popout_piece(abs(best_col))
             if not success:
                 logging.error(f"Popout failed for column {abs(best_col)}")
                 return jsonify({'error': 'Invalid popout move'}), 400
         else:
-            # Standard drop move
             success = game_position.drop_piece(best_col, current_player)
             if not success:
                 logging.error(f"Drop failed for column {best_col}")
                 return jsonify({'error': 'Invalid drop move'}), 400
 
-        # Check for a winner or draw after the AI's move
         outcome = game_position.check_winner()
         if outcome is None:
-            outcome = 0 if not game_position.is_draw() else -1  # 0 for ongoing, -1 for draw
+            outcome = 0 if not game_position.is_draw() else -1 
 
         logging.info(f"Best move: {best_col}, Outcome: {outcome}")
         logging.debug(f"Updated board: {game_position.array_board}")
         return jsonify({
             'best_move': best_col,
-            'board': game_position.array_board,  # Return updated board
+            'board': game_position.array_board, 
             'outcome': outcome
         }), 200
 
