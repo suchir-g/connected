@@ -1,4 +1,3 @@
-// src/components/friends/AddFriend.jsx
 import React, { useState } from "react";
 import { db } from "../../config/firebase";
 import {
@@ -36,7 +35,7 @@ const AddFriend = ({ targetUsername }) => {
 
       const targetUserDoc = querySnapshot.docs[0];
       const targetUser = targetUserDoc.data();
-      const targetUserID = targetUserDoc.id; // This is the document ID used as UID
+      const targetUserID = targetUserDoc.id; // the document id IS the user id
 
       console.log("Target User Data:", targetUser);
       console.log("Target User ID:", targetUserID);

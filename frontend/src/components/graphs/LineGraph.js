@@ -1,10 +1,8 @@
-// src/components/LineGraph.js
-
 import React, { useRef, useEffect } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
 import styles from "./LineGraph.module.css";
 
-// Helper function to get 5 equally spaced indices
+// helper function to get 5 equally spaced indices
 const getSelectedIndices = (length, count) => {
   if (count >= length) return [...Array(length).keys()];
   const step = (length - 1) / (count - 1);
@@ -47,7 +45,7 @@ const LineGraph = ({ labels = [], values = [], scale = 1 }) => {
 
     const maxValue = Math.max(...values, 1); // Prevent division by zero
 
-    // Draw Y-axis and X-axis
+    // draw x-axis and y-axis
     ctx.beginPath();
     ctx.moveTo(padding, padding);
     ctx.lineTo(padding, canvas.height - padding);
@@ -56,7 +54,6 @@ const LineGraph = ({ labels = [], values = [], scale = 1 }) => {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Draw Y-axis labels and grid lines
     const ySteps = 5;
     const stepValue = maxValue / ySteps;
     const stepHeight = height / ySteps;
@@ -78,13 +75,12 @@ const LineGraph = ({ labels = [], values = [], scale = 1 }) => {
       ctx.stroke();
     }
 
-    // Determine which indices to label
+    // determine which equally spaced indices to label
     const selectedIndices =
       labels.length > 5
         ? getSelectedIndices(labels.length, 5)
         : [...Array(labels.length).keys()];
 
-    // Draw the line graph
     ctx.beginPath();
     ctx.moveTo(
       padding,
@@ -99,18 +95,15 @@ const LineGraph = ({ labels = [], values = [], scale = 1 }) => {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Draw data points and selective labels
     values.forEach((value, index) => {
       const x = padding + (index * width) / (labels.length - 1);
       const y = canvas.height - padding - (value / maxValue) * height;
 
-      // Draw data points
       ctx.fillStyle = darkMode ? "#ffffff" : "#000000";
       ctx.beginPath();
       ctx.arc(x, y, 5 * scale, 0, 2 * Math.PI);
       ctx.fill();
 
-      // Draw X-axis labels if index is selected
       if (selectedIndices.includes(index)) {
         ctx.fillStyle = darkMode ? "#ffffff" : "#000000";
         ctx.textAlign = "center";

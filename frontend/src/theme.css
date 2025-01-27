@@ -1,10 +1,8 @@
-/* Light theme variables */
 :root {
   --bs-body-bg: #ffffff;
   --bs-body-color: #212121;
 
-  /* Bootstrap color overrides */
-  --bs-primary: #007bff; /* Main theme color */
+  --bs-primary: #007bff;
   --bs-secondary: #6c757d;
   --bs-success: #28a745;
   --bs-info: #17a2b8;
@@ -14,16 +12,14 @@
   --bs-dark: #343a40;
 
   --graph-bg: #f5f5f5;
-  --graph-bar-color: #17a2b8; /* Main theme color */
+  --graph-bar-color: #17a2b8; 
 }
 
-/* Dark theme variables */
 .dark-theme {
   --bs-body-bg: #1b1b1b;
   --bs-body-color: #ffffff;
 
-  /* Bootstrap color overrides */
-  --bs-primary: #17a2b8; /* Main theme color */
+  --bs-primary: #17a2b8;
   --bs-secondary: #6c757d;
   --bs-success: #28a745;
   --bs-info: #17a2b8;
@@ -33,7 +29,7 @@
   --bs-dark: #1b1b1b;
 
   --graph-bg: #2c2c2c;
-  --graph-bar-color: #17a2b8; /* Main theme color */
+  --graph-bar-color: #17a2b8; 
 }
 
 /* Global Overrides */
@@ -46,7 +42,6 @@ body,
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* Table Styles */
 table {
   background-color: var(--table-bg) !important;
   color: var(--table-text-color) !important;
@@ -57,7 +52,6 @@ table td {
   border-color: var(--table-border-color) !important;
 }
 
-/* Ensure Bootstrap table classes adapt to theme */
 .dark-theme .table {
   background-color: var(--table-bg) !important;
   color: var(--table-text-color) !important;
@@ -68,7 +62,6 @@ table td {
   border-color: var(--table-border-color) !important;
 }
 
-/* Graph Components */
 .graph-container {
   background-color: var(--graph-bg) !important;
   border-radius: 8px;
@@ -76,12 +69,10 @@ table td {
   transition: background-color 0.3s;
 }
 
-/* Ensure canvas background aligns with graph-container */
 .graph-container canvas {
   background-color: var(--graph-bg);
 }
 
-/* Ensure all text elements inherit color */
 a,
 a:hover,
 a:focus,
@@ -98,7 +89,6 @@ textarea {
   border-color: var(--bs-body-color) !important;
 }
 
-/* Ensure Bootstrap buttons adapt to theme */
 .btn-primary {
   background-color: var(--bs-primary) !important;
   border-color: var(--bs-primary) !important;

@@ -17,7 +17,6 @@ const PlayLocal = () => {
   const [lastMove, setLastMove] = useState({ row: null, column: null });
   const [error, setError] = useState(null);
 
-  // Define gameMode and difficulty
   const gameMode = "connect-4"; // Supported game mode
   const difficulty = "medium"; // You can set this based on your requirements
 

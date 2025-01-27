@@ -1,4 +1,3 @@
-// src/components/PositionTrainer.js
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -25,7 +24,7 @@ const GAME_MODES = ["connect-4", "popout"];
 
 const PositionTrainer = () => {
   const [gameMode, setGameMode] = useState("connect-4");
-  const [difficulty, setDifficulty] = useState("medium");
+  const [difficulty, setDifficulty] = useState("very_hard");
   const [rows, setRows] = useState(6);
   const [cols, setCols] = useState(7);
   const [actionMode, setActionMode] = useState("place");
@@ -38,29 +37,19 @@ const PositionTrainer = () => {
   const [userMove, setUserMove] = useState(null);
   const [aiBestMove, setAiBestMove] = useState(null);
 
-  // This tracks the total number of moves that were used to generate the board
-  // We'll store this in Firestore as "moves"
   const [randomMoves, setRandomMoves] = useState(0);
 
-  // If you still need them for debugging or internal logic:
   const movesRef = useRef("");
 
   const [searchParams] = useSearchParams();
   const [currentPlayer, setCurrentPlayer] = useState(1);
 
-  /**
-   * Ensures grid defaults (6x7) for Connect-4 or Popout.
-   */
   const setDefaultGrid = useCallback((mode) => {
     setRows(6);
     setCols(7);
     setActionMode("place");
   }, []);
 
-  /**
-   * 1) Function that saves minimal data to Firestore.
-   *    Must be declared BEFORE handlePlayerMove (so the latter can see it).
-   */
   const recordTrainingResult = useCallback(
     async (isCorrect, userMoveIndex, aiMove) => {
       if (!auth.currentUser) {
@@ -75,18 +64,16 @@ const PositionTrainer = () => {
         } else if (isCorrect === false) {
           resultString = "incorrect";
         } else {
-          // e.g., if there's a draw or immediate userWin
           resultString = "draw";
         }
 
-        // The AI move might be negative if it's a popout, store as-is:
         const bestMoveStored = aiMove !== null ? aiMove : null;
 
         const trainingData = {
           timestamp: new Date(),
           gameMode,
           result: resultString,
-          moves: randomMoves, // number of moves used to generate the board
+          moves: randomMoves, 
           aiBestMove: bestMoveStored,
         };
 
@@ -102,25 +89,20 @@ const PositionTrainer = () => {
     [gameMode, randomMoves]
   );
 
-  /**
-   * 2) Handle player's move, referencing recordTrainingResult
-   */
   const handlePlayerMove = useCallback(
     async (column) => {
       if (loading || error || moveMade) return;
 
       try {
-        // 1) Check if column is full
         if (board[0][column] !== 0) {
           setFeedback(`Column ${column + 1} is full. Choose another column.`);
           return;
         }
 
-        // 2) Apply user's move
         const updatedBoard = applyMove(
           board,
           column,
-          1, // Player is "1"
+          1,
           gameMode,
           rows,
           cols,
@@ -129,7 +111,6 @@ const PositionTrainer = () => {
         setBoard(updatedBoard);
         setFeedback("");
 
-        // Track the user move choice for local logic
         const moveNotation =
           actionMode === "place" ? `${column + 1}` : `-${column + 1}`;
         movesRef.current += moveNotation;
@@ -137,7 +118,6 @@ const PositionTrainer = () => {
         setMoveMade(true);
         setUserMove(column);
 
-        // 3) Check immediate win or draw for user
         if (checkWinner(updatedBoard, 1, gameMode)) {
           setFeedback("Congratulations! You win!");
           await recordTrainingResult(true, column, null);
@@ -149,11 +129,10 @@ const PositionTrainer = () => {
           return;
         }
 
-        // 4) Get best AI move
         setLoading(true);
         const aiMoveResponse = await getBestMove(
           updatedBoard,
-          -1, // AI is "-1"
+          -1, 
           gameMode,
           difficulty
         );
@@ -165,12 +144,11 @@ const PositionTrainer = () => {
           const aiMoveVal = aiMoveResponse.data.best_move;
           setAiBestMove(aiMoveVal);
 
-          // Compare player's move vs AI's recommended
           let aiMoveAction = "place";
           let aiMoveColumn = aiMoveVal;
           if (aiMoveVal < 0) {
             aiMoveAction = "popout";
-            aiMoveColumn = -aiMoveVal; // e.g., -3 => popout col 3
+            aiMoveColumn = -aiMoveVal; 
           }
 
           if (actionMode === aiMoveAction && aiMoveColumn === column) {
@@ -213,13 +191,10 @@ const PositionTrainer = () => {
       rows,
       cols,
       difficulty,
-      recordTrainingResult, // make sure recordTrainingResult is in the dependency array
+      recordTrainingResult, 
     ]
   );
 
-  /**
-   * 3) Generate a brand new training position from your backend
-   */
   const generateTrainingPosition = useCallback(
     async (type) => {
       setLoading(true);
@@ -257,7 +232,6 @@ const PositionTrainer = () => {
           setFeedback("");
           setCurrentPlayer(1);
 
-          // Store the randomMoves so we can save it in Firestore
           setRandomMoves(moveCount);
         } else {
           throw new Error("Invalid board data from API.");
@@ -272,19 +246,9 @@ const PositionTrainer = () => {
     [gameMode, difficulty]
   );
 
-  /**
-   * 4) On first load or param changes, read queries from URL
-   */
   useEffect(() => {
-    const queryDifficulty = searchParams.get("difficulty");
     const queryMode = searchParams.get("mode");
     const type = searchParams.get("type") || "early";
-
-    if (DIFFICULTY_LEVELS.includes(queryDifficulty)) {
-      setDifficulty(queryDifficulty);
-    } else {
-      setDifficulty("medium");
-    }
 
     if (GAME_MODES.includes(queryMode)) {
       setGameMode(queryMode);
@@ -297,11 +261,6 @@ const PositionTrainer = () => {
     setTrainingType(type);
     generateTrainingPosition(type);
   }, [searchParams, setDefaultGrid, generateTrainingPosition]);
-
-  // Handlers for changing difficulty/game mode
-  const handleDifficultyChange = (event) => {
-    setDifficulty(event.target.value);
-  };
 
   const handleGameModeChange = (event) => {
     const selectedMode = event.target.value;
@@ -316,9 +275,6 @@ const PositionTrainer = () => {
     generateTrainingPosition(type);
   };
 
-  // ------------------------------------------------------------------
-  // Render the Trainer
-  // ------------------------------------------------------------------
   return (
     <div
       className="container mt-4 text-center"
@@ -362,28 +318,6 @@ const PositionTrainer = () => {
 
       <div className="row mt-4">
         <div className="col d-flex justify-content-center flex-wrap">
-          <div className="me-3 mb-2">
-            <label htmlFor="difficulty" className="me-2">
-              AI Difficulty:
-            </label>
-            <select
-              id="difficulty"
-              value={difficulty}
-              onChange={handleDifficultyChange}
-              className="form-select w-auto"
-              disabled={moveMade}
-            >
-              {DIFFICULTY_LEVELS.map((level) => (
-                <option key={level} value={level}>
-                  {level
-                    .split("_")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ")}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="me-3 mb-2">
             <label htmlFor="gameMode" className="me-2">
               Game Mode:

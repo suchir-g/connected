@@ -54,7 +54,6 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         trimmedEmail,
@@ -62,7 +61,7 @@ const Register = () => {
       );
       const user = userCredential.user;
 
-      // Create a Firestore document in the `players` collection
+      // create a Firestore document in the players collection BUT the document id should be the uid
       const playerRef = doc(db, "players", user.uid);
       await setDoc(playerRef, {
         uid: user.uid,

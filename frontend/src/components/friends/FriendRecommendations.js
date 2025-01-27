@@ -42,6 +42,8 @@ const FriendRecommendations = () => {
         snapshot2.forEach((doc) => friendIds.add(doc.data().user1));
 
         const mutualFriendsCount = {};
+
+        // for the BFS we use a set to avoid duplicates
         const friendsOfFriends = new Set();
 
         for (let friendId of friendIds) {
@@ -116,7 +118,7 @@ const FriendRecommendations = () => {
           }
         }
 
-        setRecommendations(filteredFriendsData.slice(0, 5)); // limit to top 5 recommendations
+        setRecommendations(filteredFriendsData.slice(0, 5)); // limit to top 5 recommendations (only on the view)
       } catch (err) {
         console.error("Error fetching friend recommendations:", err);
       }

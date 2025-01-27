@@ -33,7 +33,6 @@ const App = () => {
       <Router>
         <Navbar />
         <Routes>
-          {/* Public Routes */}
           <Route path="/" element={<Landing />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
@@ -48,7 +47,6 @@ const App = () => {
 
           <Route path="/loading" element={<Loading />} />
 
-          {/* protected Routes */}
           <Route
             path="/dashboard"
             element={

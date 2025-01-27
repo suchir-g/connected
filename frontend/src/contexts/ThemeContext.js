@@ -7,7 +7,6 @@ export const useTheme = () => useContext(ThemeContext);
 export const ThemeProvider = ({ children }) => {
   const [darkMode, setDarkMode] = useState(true);
 
-  // Load from local storage on mount
   useEffect(() => {
     const storedTheme = localStorage.getItem("darkMode");
     if (storedTheme !== null) {
@@ -15,7 +14,6 @@ export const ThemeProvider = ({ children }) => {
     }
   }, []);
 
-  // Store updated state in local storage
   const toggleTheme = () => {
     setDarkMode((prev) => {
       const newValue = !prev;
