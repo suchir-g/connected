@@ -5,8 +5,8 @@ import { useTheme } from "../../contexts/ThemeContext";
 import styles from "./Navbar.module.css";
 
 const Navbar = () => {
-  const { currentUser, userData } = useAuth(); // Access `currentUser` and `userData` from AuthContext
-  const { darkMode } = useTheme(); // Access `darkMode` from ThemeContext
+  const { currentUser, userData } = useAuth(); 
+  const { darkMode } = useTheme(); 
 
   return (
     <nav
@@ -15,17 +15,16 @@ const Navbar = () => {
       } ${styles.navbar}`}
     >
       <div className="container-fluid">
-        {/* Brand */}
         <NavLink
           className={`navbar-brand fw-bold ${styles.navLink}`}
           to={currentUser ? "/dashboard" : "/"}
+          style={{letterSpacing: "2px"}}
         >
           <span style={{ color: darkMode ? "#ffffff" : "#000000" }}>
             CONNECTED
           </span>
         </NavLink>
 
-        {/* Toggler Button */}
         <button
           className="navbar-toggler"
           type="button"
@@ -38,12 +37,10 @@ const Navbar = () => {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* Navbar Links */}
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto">
             {currentUser ? (
               <>
-                {/* Dropdown for Play */}
                 <li className="nav-item dropdown">
                   <span
                     className={`nav-link dropdown-toggle ${styles.navLink}`}
@@ -79,14 +76,12 @@ const Navbar = () => {
                   </ul>
                 </li>
 
-                {/* Stats Link */}
                 <li className="nav-item">
                   <NavLink className={`nav-link ${styles.navLink}`} to="/stats">
                     Stats
                   </NavLink>
                 </li>
 
-                {/* Social Link */}
                 <li className="nav-item">
                   <NavLink
                     className={`nav-link ${styles.navLink}`}
@@ -98,14 +93,12 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                {/* Login Link */}
                 <li className="nav-item">
                   <NavLink className={`nav-link ${styles.navLink}`} to="/login">
                     Login
                   </NavLink>
                 </li>
 
-                {/* Register Link */}
                 <li className="nav-item">
                   <NavLink
                     className={`nav-link ${styles.navLink}`}
@@ -118,7 +111,6 @@ const Navbar = () => {
             )}
           </ul>
 
-          {/* User Profile or Loading Indicator */}
           {currentUser && (
             <ul className="navbar-nav ms-auto">
               {userData ? (

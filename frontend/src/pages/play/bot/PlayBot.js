@@ -22,7 +22,6 @@ const difficultyLevels = [
 const gameModes = ["connect-4", "connect-5", "popout", "anti", "colour-switch"];
 
 const PlayBot = () => {
-  // Correct initial board setup using Array.from
   const [board, setBoard] = useState(() =>
     Array.from({ length: 6 }, () => Array(7).fill(0))
   );
@@ -42,7 +41,6 @@ const PlayBot = () => {
   const [searchParams] = useSearchParams();
   const [error, setError] = useState(null);
 
-  // Effect to handle searchParams changes
   useEffect(() => {
     const queryDifficulty = searchParams.get("difficulty");
     const queryMode = searchParams.get("mode");
@@ -61,19 +59,14 @@ const PlayBot = () => {
       setGameMode("connect-4");
       setDefaultGrid("connect-4");
     }
-    // Removed resetGame from here
   }, [searchParams]);
 
-  // Effect to handle firstPlayer changes
   useEffect(() => {
     resetGame();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstPlayer]);
 
-  // Effect to reset game when rows or cols change
   useEffect(() => {
     resetGame();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, cols]);
 
   const setDefaultGrid = (mode) => {
@@ -94,17 +87,16 @@ const PlayBot = () => {
     setHighlightedColumns([]);
     setMoves("");
     movesRef.current = "";
-    setTotalMoves(0); // Reset move counter
+    setTotalMoves(0); 
     setIsLocked(false);
-    setError(null); // Clear any previous errors
+    setError(null); 
 
-    // If the bot is set to play first, make the bot's move
     if (firstPlayer === "bot") {
       setIsLocked(true);
       try {
         const response = await getBestMove(
           newBoard,
-          -1, // AI always plays as -1
+          -1, 
           gameMode,
           difficulty
         );
@@ -116,21 +108,18 @@ const PlayBot = () => {
 
         let finalBoard = updatedBoardAI;
 
-        // Handle board flipping for "colour-switch" mode
         if (gameMode === "colour-switch" && (totalMoves + 1) % 3 === 0) {
           finalBoard = flipBoardColors(updatedBoardAI);
         }
 
         setBoard(finalBoard);
 
-        // Update moves history
         if (aiMove !== null) {
           const aiMoveNotation = aiMove < 0 ? `${aiMove}` : `${aiMove + 1}`;
           movesRef.current += aiMoveNotation;
           setMoves(movesRef.current);
         }
 
-        // Check if the AI wins
         if (checkWinner(finalBoard, -1, gameMode)) {
           setWinner("AI");
           recordGameResult(-1, false);
@@ -138,7 +127,6 @@ const PlayBot = () => {
           return;
         }
 
-        // Check for a draw
         if (isDrawCondition(finalBoard)) {
           setIsDraw(true);
           recordGameResult(-1, true);
@@ -165,7 +153,6 @@ const PlayBot = () => {
   const handleMakeMove = async (column) => {
     if (isLocked || winner !== null || isDraw) return;
 
-    // Validation for popout mode
     if (actionMode === "popout") {
       const columnIsEmpty = board.every((row) => row[column] === 0);
       if (columnIsEmpty) {
@@ -174,11 +161,10 @@ const PlayBot = () => {
       }
     }
 
-    // Apply the player's move
     const updatedBoard = applyMove(
       board,
       column,
-      1, // Player always plays as 1
+      1, 
       gameMode,
       rows,
       cols,
@@ -186,17 +172,14 @@ const PlayBot = () => {
     );
     setBoard(updatedBoard);
 
-    // Clear any previous error message
     setError(null);
 
-    // Update move history and total moves
     const moveNotation =
       actionMode === "place" ? (column + 1).toString() : `-${column + 1}`;
     movesRef.current += moveNotation;
     setMoves(movesRef.current);
     setTotalMoves((prev) => prev + 1);
 
-    // Check if the player wins
     if (
       (checkWinner(updatedBoard, 1, gameMode) && gameMode !== "anti") ||
       (checkWinner(updatedBoard, -1, gameMode) && gameMode === "anti")
@@ -206,7 +189,6 @@ const PlayBot = () => {
       return;
     }
 
-    // Check if the AI wins (for 'anti' mode)
     if (
       (checkWinner(updatedBoard, -1, gameMode) && gameMode !== "anti") ||
       (checkWinner(updatedBoard, 1, gameMode) && gameMode === "anti")
@@ -216,7 +198,6 @@ const PlayBot = () => {
       return;
     }
 
-    // Check for a draw
     if (isDrawCondition(updatedBoard)) {
       setIsDraw(true);
       recordGameResult(-1, true);
@@ -226,10 +207,9 @@ const PlayBot = () => {
     setIsLocked(true);
 
     try {
-      // Fetch the AI's best move and outcome
       const response = await getBestMove(
         updatedBoard,
-        -1, // AI always plays as -1
+        -1,
         gameMode,
         difficulty
       );
@@ -241,21 +221,18 @@ const PlayBot = () => {
 
       let finalBoard = updatedBoardAI;
 
-      // Handle board flipping for "colour-switch" mode
       if (gameMode === "colour-switch" && (totalMoves + 1) % 3 === 0) {
         finalBoard = flipBoardColors(updatedBoardAI);
       }
 
       setBoard(finalBoard);
 
-      // Update moves history
       if (aiMove !== null) {
         const aiMoveNotation = aiMove < 0 ? `${aiMove}` : `${aiMove + 1}`;
         movesRef.current += aiMoveNotation;
         setMoves(movesRef.current);
       }
 
-      // Check if the AI wins
       if (checkWinner(finalBoard, -1, gameMode)) {
         setWinner("AI");
         recordGameResult(-1, false);
@@ -263,7 +240,6 @@ const PlayBot = () => {
         return;
       }
 
-      // Check for a draw
       if (isDrawCondition(finalBoard)) {
         setIsDraw(true);
         recordGameResult(-1, true);
@@ -289,12 +265,10 @@ const PlayBot = () => {
     setGameMode(selectedMode);
     setActionMode("place");
     setDefaultGrid(selectedMode);
-    // Removed resetGame from here
   };
 
   const handleFirstPlayerChange = (event) => {
     setFirstPlayer(event.target.value);
-    // The game will reset automatically due to the useEffect listening to firstPlayer changes
   };
 
   const recordGameResult = async (gameOutcome, isDraw) => {
@@ -315,6 +289,7 @@ const PlayBot = () => {
         moves: movesRef.current,
         result: isDraw ? "draw" : gameOutcome === 1 ? "win" : "loss",
         bestMoves: [],
+        startPlayer: (firstPlayer == "player" ? 1 : -1)
       };
 
       await addDoc(gameSubCollection, gameData);
@@ -341,7 +316,6 @@ const PlayBot = () => {
         </div>
       </div>
 
-      {/* First Player Selection */}
       <div className="row mt-4">
         <div className="col d-flex justify-content-center">
           <label htmlFor="firstPlayer" className="me-2 align-self-center">
@@ -360,7 +334,6 @@ const PlayBot = () => {
         </div>
       </div>
 
-      {/* Action Mode Selection for Popout */}
       {gameMode === "popout" && (
         <div className="row mt-4">
           <div className="col d-flex justify-content-center">
@@ -377,7 +350,6 @@ const PlayBot = () => {
         </div>
       )}
 
-      {/* Difficulty and Game Mode Selection */}
       <div className="row mt-4">
         <div className="col-md-6 d-flex justify-content-center mb-3 mb-md-0">
           <div>
@@ -389,7 +361,7 @@ const PlayBot = () => {
               value={difficulty}
               onChange={handleDifficultyChange}
               className="form-select d-inline-block w-auto"
-              disabled={totalMoves > 0}
+              disabled={totalMoves > 1}
             >
               {difficultyLevels.map((level) => (
                 <option key={level} value={level}>
@@ -426,7 +398,6 @@ const PlayBot = () => {
         </div>
       </div>
 
-      {/* Reset Game Button */}
       <div className="row mt-4">
         <div className="col d-flex justify-content-center">
           <button
@@ -439,7 +410,6 @@ const PlayBot = () => {
         </div>
       </div>
 
-      {/* Display Winner or Draw Message */}
       {winner && (
         <div className="alert alert-success mt-4">Winner: {winner}</div>
       )}

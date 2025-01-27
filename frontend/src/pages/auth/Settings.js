@@ -13,7 +13,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 
 const Settings = () => {
   const user = auth.currentUser;
-  const { darkMode } = useTheme(); // Access darkMode from ThemeContext
+  const { darkMode } = useTheme(); 
   const [newPassword, setNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [error, setError] = useState("");
@@ -91,7 +91,6 @@ const Settings = () => {
     <div className="container my-5">
       <h2 className="mb-4 text-center">Profile Settings</h2>
 
-      {/* Display Error and Success Messages */}
       {error && (
         <div
           className="alert alert-danger alert-dismissible fade show"
@@ -172,7 +171,6 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Delete Account Section */}
       <div className="card mb-4">
         <div className="card-header">
           <h5 className="mb-0">Delete Account</h5>
@@ -207,7 +205,6 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Sign Out Section */}
       <div className="card mb-4">
         <div className="card-header">
           <h5 className="mb-0">Sign Out</h5>
@@ -219,7 +216,6 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Toggle Theme Button */}
       <div className="text-center">
         <ToggleThemeButton />
       </div>

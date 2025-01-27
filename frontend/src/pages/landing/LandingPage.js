@@ -29,14 +29,12 @@ const LandingPage = () => {
     setIsDraw(false);
     setIsLocked(false);
 
-    // AI plays first
     setIsLocked(true);
     try {
       const response = await getBestMove(newBoard, -1, gameMode, difficulty);
       const updatedBoard = response.data.board;
       setBoard(updatedBoard);
 
-      // Check AI immediate win or draw
       if (checkWinner(updatedBoard, -1, gameMode)) {
         setWinner("AI");
         setIsLocked(false);
@@ -60,7 +58,6 @@ const LandingPage = () => {
     const updatedBoard = applyMove(board, column, 1, gameMode, 6, 7, "place");
     setBoard(updatedBoard);
 
-    // Player win or draw
     if (checkWinner(updatedBoard, 1, gameMode)) {
       setWinner("Player");
       return;
@@ -70,7 +67,6 @@ const LandingPage = () => {
       return;
     }
 
-    // AI's turn
     setIsLocked(true);
     try {
       const response = await getBestMove(
@@ -101,18 +97,16 @@ const LandingPage = () => {
 
   return (
     <div className="landing-page">
-      {/* Left Section */}
       <div className="landing-left">
         <h5 className="h4">Test your skills!</h5>
         {winner && <div className="alert alert-success">Winner: {winner}</div>}
         {isDraw && <div className="alert alert-warning">It's a draw!</div>}
         <Board rows={6} cols={7} board={board} onColumnClick={handleMakeMove} />
-        <button onClick={resetGame} className="btn btn-primary mt-1">
+        <button onClick={resetGame} className="btn btn-primary mt-1 landingButtonn">
           Play Again
         </button>
       </div>
 
-      {/* Right Section */}
       <div className="landing-right">
         <h1 className="landing-title">CONNECTED</h1>
         <p className="landing-description">

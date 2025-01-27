@@ -26,11 +26,11 @@ const difficultyLabels = [
 ];
 
 const Profile = () => {
-  const { username } = useParams(); // Get username from URL
+  const { username } = useParams(); 
   const [playerData, setPlayerData] = useState(null);
   const [allGames, setAllGames] = useState([]);
   const [recentGames, setRecentGames] = useState([]);
-  const [currentUsername, setCurrentUsername] = useState(""); // Current user's username from Firestore
+  const [currentUsername, setCurrentUsername] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const { currentUser } = useContext(AuthContext);
@@ -39,9 +39,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchCurrentUserUsername = async () => {
       try {
-        // Only attempt fetch if there's a logged-in user
         if (currentUser?.uid) {
-          // Build a doc ref using the UID as the doc ID in "players" collection
           const userDocRef = doc(db, "players", currentUser.uid);
           const docSnap = await getDoc(userDocRef);
 

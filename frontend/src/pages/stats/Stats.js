@@ -4,21 +4,19 @@ import { db } from "../../config/firebase";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { AuthContext } from "../../contexts/AuthContext";
 import BarGraph from "../../components/graphs/BarGraph";
-import LineGraph from "../../components/graphs/LineGraph"; // Still imported if needed
+import LineGraph from "../../components/graphs/LineGraph"; 
 import Loading from "../../components/loading/Loading";
 import { useTheme } from "../../contexts/ThemeContext";
 
-// Difficulty labels for main game stats
 const difficultyLabels = [
   "very_easy",
   "Easy",
-  "Medium",
-  "Hard",
+  "medium",
+  "hard",
   "very_hard",
   "Expert",
 ];
 
-// Game mode labels for main game stats
 const gameModeLabels = [
   "connect-4",
   "connect-5",
@@ -31,43 +29,34 @@ const Stats = () => {
   const { currentUser } = useContext(AuthContext);
   const { darkMode } = useTheme();
 
-  // ----- Main game stats -----
   const [statsData, setStatsData] = useState([]);
   const [variantStats, setVariantStats] = useState([]);
   const [gameHistory, setGameHistory] = useState([]);
 
-  // ----- Training data stats -----
   const [trainingData, setTrainingData] = useState([]);
   const [trainingStats, setTrainingStats] = useState({
     totalCorrect: 0,
     totalWrong: 0,
-    correctnessByMoves: {}, // { moveCount: { correct, wrong } }
+    correctnessByMoves: {}, 
   });
 
-  // ----- Error/loading states -----
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // ----- Pagination for main game history -----
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Calculate pagination indices
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentData = gameHistory.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(gameHistory.length / itemsPerPage);
 
-  // Handle page change
   const handlePageChange = (page) => {
     if (page > 0 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
 
-  //------------------------------------------------------------------
-  // 1) Fetch the main game history (subcollection "games")
-  //------------------------------------------------------------------
   useEffect(() => {
     if (!currentUser) {
       setError("User not authenticated.");
@@ -88,7 +77,6 @@ const Stats = () => {
           }));
           setGameHistory(games);
 
-          // Stats by difficulty
           const stats = difficultyLabels.map((label) => {
             const wins = games.filter(
               (game) =>
@@ -109,7 +97,6 @@ const Stats = () => {
           });
           setStatsData(stats);
 
-          // Stats by variant
           const variants = gameModeLabels.map((mode) => {
             const wins = games.filter(
               (game) => game.result === "win" && game.gameMode === mode
@@ -143,9 +130,6 @@ const Stats = () => {
     fetchGameHistory();
   }, [currentUser]);
 
-  //------------------------------------------------------------------
-  // 2) Fetch the training sessions (subcollection "trainingSessions")
-  //------------------------------------------------------------------
   useEffect(() => {
     if (!currentUser) return;
 
@@ -167,7 +151,6 @@ const Stats = () => {
           }));
           setTrainingData(trainingDocs);
 
-          // Aggregate stats
           const { totalCorrect, totalWrong, correctnessByMoves } =
             aggregateTrainingStats(trainingDocs);
           setTrainingStats({
@@ -184,23 +167,15 @@ const Stats = () => {
     fetchTrainingData();
   }, [currentUser]);
 
-  //------------------------------------------------------------------
-  // 3) Aggregate training stats
-  //------------------------------------------------------------------
   const aggregateTrainingStats = (trainingDocs) => {
     let totalCorrect = 0;
     let totalWrong = 0;
     const correctnessByMoves = {};
 
     trainingDocs.forEach((doc) => {
-      /**
-       * trainingDoc fields:
-       *   { result: "correct" | "incorrect" | "draw", moves, aiBestMove, ... }
-       */
       const { result, moves } = doc;
       const moveCount = moves || 0;
 
-      // Tally correctness
       if (result === "correct") {
         totalCorrect++;
         if (!correctnessByMoves[moveCount]) {
@@ -214,15 +189,11 @@ const Stats = () => {
         }
         correctnessByMoves[moveCount].wrong++;
       }
-      // ignore "draw" for correctness
     });
 
     return { totalCorrect, totalWrong, correctnessByMoves };
   };
 
-  //------------------------------------------------------------------
-  // 4) Prepare training data for graphs
-  //------------------------------------------------------------------
   const moveCounts = Object.keys(trainingStats.correctnessByMoves)
     .map(Number)
     .sort((a, b) => a - b);
@@ -234,15 +205,11 @@ const Stats = () => {
     (count) => trainingStats.correctnessByMoves[count].wrong
   );
 
-  // For ratio, we use "correct / wrong" or "correct" if wrong === 0
   const correctRatiosForMoves = moveCounts.map((count) => {
     const { correct, wrong } = trainingStats.correctnessByMoves[count];
     return wrong === 0 ? correct : correct / wrong;
   });
 
-  //------------------------------------------------------------------
-  // 5) Prepare daily win-loss ratio for main game stats
-  //------------------------------------------------------------------
   const winLossCumulative = gameHistory.reduce(
     (acc, game) => {
       const date = new Date(game.timestamp.seconds * 1000)
@@ -278,16 +245,12 @@ const Stats = () => {
     return losses === 0 ? wins : wins / losses;
   });
 
-  //------------------------------------------------------------------
-  // 6) Render
-  //------------------------------------------------------------------
   return (
     <div className="container mt-4">
       <h2 className="text-center">Statistics</h2>
       {error && <p className="text-danger">{error}</p>}
       {loading && <Loading />}
 
-      {/* ================= Main Game Stats (Daily Win/Loss Ratio) ================= */}
       {!loading && dailyLabels.length > 0 && (
         <div
           style={{
@@ -301,14 +264,12 @@ const Stats = () => {
           <h4 className="text-center">
             Cumulative Win-to-Loss Ratio Over Time
           </h4>
-          <LineGraph labels={dailyLabels} values={dailyRatios} />
+          <LineGraph labels={dailyLabels} values={dailyRatios} color={"#20BF55"} />
         </div>
       )}
 
-      {/* ================= Accordeon for Original, Variants, and Training ================= */}
       {!loading && (
         <div className="accordion" id="statsAccordion">
-          {/* --- Original --- */}
           <div className="accordion-item">
             <h2 className="accordion-header" id="headingOriginal">
               <button
@@ -356,7 +317,6 @@ const Stats = () => {
             </div>
           </div>
 
-          {/* --- Variants --- */}
           <div className="accordion-item">
             <h2 className="accordion-header" id="headingVariants">
               <button
@@ -404,7 +364,6 @@ const Stats = () => {
             </div>
           </div>
 
-          {/* --- Training Data --- */}
           <div className="accordion-item">
             <h2 className="accordion-header" id="headingTraining">
               <button
@@ -425,7 +384,6 @@ const Stats = () => {
               data-bs-parent="#statsAccordion"
             >
               <div className="accordion-body">
-                {/* Only show if we have training data */}
                 {trainingData.length > 0 ? (
                   <>
                     <div className="row my-3">
@@ -479,7 +437,6 @@ const Stats = () => {
         </div>
       )}
 
-      {/* ================= Game History Table (Paginated) ================= */}
       {!loading && gameHistory.length > 0 && (
         <>
           <h3 className="mt-5 mb-3">Game History</h3>
@@ -538,7 +495,6 @@ const Stats = () => {
             </table>
           </div>
 
-          {/* Pagination Controls */}
           <div className="d-flex justify-content-center my-3">
             <button
               className="btn btn-primary me-2"
@@ -561,7 +517,6 @@ const Stats = () => {
         </>
       )}
 
-      {/* If no stats data or game history */}
       {!loading && statsData.length === 0 && gameHistory.length === 0 && (
         <p>No statistics available. Play a game to start tracking!</p>
       )}

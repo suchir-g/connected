@@ -6,9 +6,9 @@ export const boardToBinary = (board) => {
     row.forEach((cell, colIndex) => {
       const cellIndex = rowIndex * board[0].length + colIndex;
       if (cell === 1) {
-        player1Binary |= 1 << cellIndex; // Set bit for Player 1
+        player1Binary |= 1 << cellIndex; 
       } else if (cell === -1) {
-        player2Binary |= 1 << cellIndex; // Set bit for Player 2
+        player2Binary |= 1 << cellIndex; 
       }
     });
   });
@@ -23,9 +23,9 @@ export const binaryToBoard = (player1Binary, player2Binary, rows, cols) => {
     for (let col = 0; col < cols; col++) {
       const cellIndex = row * cols + col;
       if ((player1Binary >> cellIndex) & 1) {
-        board[row][col] = 1; // 1 is player 1
+        board[row][col] = 1; 
       } else if ((player2Binary >> cellIndex) & 1) {
-        board[row][col] = -1; // -1 is player 2
+        board[row][col] = -1; 
       }
     }
   }

@@ -17,9 +17,8 @@ const PlayLocal = () => {
   const [lastMove, setLastMove] = useState({ row: null, column: null });
   const [error, setError] = useState(null);
 
-  // Define gameMode and difficulty
-  const gameMode = "connect-4"; // Supported game mode
-  const difficulty = "medium"; // You can set this based on your requirements
+  const gameMode = "connect-4"; 
+  const difficulty = "medium"; 
 
   const initializeGame = () => {
     setBoard(initialBoard);
@@ -87,10 +86,10 @@ const PlayLocal = () => {
 
   const isWinningMove = (board, row, column, player) => {
     const directions = [
-      { dr: 0, dc: 1 }, // Horizontal
-      { dr: 1, dc: 0 }, // Vertical
-      { dr: 1, dc: 1 }, // Diagonal down-right
-      { dr: 1, dc: -1 }, // Diagonal down-left
+      { dr: 0, dc: 1 }, // horizontal
+      { dr: 1, dc: 0 }, // vertical
+      { dr: 1, dc: 1 }, // diagonal down-right
+      { dr: 1, dc: -1 }, // diagonal down-left
     ];
 
     for (let { dr, dc } of directions) {

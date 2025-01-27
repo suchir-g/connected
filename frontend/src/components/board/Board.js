@@ -1,9 +1,9 @@
 import "./Board.css";
 
 const Board = ({
-  rows = 6, // Default to 6 rows
-  cols = 7, // Default to 7 columns
-  board = Array.from({ length: 6 }, () => Array.from({ length: 7 }, () => 0)), // Default to 6x7 empty board
+  rows = 6, // default to 6 rows
+  cols = 7, // default to 7 columns
+  board = Array.from({ length: 6 }, () => Array.from({ length: 7 }, () => 0)), // default to 6x7 empty board
   highlightedColumns = [],
   latestMove = null,
   onColumnClick,
@@ -17,13 +17,15 @@ const Board = ({
     onColumnClick,
   });
 
+  // if the board hasn't loaded render a small loading board component
+
   if (
     !Array.isArray(board) ||
     board.length !== rows ||
     !board.every((row) => Array.isArray(row) && row.length === cols)
   ) {
     return <div className="board-loading">LOADING BOARD...</div>;
-  }
+  } 
 
   return (
     <div
@@ -36,27 +38,25 @@ const Board = ({
       {board.map((row, rowIndex) => (
         <div key={rowIndex} className="board-row">
           {row.map((cell, colIndex) => {
-            // Determine if the column is highlighted
             const isHighlighted = highlightedColumns.some((highlighted) => {
-              // Popout moves are negative values
+              // since popout moves are negative values, deal with the highlighted seperatley
               if (highlighted < 0) {
-                return Math.abs(highlighted) - 1 === colIndex; // Popout column
+                return Math.abs(highlighted) - 1 === colIndex; 
               }
-              return highlighted === colIndex; // Regular column
+              return highlighted === colIndex; 
             });
 
-            // Determine if the column is a popout move
             const isPopoutMove = highlightedColumns.includes(
-              -(colIndex + 1) // Popout column representation
+              -(colIndex + 1)
             );
 
-            // Determine if this cell is the latest move
+            // determine if this cell is the latest move
             const isLatestMove =
               latestMove &&
               latestMove.row === rowIndex &&
               latestMove.column === colIndex;
 
-            // Apply appropriate cell classes
+            // apply appropriate cell classes
             let cellClass = "cell";
             if (cell === 1) cellClass += " player1";
             else if (cell === -1) cellClass += " player2";

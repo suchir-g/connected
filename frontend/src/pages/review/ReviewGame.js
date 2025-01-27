@@ -1,15 +1,14 @@
-// ReviewGame.js
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "../../config/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import Board from "../../components/board/Board";
 import { getBestMove } from "../../config/api";
-import { useTheme } from "../../contexts/ThemeContext"; // Import useTheme
+import { useTheme } from "../../contexts/ThemeContext"; 
 
 const ReviewGame = () => {
   const { gameId, playerId } = useParams();
-  const { darkMode } = useTheme(); // Destructure darkMode from context
+  const { darkMode } = useTheme(); 
 
   const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0)));
   const [moves, setMoves] = useState([]);
@@ -68,7 +67,7 @@ const ReviewGame = () => {
       } else {
         const move = parseInt(char, 10);
         if (!isNaN(move)) {
-          parsed.push(isNegative ? -move : move - 1); // Convert to 0-based index
+          parsed.push(isNegative ? -move : move - 1); 
           isNegative = false;
         }
       }
@@ -148,7 +147,7 @@ const ReviewGame = () => {
     let tempBoard = Array(6).fill(Array(7).fill(0));
 
     for (let i = 0; i <= moveIndex; i++) {
-      const player = i % 2 === 0 ? 1 : -1;
+      const player = (i % 2 + 0 === 0) ? 1 : -1;
 
       if (gameMode === "colour-switch" && i > 0 && i % 3 === 0) {
         tempBoard = flipBoardColors(tempBoard);
@@ -182,7 +181,6 @@ const ReviewGame = () => {
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moves, currentMoveIndex]);
 
   if (loading) {
@@ -223,7 +221,6 @@ const ReviewGame = () => {
 
   return (
     <div className="container py-4">
-      {/* Header Card */}
       <div
         className={`card mb-4 shadow-sm border-${darkMode ? "white" : "dark"}`}
       >
@@ -267,7 +264,6 @@ const ReviewGame = () => {
         </div>
       </div>
 
-      {/* Board Display Card */}
       <div
         className={`card mb-4 shadow-sm border-${darkMode ? "white" : "dark"}`}
       >

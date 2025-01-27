@@ -22,7 +22,7 @@ const difficultyLevels = [
   "expert",
 ];
 
-const MOVE_LENGTH_THRESHOLD = 20;
+const MOVE_LENGTH_THRESHOLD = 20; // this is a constant for long and short moves
 
 const Dashboard = () => {
   const { currentUser } = useContext(AuthContext);
@@ -65,7 +65,7 @@ const Dashboard = () => {
           (acc, game) => {
             const date = new Date(game.timestamp.seconds * 1000)
               .toISOString()
-              .split("T")[0]; // extract YYYY-MM-DD
+              .split("T")[0]; 
             const isWin = game.result === "win";
             const isLoss = game.result === "loss";
 
