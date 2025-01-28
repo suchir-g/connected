@@ -19,7 +19,7 @@ The backend is built using Flask and includes the following main components:
 * `backend/position.py`: Represents the game board and provides methods for making moves, checking for a winner, and evaluating board positions.
 * `backend/generateOpeningBook.py`: Script to generate an opening book for the AI player.
 * `backend/opening_book.pkl`: The opening book file used by the AI player (content not shown).
-* `backend/zobristHashing.py`: Implements Zobrist hashing for efficient board state representation (content not shown).
+* `backend/zobristHashing.py`: Implements Zobrist hashing for efficient board state representation.
 
 ## Frontend
 

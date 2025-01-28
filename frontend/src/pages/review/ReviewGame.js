@@ -9,7 +9,7 @@ import Loading from "../../components/loading/Loading";
 
 const ReviewGame = () => {
   const { gameId, playerId } = useParams();
-  const { darkMode } = useTheme();
+  const { darkMode } = useTheme(); 
 
   const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0)));
   const [moves, setMoves] = useState([]);
