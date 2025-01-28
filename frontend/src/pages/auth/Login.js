@@ -1,68 +1,110 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { auth } from "../../config/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../../contexts/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+import { useTheme } from "../../contexts/ThemeContext";
+import Loading from "../../components/loading/Loading";
+import { getFirebaseErrorMessage } from "../../config/errors";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false); // State for loading indicator
 
   const navigate = useNavigate();
 
-  const signInEmailPassword = async () => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+  const { darkMode } = useTheme(); // Consume ThemeContext
 
+  const signInEmailPassword = async () => {
+    setError("");
+    setLoading(true); // Start loading
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message);
+      const friendlyMessage = getFirebaseErrorMessage(err);
+      setError(friendlyMessage);
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
   return (
-    <div className="container mt-5" style={{ minHeight: "100vh" }}>
+    <div
+      className={`container mt-5 ${darkMode ? "bg-dark text-white" : ""}`}
+      style={{ minHeight: "100vh", padding: "20px" }}
+    >
       <div className="row justify-content-center">
         <div className="col-md-6">
-          <div className="card">
-            <div className="card-body">
-              <h2 className="card-title text-center mb-4">Login</h2>
-              {error && <div className="alert alert-danger">{error}</div>}
+          <div className="card-body">
+            <h2 className="card-title text-center mb-4">Login</h2>
+
+            {error && (
+              <div className="alert alert-danger w-100" role="alert">
+                {error}
+              </div>
+            )}
+
+            {loading && <Loading />}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                signInEmailPassword();
+              }}
+            >
               <div className="mb-3">
                 <label htmlFor="email" className="form-label">
                   Email address
                 </label>
                 <input
                   type="email"
-                  className="form-control"
+                  className={`form-control ${
+                    darkMode ? "bg-dark text-white" : ""
+                  }`}
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="Enter your email"
                 />
               </div>
+
               <div className="mb-3">
                 <label htmlFor="password" className="form-label">
                   Password
                 </label>
                 <input
                   type="password"
-                  className="form-control"
+                  className={`form-control ${
+                    darkMode ? "bg-dark text-white" : ""
+                  }`}
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Enter your password"
                 />
               </div>
+
               <button
+                type="submit"
                 className="btn btn-primary w-100"
-                onClick={signInEmailPassword}
+                disabled={loading} // Disable button while loading
               >
-                Login
+                {loading ? "Logging in..." : "Login"}
               </button>
+            </form>
+
+            {/* Link to Registration */}
+            <div className="mt-3 text-center">
+              <p>
+                Don't have an account?{" "}
+                <Link to="/register" className="link-primary">
+                  Register here
+                </Link>
+              </p>
             </div>
           </div>
         </div>

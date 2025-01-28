@@ -4,11 +4,12 @@ import { db } from "../../config/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import Board from "../../components/board/Board";
 import { getBestMove } from "../../config/api";
-import { useTheme } from "../../contexts/ThemeContext"; 
+import { useTheme } from "../../contexts/ThemeContext";
+import Loading from "../../components/loading/Loading";
 
 const ReviewGame = () => {
   const { gameId, playerId } = useParams();
-  const { darkMode } = useTheme(); 
+  const { darkMode } = useTheme();
 
   const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0)));
   const [moves, setMoves] = useState([]);
@@ -21,7 +22,7 @@ const ReviewGame = () => {
   const [evaluating, setEvaluating] = useState(false);
   const [error, setError] = useState("");
   const [difficulty, setDifficulty] = useState("medium");
-
+  const [startPlayer, setStartPlayer] = useState(1);
   useEffect(() => {
     const fetchGame = async () => {
       try {
@@ -38,6 +39,9 @@ const ReviewGame = () => {
 
           const gameDifficulty = gameData.difficulty || "medium";
           setDifficulty(gameDifficulty);
+
+          const gameStartPlayer = gameData.startPlayer || 1;
+          setStartPlayer(gameStartPlayer);
 
           if (gameData.bestMoves && gameData.bestMoves.length > 0) {
             setPrecomputedBestMoves(gameData.bestMoves);
@@ -67,7 +71,7 @@ const ReviewGame = () => {
       } else {
         const move = parseInt(char, 10);
         if (!isNaN(move)) {
-          parsed.push(isNegative ? -move : move - 1); 
+          parsed.push(isNegative ? -move : move - 1);
           isNegative = false;
         }
       }
@@ -88,7 +92,7 @@ const ReviewGame = () => {
     const bestMoves = [];
 
     for (let i = 0; i < moves.length; i++) {
-      const player = i % 2 === 0 ? 1 : -1;
+      const player = (i + (startPlayer == 1 ? 0 : 1)) % 2 === 0 ? 1 : -1;
 
       if (gameMode === "colour-switch" && i > 0 && i % 3 === 0) {
         tempBoard = flipBoardColors(tempBoard);
@@ -147,7 +151,7 @@ const ReviewGame = () => {
     let tempBoard = Array(6).fill(Array(7).fill(0));
 
     for (let i = 0; i <= moveIndex; i++) {
-      const player = (i % 2 + 0 === 0) ? 1 : -1;
+      const player = (i + (startPlayer == 1 ? 0 : 1)) % 2 === 0 ? 1 : -1;
 
       if (gameMode === "colour-switch" && i > 0 && i % 3 === 0) {
         tempBoard = flipBoardColors(tempBoard);
@@ -184,22 +188,13 @@ const ReviewGame = () => {
   }, [moves, currentMoveIndex]);
 
   if (loading) {
-    return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "100vh" }}
-      >
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading game...</span>
-        </div>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (error) {
     return (
       <div className="container mt-4">
-        <div className="alert alert-danger" role="alert">
+        <div className="alert alert-danger w-100" role="alert">
           {error}
         </div>
       </div>
@@ -207,16 +202,7 @@ const ReviewGame = () => {
   }
 
   if (evaluating) {
-    return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "100vh" }}
-      >
-        <div className="spinner-border text-warning" role="status">
-          <span className="visually-hidden">Computing evaluation...</span>
-        </div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (

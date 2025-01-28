@@ -87,19 +87,14 @@ const PlayBot = () => {
     setHighlightedColumns([]);
     setMoves("");
     movesRef.current = "";
-    setTotalMoves(0); 
+    setTotalMoves(0);
     setIsLocked(false);
-    setError(null); 
+    setError(null);
 
     if (firstPlayer === "bot") {
       setIsLocked(true);
       try {
-        const response = await getBestMove(
-          newBoard,
-          -1, 
-          gameMode,
-          difficulty
-        );
+        const response = await getBestMove(newBoard, -1, gameMode, difficulty);
         const {
           best_move: aiMove,
           board: updatedBoardAI,
@@ -164,7 +159,7 @@ const PlayBot = () => {
     const updatedBoard = applyMove(
       board,
       column,
-      1, 
+      1,
       gameMode,
       rows,
       cols,
@@ -289,7 +284,7 @@ const PlayBot = () => {
         moves: movesRef.current,
         result: isDraw ? "draw" : gameOutcome === 1 ? "win" : "loss",
         bestMoves: [],
-        startPlayer: (firstPlayer == "player" ? 1 : -1)
+        startPlayer: firstPlayer === "player" ? 1 : -1,
       };
 
       await addDoc(gameSubCollection, gameData);
@@ -300,7 +295,7 @@ const PlayBot = () => {
 
   return (
     <div className="container mt-4 text-center" style={{ minHeight: "100vh" }}>
-      {error && <div className="alert alert-warning">{error}</div>}
+      {error && <div className="alert alert-warning w-100">{error}</div>}
 
       <h1 className="my-4">Play against Bot</h1>
 
@@ -411,9 +406,11 @@ const PlayBot = () => {
       </div>
 
       {winner && (
-        <div className="alert alert-success mt-4">Winner: {winner}</div>
+        <div className="alert alert-success mt-4 w-100">Winner: {winner}</div>
       )}
-      {isDraw && <div className="alert alert-warning mt-4">It's a draw!</div>}
+      {isDraw && (
+        <div className="alert alert-warning mt-4 w-100">It's a draw!</div>
+      )}
     </div>
   );
 };

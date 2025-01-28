@@ -7,16 +7,16 @@ const Footer = () => {
       <div className="container text-center">
         <h3 className="mb-4">Connected</h3>
         <nav className="mb-3">
-          <a href="/" className="px-3 text-white">
+          <a href="/" className="px-3 text-secondary">
             Home
           </a>
-          <a href="/register" className="px-3 text-white">
+          <a href="/register" className="px-3 text-secondary">
             Register
           </a>
-          <a href="https://synapse.education/" className="px-3 text-white">
+          <a href="https://synapse.education/" className="px-3 text-secondary">
             Synapse Education
           </a>
-          <a href="https://github.com/suchir-g" className="px-3 text-white">
+          <a href="https://github.com/suchir-g" className="px-3 text-secondary">
             My Github
           </a>
         </nav>
