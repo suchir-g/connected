@@ -89,6 +89,8 @@ const PositionTrainer = () => {
           return;
         }
 
+        const oldBoard = board;
+
         const updatedBoard = applyMove(
           board,
           column,
@@ -121,7 +123,7 @@ const PositionTrainer = () => {
 
         setLoading(true);
         const aiMoveResponse = await getBestMove(
-          updatedBoard,
+          oldBoard,
           -1,
           gameMode,
           difficulty
