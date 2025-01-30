@@ -10,10 +10,11 @@ import {
 import { doc, deleteDoc } from "firebase/firestore";
 import ToggleThemeButton from "../../components/navbar/ToggleThemeButton";
 import { useTheme } from "../../contexts/ThemeContext";
+import "./Settings.css";
 
 const Settings = () => {
   const user = auth.currentUser;
-  const { darkMode } = useTheme(); 
+  const { darkMode, toggleDarkMode } = useTheme();
   const [newPassword, setNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [error, setError] = useState("");
@@ -88,12 +89,14 @@ const Settings = () => {
   };
 
   return (
-    <div className="container my-5">
+    <div className={`container my-5 ${darkMode ? "dark-mode" : "light-mode"}`}>
       <h2 className="mb-4 text-center">Profile Settings</h2>
-
+      <div className="text-center my-3">
+        <ToggleThemeButton />
+      </div>
       {error && (
         <div
-          className="alert alert-danger alert-dismissible fade show"
+          className={`alert alert-danger alert-dismissible fade show`}
           role="alert"
         >
           {error}
@@ -108,7 +111,7 @@ const Settings = () => {
       )}
       {success && (
         <div
-          className="alert alert-success alert-dismissible fade show"
+          className={`alert alert-success alert-dismissible fade show`}
           role="alert"
         >
           {success}
@@ -171,6 +174,7 @@ const Settings = () => {
         </div>
       </div>
 
+      {/* Delete Account Section */}
       <div className="card mb-4">
         <div className="card-header">
           <h5 className="mb-0">Delete Account</h5>
@@ -205,6 +209,7 @@ const Settings = () => {
         </div>
       </div>
 
+      {/* Sign Out Section */}
       <div className="card mb-4">
         <div className="card-header">
           <h5 className="mb-0">Sign Out</h5>
@@ -216,9 +221,7 @@ const Settings = () => {
         </div>
       </div>
 
-      <div className="text-center">
-        <ToggleThemeButton />
-      </div>
+      {/* Theme Toggle Button */}
     </div>
   );
 };

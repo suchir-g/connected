@@ -7,8 +7,11 @@ import {
   applyMove,
 } from "../../utilities/gameState";
 import "./LandingPage.css";
+import { useTheme } from "../../contexts/ThemeContext"; // Import useTheme
 
 const LandingPage = () => {
+  const { darkMode } = useTheme(); // Destructure darkMode from ThemeContext
+
   const [board, setBoard] = useState(() =>
     Array.from({ length: 6 }, () => Array(7).fill(0))
   );
@@ -96,13 +99,24 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="landing-page">
+    <div className={`landing-page ${darkMode ? "dark" : "light"}`}>
       <div className="landing-left">
         <h5 className="h4">Test your skills!</h5>
-        {winner && <div className="alert alert-success">Winner: {winner}</div>}
+        {winner && (
+          <div
+            className={`alert ${
+              winner === "AI" ? "alert-success" : "alert-primary"
+            }`}
+          >
+            Winner: {winner}
+          </div>
+        )}
         {isDraw && <div className="alert alert-warning">It's a draw!</div>}
         <Board rows={6} cols={7} board={board} onColumnClick={handleMakeMove} />
-        <button onClick={resetGame} className="btn btn-primary mt-1 landingButtonn">
+        <button
+          onClick={resetGame}
+          className="btn btn-primary mt-1 landingButtonn"
+        >
           Play Again
         </button>
       </div>

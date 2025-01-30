@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import Board from "../../components/board/Board";
@@ -64,7 +63,7 @@ const PositionTrainer = () => {
           timestamp: new Date(),
           gameMode,
           result: resultString,
-          moves: randomMoves, 
+          moves: randomMoves,
           aiBestMove: bestMoveStored,
         };
 
@@ -123,7 +122,7 @@ const PositionTrainer = () => {
         setLoading(true);
         const aiMoveResponse = await getBestMove(
           updatedBoard,
-          -1, 
+          -1,
           gameMode,
           difficulty
         );
@@ -139,7 +138,7 @@ const PositionTrainer = () => {
           let aiMoveColumn = aiMoveVal;
           if (aiMoveVal < 0) {
             aiMoveAction = "popout";
-            aiMoveColumn = -aiMoveVal; 
+            aiMoveColumn = -aiMoveVal;
           }
 
           if (actionMode === aiMoveAction && aiMoveColumn === column) {
@@ -182,7 +181,7 @@ const PositionTrainer = () => {
       rows,
       cols,
       difficulty,
-      recordTrainingResult, 
+      recordTrainingResult,
     ]
   );
 
@@ -271,7 +270,7 @@ const PositionTrainer = () => {
       className="container mt-4 text-center"
       style={{ minHeight: "100vh", padding: "20px" }}
     >
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && <div className="alert alert-danger w-100">{error}</div>}
 
       <h1 className="my-4">Position Trainer</h1>
 
