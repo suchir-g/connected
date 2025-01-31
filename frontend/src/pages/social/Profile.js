@@ -182,7 +182,7 @@ const Profile = () => {
                       <th>Result</th>
                       <th>Difficulty</th>
                       <th>Gamemode</th>
-                      <th>Moves</th>
+                      <th>No. Moves</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -217,7 +217,7 @@ const Profile = () => {
                             : "N/A"}
                         </td>
                         <td>{game.gameMode || "N/A"}</td>
-                        <td>{game.moves || "No moves"}</td>
+                        <td>{game.moves.length || "N/A"}</td>
                       </tr>
                     ))}
                   </tbody>

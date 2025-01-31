@@ -21,6 +21,7 @@ const difficultyLevels = [
   "expert",
 ];
 
+
 const MOVE_LENGTH_THRESHOLD = 20; // this is a constant for long and short moves
 
 const Dashboard = () => {
@@ -158,7 +159,7 @@ const Dashboard = () => {
                   navigate(`/play/bot?difficulty=${recommendedDifficulty}`)
                 }
               >
-                Play Bot - Recommended Difficulty: {recommendedDifficulty}
+                Play Bot - Recommended Difficulty: {recommendedDifficulty.replace("_", " ")}
               </button>
             </div>
           </div>
