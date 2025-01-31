@@ -9,7 +9,15 @@ const Social = () => {
     <div className="container mt-4" style={{ minHeight: "100vh" }}>
       <h2 className="mb-4">Social</h2>
 
-      <div className="row g-3">
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="p-3 border rounded-3">
+            <SearchUser />
+          </div>
+        </div>
+      </div>
+
+      <div className="row g-4">
         <div className="col-lg-4 col-md-6">
           <div className="p-3 border rounded-3 h-100">
             <FriendsList />
@@ -20,15 +28,7 @@ const Social = () => {
             <FriendRequests />
           </div>
         </div>
-        <div className="col-lg-4 col-md-6">
-          <div className="p-3 border rounded-3 h-100">
-            <SearchUser />
-          </div>
-        </div>
-      </div>
-
-      <div className="row g-3 mt-3">
-        <div className="col-lg-4 col-md-6">
+        <div className="col-lg-4 col-md-12">
           <div className="p-3 border rounded-3 h-100">
             <FriendRecommendations />
           </div>

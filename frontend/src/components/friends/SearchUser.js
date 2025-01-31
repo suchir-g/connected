@@ -123,7 +123,7 @@ const SearchUser = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4 ">
       <h3 className="mb-4">Search Users</h3>
       <div className="input-group mb-3">
         <input
