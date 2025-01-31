@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = "http://192.168.35.37:5000" || "http://127.0.0.1:5000";
+const API_BASE = "http://192.168.35.37:5000";
 
 // request wrapper (handles errors pretty much)
 const handleRequest = async (requestFn) => {
@@ -8,6 +8,7 @@ const handleRequest = async (requestFn) => {
     const response = await requestFn();
     return response;
   } catch (error) {
+    console.log("err: ", error)
     throw error;
   }
 };
