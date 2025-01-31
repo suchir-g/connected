@@ -41,17 +41,22 @@ class Negamaxer:
             self.zobrist_table = None
             self.transposition_table = None
 
+    def order_moves(self, moves):
+        center = 3 if self.mode == "connect-4" else 4  
+        return sorted(moves, key=lambda move: abs(move - center))
+
     def choose_move(self, position, player):
         print(f"Choosing move for player {player} with difficulty {self.difficulty}")
         
-        valid_moves = position.get_valid_moves() 
+        valid_moves = self.order_moves(position.get_valid_moves()) 
         popout_moves = []  
 
         if position.mode == "popout":
-            popout_moves = [-col for col in range(position.COLS) if any(position.array_board[row][col] != 0 for row in range(position.ROWS))]
+            popout_moves = self.order_moves([-col for col in range(position.COLS) if any(position.array_board[row][col] != 0 for row in range(position.ROWS))])
 
         best_score = -float('inf')
         best_move = None
+
 
         total_moves = sum(row.count(0) for row in position.array_board)  
         flip_colors = self.mode == "colour-switch" and (total_moves % 3 == 0)
@@ -99,14 +104,14 @@ class Negamaxer:
         total_moves = sum(row.count(0) for row in position.array_board) 
         flip_colors = self.mode == "colour-switch" and (total_moves % 3 == 0)
 
-        valid_moves = position.get_valid_moves()
+        valid_moves = self.order_moves(position.get_valid_moves())
 
         popout_moves = []
         if position.mode == "popout":
-            popout_moves = [
+            popout_moves = self.order_moves([
                 -col for col in range(position.COLS)
                 if any(position.array_board[row][col] != 0 for row in range(position.ROWS))
-            ]
+            ])
 
         for move in valid_moves:
             new_position = position.copy()
