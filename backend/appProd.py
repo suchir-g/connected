@@ -6,7 +6,7 @@ import random
 
 app = Flask(__name__)
 CORS(app)
-
+#saiusaddsa
 def validate_board(board, game_mode):
     mode_dimensions = {
         'connect-4': (6, 7),
