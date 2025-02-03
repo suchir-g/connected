@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
 import styles from "./BarGraph.module.css";
 
-const BarGraph = ({ labels = [], values = [], scale = 1 }) => {
+const BarGraph = ({ labels = [], values = [], scale = 1, color }) => {
   const canvasRef = useRef(null);
   const { darkMode } = useTheme();
 

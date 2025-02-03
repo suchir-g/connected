@@ -6,7 +6,6 @@ import { AuthContext } from "../../contexts/AuthContext";
 import BarGraph from "../../components/graphs/BarGraph";
 import LineGraph from "../../components/graphs/LineGraph";
 import "bootstrap/dist/css/bootstrap.min.css";
-import styles from "./Dashboard.module.css";
 
 import FriendRequests from "../../components/friends/FriendRequests";
 import FriendsList from "../../components/friends/FriendsList";
@@ -66,7 +65,7 @@ const Dashboard = () => {
           (acc, game) => {
             const date = new Date(game.timestamp.seconds * 1000)
               .toISOString()
-              .split("T")[0]; 
+              .split("T")[0];
             const isWin = game.result === "win";
             const isLoss = game.result === "loss";
 

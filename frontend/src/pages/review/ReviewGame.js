@@ -4,12 +4,12 @@ import { db } from "../../config/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import Board from "../../components/board/Board";
 import { getBestMove } from "../../config/api";
-import { useTheme } from "../../contexts/ThemeContext"; 
+import { useTheme } from "../../contexts/ThemeContext";
 
 const ReviewGame = () => {
   const { gameId, playerId } = useParams();
   const { darkMode } = useTheme(); 
-//ddsfdfdf
+//d
   const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0)));
   const [moves, setMoves] = useState([]);
   const [gameMode, setGameMode] = useState("connect-4");
@@ -67,7 +67,7 @@ const ReviewGame = () => {
       } else {
         const move = parseInt(char, 10);
         if (!isNaN(move)) {
-          parsed.push(isNegative ? -move : move - 1); 
+          parsed.push(isNegative ? -move : move - 1);
           isNegative = false;
         }
       }
@@ -147,7 +147,7 @@ const ReviewGame = () => {
     let tempBoard = Array(6).fill(Array(7).fill(0));
 
     for (let i = 0; i <= moveIndex; i++) {
-      const player = (i % 2 + 0 === 0) ? 1 : -1;
+      const player = (i % 2) + 0 === 0 ? 1 : -1;
 
       if (gameMode === "colour-switch" && i > 0 && i % 3 === 0) {
         tempBoard = flipBoardColors(tempBoard);

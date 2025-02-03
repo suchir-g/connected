@@ -1,9 +1,0 @@
-th {
-  color: black;
-}
-
-@media (prefers-color-scheme: dark) {
-  .table {
-    color: white;
-  }
-}
