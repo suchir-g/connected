@@ -85,7 +85,7 @@ const PlayLocal = () => {
       setTotalMoves((prev) => prev + 1);
       setError(null);
 
-      // Check for loss in Anti Connect-4 mode
+      // check for loss in Anti Connect-4 mode
       if (
         gameMode === "anti" &&
         checkWinner(newBoard, currentPlayer, gameMode)
@@ -94,19 +94,16 @@ const PlayLocal = () => {
         return;
       }
 
-      // Check for draw
       if (isDrawCondition(newBoard)) {
         setIsDraw(true);
         return;
       }
 
-      // Switch Player
       switchPlayer();
 
       return;
     }
 
-    // Handle Place action
     const updatedBoard = applyMove(
       board,
       column,
@@ -129,7 +126,6 @@ const PlayLocal = () => {
     setTotalMoves((prev) => prev + 1);
     setError(null);
 
-    // Check for win
     if (
       (checkWinner(updatedBoard, currentPlayer, gameMode) &&
         gameMode !== "anti") ||
@@ -201,7 +197,7 @@ const PlayLocal = () => {
       setColorReversed((prev) => !prev);
       // Optionally, notify players about color reversal
     }
-  }, [totalMoves, gameMode, board]);
+  }, [totalMoves, gameMode]);
 
   // Function to switch the current player
   const switchPlayer = () => {

@@ -8,8 +8,8 @@ import { useTheme } from "../../contexts/ThemeContext";
 
 const ReviewGame = () => {
   const { gameId, playerId } = useParams();
-  const { darkMode } = useTheme(); 
-//d
+  const { darkMode } = useTheme();
+  //de
   const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0)));
   const [moves, setMoves] = useState([]);
   const [gameMode, setGameMode] = useState("connect-4");
@@ -20,7 +20,7 @@ const ReviewGame = () => {
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
   const [error, setError] = useState("");
-  const [difficulty, setDifficulty] = useState("medium");
+  const [difficulty, setDifficulty] = useState("expert");
 
   useEffect(() => {
     const fetchGame = async () => {

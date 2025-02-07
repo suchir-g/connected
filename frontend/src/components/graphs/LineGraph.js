@@ -16,6 +16,8 @@ const getSelectedIndices = (length, count) => {
   return Array.from(new Set(indices));
 };
 
+
+
 const LineGraph = ({ labels = [], values = [], scale = 1, color }) => {
   const canvasRef = useRef(null);
   const { darkMode } = useTheme();
