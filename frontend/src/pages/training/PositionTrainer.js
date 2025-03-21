@@ -200,11 +200,11 @@ const PositionTrainer = () => {
       try {
         let moveCount;
         if (type === "early") {
-          const evenMovesEarly = [6, 8];
+          const evenMovesEarly = [4, 6, 8, 10];
           moveCount =
             evenMovesEarly[Math.floor(Math.random() * evenMovesEarly.length)];
         } else {
-          const evenMovesLate = [20, 22, 24];
+          const evenMovesLate = [20, 22, 24, 26, 30];
           moveCount =
             evenMovesLate[Math.floor(Math.random() * evenMovesLate.length)];
         }

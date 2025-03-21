@@ -4,7 +4,7 @@ import { db } from "../../config/firebase";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { AuthContext } from "../../contexts/AuthContext";
 import BarGraph from "../../components/graphs/BarGraph";
-import LineGraph from "../../components/graphs/LineGraph"; 
+import LineGraph from "../../components/graphs/LineGraph";
 import Loading from "../../components/loading/Loading";
 import { useTheme } from "../../contexts/ThemeContext";
 
@@ -37,7 +37,7 @@ const Stats = () => {
   const [trainingStats, setTrainingStats] = useState({
     totalCorrect: 0,
     totalWrong: 0,
-    correctnessByMoves: {}, 
+    correctnessByMoves: {},
   });
 
   const [error, setError] = useState("");
@@ -210,7 +210,11 @@ const Stats = () => {
     return wrong === 0 ? correct : correct / wrong;
   });
 
-  const winLossCumulative = gameHistory.reduce(
+  const sortedGameHistory = [...gameHistory].sort(
+    (a, b) => a.timestamp.seconds - b.timestamp.seconds
+  );
+
+  const winLossCumulative = sortedGameHistory.reduce(
     (acc, game) => {
       const date = new Date(game.timestamp.seconds * 1000)
         .toISOString()
@@ -264,7 +268,11 @@ const Stats = () => {
           <h4 className="text-center">
             Cumulative Win-to-Loss Ratio Over Time
           </h4>
-          <LineGraph labels={dailyLabels} values={dailyRatios} color={"#20BF55"} />
+          <LineGraph
+            labels={dailyLabels}
+            values={dailyRatios}
+            color={"#20BF55"}
+          />
         </div>
       )}
 

@@ -22,9 +22,6 @@ class Negamaxer:
         if mode == "connect-5":
             rows = 8
             cols = 9
-        elif mode == "popout":
-            rows = 6
-            cols = 7
 
         if difficulty == 'expert' and mode == "connect-4": # only zobrist on expert connect 4
             try:
@@ -46,8 +43,8 @@ class Negamaxer:
         return sorted(moves, key=lambda move: abs(move - center))
 
     def choose_move(self, position, player):
-        print(f"Choosing move for player {player} with difficulty {self.difficulty}")
-        
+        print("choosing move for player", player)
+        print("position", position.array_board)
         valid_moves = self.order_moves(position.get_valid_moves()) 
         popout_moves = []  
 
@@ -86,7 +83,6 @@ class Negamaxer:
                     best_score = score
                     best_move = move
 
-        print(f"Best move: {best_move}, Score: {best_score}")
         return best_move
 
     def negamax(self, position, player, depth, alpha, beta):

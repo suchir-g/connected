@@ -11,18 +11,25 @@ import {
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
+const levCache = {};
+
 const lev = (a, b) => {
+  const key = `${a}|${b}`;
+  if (levCache[key] !== undefined) return levCache[key];
+
+  if (a == b) return 0;
   if (a.length === 0) return b.length;
   if (b.length === 0) return a.length;
   if (a[0] === b[0]) return lev(a.slice(1), b.slice(1));
-  return (
-    1 +
-    Math.min(
-      lev(a.slice(1), b),
-      lev(a, b.slice(1)),
-      lev(a.slice(1), b.slice(1))
-    )
+
+  const result = 1 + Math.min(
+    lev(a.slice(1), b),
+    lev(a, b.slice(1)),
+    lev(a.slice(1), b.slice(1))
   );
+
+  levCache[key] = result;
+  return result;
 };
 
 const SearchUser = () => {

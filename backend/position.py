@@ -112,7 +112,7 @@ class Position:
                 valid.append(c)
         return valid
 
-    def _has_connect_n(self, bitboard: int) -> bool:
+    def has_connect_n(self, bitboard: int) -> bool:
 
         n = self.n_in_a_row
         directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
@@ -138,16 +138,13 @@ class Position:
         return False
 
     def check_winner(self) -> Optional[int]:
-        if self._has_connect_n(self.p1_bitboard):
+        if self.has_connect_n(self.p1_bitboard):
             return 1
-        if self._has_connect_n(self.p2_bitboard):
+        if self.has_connect_n(self.p2_bitboard):
             return -1
         return None
 
     def is_draw(self) -> bool:
-        """
-        A draw occurs if there is no winner AND no empty space left.
-        """
         if self.check_winner() is not None:
             return False
         for row in self.array_board:

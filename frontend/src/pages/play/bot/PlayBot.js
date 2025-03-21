@@ -4,10 +4,16 @@ import Board from "../../../components/board/Board";
 import { getBestMove } from "../../../config/api";
 import { auth, db } from "../../../config/firebase";
 import { doc, collection, addDoc } from "firebase/firestore";
+
 import {
+  getGameModeConfig,
+  initializeBoard,
+  flipBoardColors,
   checkWinner,
   isDrawCondition,
   applyMove,
+  isValidMove,
+  getMoveError,
 } from "../../../utilities/gameState";
 
 const difficultyLevels = [
@@ -22,23 +28,25 @@ const difficultyLevels = [
 const gameModes = ["connect-4", "connect-5", "popout", "anti", "colour-switch"];
 
 const PlayBot = () => {
+  const [searchParams] = useSearchParams();
+  const [gameMode, setGameMode] = useState("connect-4");
+  const { rows: initialRows, cols: initialCols } = getGameModeConfig(gameMode);
+  const [rows, setRows] = useState(initialRows);
+  const [cols, setCols] = useState(initialCols);
+
   const [board, setBoard] = useState(() =>
-    Array.from({ length: 6 }, () => Array(7).fill(0))
+    initializeBoard(initialRows, initialCols)
   );
   const [isLocked, setIsLocked] = useState(false);
   const [winner, setWinner] = useState(null);
   const [isDraw, setIsDraw] = useState(false);
   const [highlightedColumns, setHighlightedColumns] = useState([]);
   const [difficulty, setDifficulty] = useState("medium");
-  const [gameMode, setGameMode] = useState("connect-4");
-  const [rows, setRows] = useState(6);
-  const [cols, setCols] = useState(7);
   const [actionMode, setActionMode] = useState("place");
   const [moves, setMoves] = useState("");
-  const [totalMoves, setTotalMoves] = useState(0); // Tracks the number of moves
-  const [firstPlayer, setFirstPlayer] = useState("player"); // State for selecting the first player
+  const [totalMoves, setTotalMoves] = useState(0);
+  const [firstPlayer, setFirstPlayer] = useState("player");
   const movesRef = useRef("");
-  const [searchParams] = useSearchParams();
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -54,33 +62,29 @@ const PlayBot = () => {
     if (gameModes.includes(queryMode)) {
       setGameMode(queryMode);
       setActionMode("place");
-      setDefaultGrid(queryMode);
     } else {
       setGameMode("connect-4");
-      setDefaultGrid("connect-4");
     }
   }, [searchParams]);
 
   useEffect(() => {
+    const { rows: newRows, cols: newCols } = getGameModeConfig(gameMode);
+    setRows(newRows);
+    setCols(newCols);
+  }, [gameMode]);
+
+  useEffect(() => {
     resetGame();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstPlayer]);
 
   useEffect(() => {
     resetGame();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, cols]);
 
-  const setDefaultGrid = (mode) => {
-    if (mode === "connect-5") {
-      setRows(8);
-      setCols(9);
-    } else {
-      setRows(6);
-      setCols(7);
-    }
-  };
-
   const resetGame = async () => {
-    const newBoard = Array.from({ length: rows }, () => Array(cols).fill(0));
+    const newBoard = initializeBoard(rows, cols);
     setBoard(newBoard);
     setWinner(null);
     setIsDraw(false);
@@ -95,27 +99,25 @@ const PlayBot = () => {
       setIsLocked(true);
       try {
         const response = await getBestMove(newBoard, -1, gameMode, difficulty);
-        const {
-          best_move: aiMove,
-          board: updatedBoardAI,
-          outcome,
-        } = response.data;
-
+        const { best_move: aiMove, board: updatedBoardAI } = response.data;
         let finalBoard = updatedBoardAI;
 
         if (gameMode === "colour-switch" && (totalMoves + 1) % 3 === 0) {
-          finalBoard = flipBoardColors(updatedBoardAI);
+          finalBoard = flipBoardColors(finalBoard);
         }
 
         setBoard(finalBoard);
 
         if (aiMove !== null) {
-          const aiMoveNotation = aiMove < 0 ? `${aiMove}` : `${aiMove + 1}`;
-          movesRef.current += aiMoveNotation;
+          movesRef.current += `${aiMove}`;
           setMoves(movesRef.current);
         }
 
-        if (checkWinner(finalBoard, -1, gameMode)) {
+        // >>> AI's immediate winner check <<<
+        if (
+          (checkWinner(finalBoard, -1, gameMode) && gameMode !== "anti") ||
+          (checkWinner(finalBoard, 1, gameMode) && gameMode === "anti")
+        ) {
           setWinner("AI");
           recordGameResult(-1, false);
           setIsLocked(false);
@@ -139,35 +141,18 @@ const PlayBot = () => {
     }
   };
 
-  const flipBoardColors = (board) => {
-    return board.map((row) =>
-      row.map((cell) => (cell === 1 ? -1 : cell === -1 ? 1 : 0))
-    );
-  };
-
   const handleMakeMove = async (column) => {
-    if (isLocked || winner !== null || isDraw) return;
+    if (isLocked || winner || isDraw) return;
 
-    if (actionMode === "popout") {
-      const columnIsEmpty = board.every((row) => row[column] === 0);
-      if (columnIsEmpty) {
-        setError("Cannot popout from an empty column.");
-        return;
-      }
+    if (!isValidMove(board, column, gameMode, actionMode)) {
+      const moveError = getMoveError(board, column, actionMode);
+      setError(moveError || "Invalid move. Try a different column.");
+      return;
     }
 
-    const updatedBoard = applyMove(
-      board,
-      column,
-      1,
-      gameMode,
-      rows,
-      cols,
-      actionMode
-    );
-    setBoard(updatedBoard);
-
     setError(null);
+    const updatedBoard = applyMove(board, column, 1, gameMode, actionMode);
+    setBoard(updatedBoard);
 
     const moveNotation =
       actionMode === "place" ? (column + 1).toString() : `-${column + 1}`;
@@ -175,6 +160,7 @@ const PlayBot = () => {
     setMoves(movesRef.current);
     setTotalMoves((prev) => prev + 1);
 
+    // >>> Player's immediate winner check <<<
     if (
       (checkWinner(updatedBoard, 1, gameMode) && gameMode !== "anti") ||
       (checkWinner(updatedBoard, -1, gameMode) && gameMode === "anti")
@@ -208,16 +194,11 @@ const PlayBot = () => {
         gameMode,
         difficulty
       );
-      const {
-        best_move: aiMove,
-        board: updatedBoardAI,
-        outcome,
-      } = response.data;
+      const { best_move: aiMove, board: updatedBoardAI } = response.data;
 
       let finalBoard = updatedBoardAI;
-
       if (gameMode === "colour-switch" && (totalMoves + 1) % 3 === 0) {
-        finalBoard = flipBoardColors(updatedBoardAI);
+        finalBoard = flipBoardColors(finalBoard);
       }
 
       setBoard(finalBoard);
@@ -228,9 +209,22 @@ const PlayBot = () => {
         setMoves(movesRef.current);
       }
 
-      if (checkWinner(finalBoard, -1, gameMode)) {
+      if (
+        (checkWinner(finalBoard, -1, gameMode) && gameMode !== "anti") ||
+        (checkWinner(finalBoard, 1, gameMode) && gameMode === "anti")
+      ) {
         setWinner("AI");
         recordGameResult(-1, false);
+        setIsLocked(false);
+        return;
+      }
+
+      if (
+        (checkWinner(finalBoard, 1, gameMode) && gameMode !== "anti") ||
+        (checkWinner(finalBoard, -1, gameMode) && gameMode === "anti")
+      ) {
+        setWinner("Player");
+        recordGameResult(1, false);
         setIsLocked(false);
         return;
       }
@@ -251,6 +245,29 @@ const PlayBot = () => {
     }
   };
 
+  const recordGameResult = async (gameOutcome, draw) => {
+    if (!auth.currentUser) {
+      console.error("User not authenticated");
+      return;
+    }
+    try {
+      const playerDocRef = doc(db, "players", auth.currentUser.uid);
+      const gameSubCollection = collection(playerDocRef, "games");
+      const gameData = {
+        timestamp: new Date(),
+        difficulty,
+        gameMode,
+        moves: movesRef.current,
+        result: draw ? "draw" : gameOutcome === 1 ? "win" : "loss",
+        bestMoves: [],
+        startPlayer: firstPlayer === "player" ? 1 : -1,
+      };
+      await addDoc(gameSubCollection, gameData);
+    } catch (error) {
+      console.error("Error recording game result:", error);
+    }
+  };
+
   const handleDifficultyChange = (event) => {
     setDifficulty(event.target.value);
   };
@@ -259,38 +276,10 @@ const PlayBot = () => {
     const selectedMode = event.target.value;
     setGameMode(selectedMode);
     setActionMode("place");
-    setDefaultGrid(selectedMode);
   };
 
   const handleFirstPlayerChange = (event) => {
     setFirstPlayer(event.target.value);
-  };
-
-  const recordGameResult = async (gameOutcome, isDraw) => {
-    if (!auth.currentUser) {
-      console.error("User not authenticated");
-      return;
-    }
-
-    try {
-      const playerDocRef = doc(db, "players", auth.currentUser.uid);
-      const gameSubCollection = collection(playerDocRef, "games");
-      const gameData = {
-        timestamp: new Date(),
-        difficulty,
-        gameMode,
-        rows,
-        cols,
-        moves: movesRef.current,
-        result: isDraw ? "draw" : gameOutcome === 1 ? "win" : "loss",
-        bestMoves: [],
-        startPlayer: firstPlayer === "player" ? 1 : -1,
-      };
-
-      await addDoc(gameSubCollection, gameData);
-    } catch (error) {
-      console.error("Error recording game result:", error);
-    }
   };
 
   return (

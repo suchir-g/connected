@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { db } from "../../config/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "../../config/firebase";
 import Board from "../../components/board/Board";
 import { getBestMove } from "../../config/api";
 import { useTheme } from "../../contexts/ThemeContext";
+import {
+  initializeBoard,
+  getGameModeConfig,
+  flipBoardColors,
+  applyMove,
+} from "../../utilities/gameState";
+import Loading from "../../components/loading/Loading";
 
 const ReviewGame = () => {
   const { gameId, playerId } = useParams();
   const { darkMode } = useTheme();
-  //de
-  const [board, setBoard] = useState(Array(6).fill(Array(7).fill(0)));
-  const [moves, setMoves] = useState([]);
+
   const [gameMode, setGameMode] = useState("connect-4");
+  const [board, setBoard] = useState([]);
+  const [moves, setMoves] = useState([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [precomputedBestMoves, setPrecomputedBestMoves] = useState([]);
   const [latestMove, setLatestMove] = useState(null);
-  const [scores, setScores] = useState(Array(7).fill(null));
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
   const [error, setError] = useState("");
@@ -28,10 +34,12 @@ const ReviewGame = () => {
         setLoading(true);
         const gameRef = doc(db, "players", playerId, "games", gameId);
         const gameSnap = await getDoc(gameRef);
-
         if (gameSnap.exists()) {
           const gameData = gameSnap.data();
-          setGameMode(gameData.gameMode || "connect-4");
+          const currentGameMode = gameData.gameMode || "connect-4";
+          setGameMode(currentGameMode);
+          const config = getGameModeConfig(currentGameMode);
+          setBoard(initializeBoard(config.rows, config.cols));
 
           const parsedMoves = parseMoves(gameData.moves);
           setMoves(parsedMoves);
@@ -42,7 +50,7 @@ const ReviewGame = () => {
           if (gameData.bestMoves && gameData.bestMoves.length > 0) {
             setPrecomputedBestMoves(gameData.bestMoves);
           } else {
-            await precomputeBestMoves(parsedMoves, gameMode, gameRef);
+            await precomputeBestMoves(parsedMoves, currentGameMode, gameRef);
           }
         } else {
           setError("Game not found.");
@@ -55,12 +63,11 @@ const ReviewGame = () => {
     };
 
     fetchGame();
-  }, [gameId, playerId, gameMode]);
+  }, [gameId, playerId]);
 
   const parseMoves = (moveString) => {
     const parsed = [];
     let isNegative = false;
-
     for (const char of moveString) {
       if (char === "-") {
         isNegative = true;
@@ -72,106 +79,78 @@ const ReviewGame = () => {
         }
       }
     }
-
     return parsed;
   };
 
-  const flipBoardColors = (board) => {
-    return board.map((row) =>
-      row.map((cell) => (cell === 1 ? -1 : cell === -1 ? 1 : 0))
-    );
-  };
-
-  const precomputeBestMoves = async (moves, gameMode, gameRef) => {
+  const precomputeBestMoves = async (movesArr, currentGameMode, gameRef) => {
     setEvaluating(true);
-    let tempBoard = Array(6).fill(Array(7).fill(0));
+    const config = getGameModeConfig(currentGameMode);
+    let tempBoard = initializeBoard(config.rows, config.cols);
     const bestMoves = [];
-
-    for (let i = 0; i < moves.length; i++) {
+    for (let i = 0; i < movesArr.length; i++) {
       const player = i % 2 === 0 ? 1 : -1;
-
-      if (gameMode === "colour-switch" && i > 0 && i % 3 === 0) {
+      if (currentGameMode === "colour-switch" && i > 0 && i % 3 === 0) {
         tempBoard = flipBoardColors(tempBoard);
       }
-
       try {
         const response = await getBestMove(
           tempBoard,
           player,
-          gameMode,
+          currentGameMode,
           difficulty
         );
         bestMoves.push(response.data.best_move);
       } catch (err) {
         bestMoves.push(null);
       }
-
-      tempBoard = applyMove(tempBoard, moves[i], player, gameMode);
+      tempBoard = applyMove(tempBoard, movesArr[i], player, currentGameMode);
     }
-
     try {
       await updateDoc(gameRef, { bestMoves });
       setPrecomputedBestMoves(bestMoves);
     } catch (err) {
       console.error("Error saving best moves:", err);
     }
-
     setEvaluating(false);
   };
 
-  const applyMove = (board, move, player, mode) => {
-    const newBoard = board.map((row) => [...row]);
-    let latestRow = null;
-
-    if (mode === "popout" && move < 0) {
-      const colIndex = Math.abs(move) - 1;
-      for (let row = newBoard.length - 1; row > 0; row--) {
-        newBoard[row][colIndex] = newBoard[row - 1][colIndex];
+  const computeBoardUpToMove = (moveIndex) => {
+    const config = getGameModeConfig(gameMode);
+    let tempBoard = initializeBoard(config.rows, config.cols);
+    let latest = null;
+    for (let i = 0; i <= moveIndex; i++) {
+      const player = i % 2 === 0 ? 1 : -1;
+      if (gameMode === "colour-switch" && i > 0 && i % 3 === 0) {
+        tempBoard = flipBoardColors(tempBoard);
       }
-      newBoard[0][colIndex] = 0;
-    } else {
-      for (let row = newBoard.length - 1; row >= 0; row--) {
-        if (newBoard[row][move] === 0) {
-          newBoard[row][move] = player;
-          latestRow = row;
+      tempBoard = applyMove(tempBoard, moves[i], player, gameMode);
+      const col = moves[i] < 0 ? Math.abs(moves[i]) - 1 : moves[i];
+      for (let r = tempBoard.length - 1; r >= 0; r--) {
+        if (tempBoard[r][col] === player) {
+          latest = { row: r, column: col };
           break;
         }
       }
     }
-
-    setLatestMove({ row: latestRow, column: move });
-    return newBoard;
+    return { board: tempBoard, latestMove: latest };
   };
 
   const renderBoardAtMove = (moveIndex) => {
-    let tempBoard = Array(6).fill(Array(7).fill(0));
-
-    for (let i = 0; i <= moveIndex; i++) {
-      const player = (i % 2) + 0 === 0 ? 1 : -1;
-
-      if (gameMode === "colour-switch" && i > 0 && i % 3 === 0) {
-        tempBoard = flipBoardColors(tempBoard);
-      }
-
-      tempBoard = applyMove(tempBoard, moves[i], player, gameMode);
-    }
-
-    setBoard(tempBoard);
+    const { board: newBoard, latestMove: latest } =
+      computeBoardUpToMove(moveIndex);
+    setBoard(newBoard);
+    setLatestMove(latest);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "ArrowRight" && currentMoveIndex < moves.length - 1) {
-      setCurrentMoveIndex((prevIndex) => {
-        const newIndex = prevIndex + 1;
-        renderBoardAtMove(newIndex);
-        return newIndex;
-      });
+      const newIndex = currentMoveIndex + 1;
+      setCurrentMoveIndex(newIndex);
+      renderBoardAtMove(newIndex);
     } else if (e.key === "ArrowLeft" && currentMoveIndex > 0) {
-      setCurrentMoveIndex((prevIndex) => {
-        const newIndex = prevIndex - 1;
-        renderBoardAtMove(newIndex);
-        return newIndex;
-      });
+      const newIndex = currentMoveIndex - 1;
+      setCurrentMoveIndex(newIndex);
+      renderBoardAtMove(newIndex);
     }
   };
 
@@ -181,21 +160,13 @@ const ReviewGame = () => {
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [moves, currentMoveIndex]);
+  }, [moves, currentMoveIndex, gameMode]);
 
   if (loading) {
     return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "100vh" }}
-      >
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading game...</span>
-        </div>
-      </div>
+      <Loading />
     );
   }
-
   if (error) {
     return (
       <div className="container mt-4">
@@ -205,7 +176,6 @@ const ReviewGame = () => {
       </div>
     );
   }
-
   if (evaluating) {
     return (
       <div
@@ -239,8 +209,9 @@ const ReviewGame = () => {
                 }`}
                 onClick={() => {
                   if (currentMoveIndex > 0) {
-                    setCurrentMoveIndex(currentMoveIndex - 1);
-                    renderBoardAtMove(currentMoveIndex - 1);
+                    const newIndex = currentMoveIndex - 1;
+                    setCurrentMoveIndex(newIndex);
+                    renderBoardAtMove(newIndex);
                   }
                 }}
               >
@@ -252,8 +223,9 @@ const ReviewGame = () => {
                 }`}
                 onClick={() => {
                   if (currentMoveIndex < moves.length - 1) {
-                    setCurrentMoveIndex(currentMoveIndex + 1);
-                    renderBoardAtMove(currentMoveIndex + 1);
+                    const newIndex = currentMoveIndex + 1;
+                    setCurrentMoveIndex(newIndex);
+                    renderBoardAtMove(newIndex);
                   }
                 }}
               >

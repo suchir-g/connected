@@ -12,7 +12,6 @@ import FriendsList from "../../components/friends/FriendsList";
 import Loading from "../../components/loading/Loading";
 import { useTheme } from "../../contexts/ThemeContext";
 
-// Difficulty levels in ascending order:
 const difficultyLevels = [
   "very_easy",
   "easy",
@@ -22,7 +21,7 @@ const difficultyLevels = [
   "expert",
 ];
 
-const MOVE_LENGTH_THRESHOLD = 20; // threshold for deciding late/early game practice
+const MOVE_LENGTH_THRESHOLD = 20; 
 
 const Dashboard = () => {
   const { currentUser } = useContext(AuthContext);
@@ -39,12 +38,7 @@ const Dashboard = () => {
 
   const { darkMode } = useTheme();
 
-  // Helper: given an array of games (newest first), compute a weighted win rate
   const computeWeightedWinRate = (gamesForDiff) => {
-    // Weighted approach:
-    //   - If we have N games, the newest game gets weight N, the oldest gets weight 1.
-    //   - WeightedWinRate = sum(weight_i * result_i) / sum(weight_i),
-    //     where result_i = 1 if win, 0 if loss.
     const n = gamesForDiff.length;
     if (n === 0) return 0;
 
@@ -52,10 +46,6 @@ const Dashboard = () => {
     let totalWeight = 0;
 
     for (let i = 0; i < n; i++) {
-      // i = 0 => newest game, i = n-1 => oldest if we slice(0, 20) from a sorted list
-      // We want the newest game to have the highest weight.
-      // So weight = (n - i).
-      // That means the first iteration has weight = n, next = n-1, etc.
       const weight = n - i;
       const isWin = gamesForDiff[i].result === "win" ? 1 : 0;
       totalWeightedWins += weight * isWin;
@@ -79,19 +69,15 @@ const Dashboard = () => {
           ...doc.data(),
         }));
 
-        // TOTAL GAMES
         const totalGamesCount = games.length;
         setTotalGamesCount(totalGamesCount);
 
-        // RECENT GAMES
         setRecentGames(games.slice(0, 5));
 
-        // WIN/LOSS Data
         const winCount = games.filter((game) => game.result === "win").length;
         const lossCount = games.filter((game) => game.result === "loss").length;
         setWinLossData([winCount, lossCount]);
 
-        // AGGREGATE DAILY WINS/LOSSES
         const cumulativeData = games.reduce(
           (acc, game) => {
             const date = new Date(game.timestamp.seconds * 1000)
@@ -107,10 +93,8 @@ const Dashboard = () => {
           { dailyStats: {} }
         );
 
-        // Sort by date
         const dailyLabels = Object.keys(cumulativeData.dailyStats).sort();
 
-        // CALCULATE A CUMULATIVE / WEIGHTED RATIO (for daily chart)
         let runningWins = 0;
         let runningLosses = 0;
         const dailyCumulativeRatios = dailyLabels.map((date) => {
@@ -126,7 +110,6 @@ const Dashboard = () => {
         setDailyLabels(dailyLabels);
         setDailyRatios(dailyCumulativeRatios);
 
-        // AVERAGE MOVE LENGTH (for last 20 games)
         const last20Games = games.slice(0, 20);
         const totalMoves = last20Games.reduce(
           (sum, game) => sum + (game.moves || 0),
@@ -136,29 +119,22 @@ const Dashboard = () => {
           last20Games.length > 0 ? totalMoves / last20Games.length : 0;
         setAverageMoveLength(averageMoveLength);
 
-        // RECOMMENDED DIFFICULTY (using the last 20 games per difficulty)
-        // We'll find the HIGHEST difficulty that meets our threshold:
-        const threshold = 0.8; // e.g. 80% weighted win rate
-        let highestSuccessfulDifficultyIndex = 0; // start at "very_easy"
+        const threshold = 0.8; 
+        let highestSuccessfulDifficultyIndex = 0; 
 
         for (let i = 0; i < difficultyLevels.length; i++) {
           const difficulty = difficultyLevels[i];
-          // Filter out all games for this difficulty, then take the LAST 20 of them
-          // games is sorted newest -> oldest, so slice(0, 20) will get the 20 most recent
           const recentGamesForDiff = games
             .filter((g) => g.difficulty === difficulty)
             .slice(0, 20);
 
           const weightedWinRate = computeWeightedWinRate(recentGamesForDiff);
 
-          // If we meet or exceed the threshold, update highestSuccessfulDifficulty
           if (weightedWinRate >= threshold && recentGamesForDiff.length > 0) {
             highestSuccessfulDifficultyIndex = i;
           }
         }
 
-        // The recommended difficulty is one step higher if possible
-        // or remain the highest if we're already at "expert"
         if (highestSuccessfulDifficultyIndex < difficultyLevels.length - 1) {
           setRecommendedDifficulty(
             difficultyLevels[highestSuccessfulDifficultyIndex + 1]
@@ -186,7 +162,6 @@ const Dashboard = () => {
         <Loading />
       ) : (
         <>
-          {/* Play Local / Play Bot Buttons */}
           <div className="row g-3 mb-4">
             <div className="col-md-6">
               <button
@@ -209,7 +184,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Practice Early/Late Game Buttons */}
           {averageMoveLength > MOVE_LENGTH_THRESHOLD ? (
             <div className="row g-3 mb-4">
               <div className="col-md-12">
@@ -234,7 +208,6 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Stats Cards */}
           <div className="row g-3 mb-4">
             <div className="col-lg-6 col-md-12">
               <div className="card" style={{ border: "1px solid #808080" }}>
@@ -258,7 +231,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Graphs */}
           <div className="row g-3 mb-4">
             <div className="col-lg-6 col-md-12">
               <div className="card" style={{ border: "1px solid #808080" }}>
@@ -292,7 +264,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Recent Games Table */}
           <div className="row g-3">
             <div className="col-md-12">
               <div className="card" style={{ border: "1px solid #808080" }}>
@@ -361,7 +332,6 @@ const Dashboard = () => {
         </>
       )}
 
-      {/* Friends List and Friend Requests */}
       <FriendsList />
       <FriendRequests />
     </div>

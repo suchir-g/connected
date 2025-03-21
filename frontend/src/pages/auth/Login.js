@@ -10,15 +10,15 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // State for loading indicator
+  const [loading, setLoading] = useState(false); 
 
   const navigate = useNavigate();
 
-  const { darkMode } = useTheme(); // Consume ThemeContext
+  const { darkMode } = useTheme(); 
 
   const signInEmailPassword = async () => {
     setError("");
-    setLoading(true); // Start loading
+    setLoading(true); 
     try {
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/dashboard");
@@ -26,7 +26,7 @@ const Login = () => {
       const friendlyMessage = getFirebaseErrorMessage(err);
       setError(friendlyMessage);
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false); 
     }
   };
 
@@ -91,13 +91,12 @@ const Login = () => {
               <button
                 type="submit"
                 className="btn btn-primary w-100"
-                disabled={loading} // Disable button while loading
+                disabled={loading} 
               >
                 {loading ? "Logging in..." : "Login"}
               </button>
             </form>
 
-            {/* Link to Registration */}
             <div className="mt-3 text-center">
               <p>
                 Don't have an account?{" "}

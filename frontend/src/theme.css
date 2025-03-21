@@ -32,7 +32,7 @@
   --graph-bar-color: #17a2b8; 
 }
 
-/* Global Overrides */
+/* overriding */
 body,
 .mainContainer,
 .container,
@@ -49,16 +49,6 @@ table {
 
 table th,
 table td {
-  border-color: var(--table-border-color) !important;
-}
-
-.dark-theme .table {
-  background-color: var(--table-bg) !important;
-  color: var(--table-text-color) !important;
-}
-
-.dark-theme .table th,
-.dark-theme .table td {
   border-color: var(--table-border-color) !important;
 }
 
