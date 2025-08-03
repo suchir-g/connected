@@ -4,9 +4,13 @@ try:
     from Position import Position
     from Negamaxer import Negamaxer
     GAME_ENGINE_AVAILABLE = True
-except ImportError:
+    print("Game engine modules loaded successfully!")
+except ImportError as e:
     GAME_ENGINE_AVAILABLE = False
-    print("Warning: Game engine modules not available. Some features will be disabled.")
+    print(f"Warning: Game engine modules not available. Import error: {e}")
+except Exception as e:
+    GAME_ENGINE_AVAILABLE = False
+    print(f"Warning: Game engine modules failed to load. Error: {e}")
 import random
 
 app = Flask(__name__)
