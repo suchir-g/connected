@@ -1,11 +1,28 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from Position import Position
-from Negamaxer import Negamaxer
+try:
+    from Position import Position
+    from Negamaxer import Negamaxer
+    GAME_ENGINE_AVAILABLE = True
+except ImportError:
+    GAME_ENGINE_AVAILABLE = False
+    print("Warning: Game engine modules not available. Some features will be disabled.")
 import random
 
 app = Flask(__name__)
 CORS(app)
+
+@app.route('/', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'ok',
+        'message': 'Connected backend is running!',
+        'game_engine_available': GAME_ENGINE_AVAILABLE
+    })
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'healthy'})
 
 def validate_board(board, game_mode):
     mode_dimensions = {
@@ -52,13 +69,19 @@ def simulate_board(moves):
             # alternate between players
             current_player = -current_player
 
-        game_position = Position(array_board=board)
-        if game_position.check_winner() is None:
-            return board  # return the valid board if there's no winner
+        if GAME_ENGINE_AVAILABLE:
+            game_position = Position(array_board=board)
+            if game_position.check_winner() is None:
+                return board  # return the valid board if there's no winner
+        else:
+            # Simple validation without game engine
+            return board
 
 
 @app.route('/bestmove', methods=['POST'])
 def best_move():
+    if not GAME_ENGINE_AVAILABLE:
+        return jsonify({'error': 'Game engine not available'}), 503
     data = request.get_json()
 
     if not data:
