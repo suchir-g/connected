@@ -29,4 +29,4 @@ def generate_opening_book(ai, max_depth=3):
     print(f"saved !")
 
 ai = Negamaxer(difficulty='expert')
-generate_opening_book(ai, max_depth=8)9
+generate_opening_book(ai, max_depth=5)

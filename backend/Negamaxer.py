@@ -16,14 +16,13 @@ class Negamaxer:
         self.difficulty = difficulty
         self.mode = mode
 
-        rows = 6  
-        cols = 7  
-
+        rows = 6
+        cols = 7
         if mode == "connect-5":
             rows = 8
             cols = 9
 
-        if difficulty == 'expert' and mode == "connect-4": # only zobrist on expert connect 4
+        if difficulty == 'expert' and mode == "connect-4":
             try:
                 with open(opening_book_file, 'rb') as f:
                     self.opening_book = pickle.load(f)
@@ -32,30 +31,40 @@ class Negamaxer:
                 print("No opening book found. Now playing without one.")
 
             self.zobrist_table = init_zobrist(rows, cols)
-            self.transposition_table = {}  
+            self.transposition_table = {}
         else:
             self.opening_book = None
             self.zobrist_table = None
             self.transposition_table = None
 
     def order_moves(self, moves):
-        center = 3 if self.mode == "connect-4" else 4  
-        return sorted(moves, key=lambda move: abs(move - center))
+        center_col = 3 if self.mode == "connect-4" else 4
+        return sorted(moves, key=lambda move: abs(move - center_col))
 
     def choose_move(self, position, player):
-        print("choosing move for player", player)
-        print("position", position.array_board)
-        valid_moves = self.order_moves(position.get_valid_moves()) 
-        popout_moves = []  
+        if (self.difficulty == 'expert'
+            and self.mode == 'connect-4'
+            and self.opening_book
+            and self.zobrist_table is not None):
+            
+            pos_hash = compute_zobrist_hash(position, self.zobrist_table)
 
+            print("choosing move from opening book")
+            if pos_hash in self.opening_book:
+                return self.opening_book[pos_hash]
+        
+        valid_moves = self.order_moves(position.get_valid_moves())
+        popout_moves = []
         if position.mode == "popout":
-            popout_moves = self.order_moves([-col for col in range(position.COLS) if any(position.array_board[row][col] != 0 for row in range(position.ROWS))])
+            popout_moves = self.order_moves([
+                -col for col in range(position.COLS)
+                if any(position.array_board[row][col] != 0 for row in range(position.ROWS))
+            ])
 
         best_score = -float('inf')
         best_move = None
 
-
-        total_moves = sum(row.count(0) for row in position.array_board)  
+        total_moves = sum(row.count(0) for row in position.array_board)
         flip_colors = self.mode == "colour-switch" and (total_moves % 3 == 0)
 
         for move in valid_moves:
@@ -65,7 +74,7 @@ class Negamaxer:
                 player = -player
             score = -self.negamax(new_position, -player, self.max_depth, -float('inf'), float('inf'))
             if flip_colors:
-                player = -player  
+                player = -player
             if score > best_score:
                 best_score = score
                 best_move = move
@@ -75,14 +84,15 @@ class Negamaxer:
             new_position = position.copy()
             if new_position.popout_piece(col):
                 if flip_colors:
-                    player = -player  
+                    player = -player
                 score = -self.negamax(new_position, -player, self.max_depth, -float('inf'), float('inf'))
                 if flip_colors:
-                    player = -player  
+                    player = -player
                 if score > best_score:
                     best_score = score
                     best_move = move
 
+        print("choosing move", best_move)
         return best_move
 
     def negamax(self, position, player, depth, alpha, beta):
@@ -97,11 +107,10 @@ class Negamaxer:
 
         best_score = -float('inf')
 
-        total_moves = sum(row.count(0) for row in position.array_board) 
+        total_moves = sum(row.count(0) for row in position.array_board)
         flip_colors = self.mode == "colour-switch" and (total_moves % 3 == 0)
 
         valid_moves = self.order_moves(position.get_valid_moves())
-
         popout_moves = []
         if position.mode == "popout":
             popout_moves = self.order_moves([
@@ -113,30 +122,32 @@ class Negamaxer:
             new_position = position.copy()
             new_position.drop_piece(move, player)
             if flip_colors:
-                player = -player  
+                player = -player
             score = -self.negamax(new_position, -player, depth - 1, -beta, -alpha)
             if flip_colors:
-                player = -player  
+                player = -player
             best_score = max(best_score, score)
             alpha = max(alpha, score)
             if alpha >= beta:
                 break
 
         for move in popout_moves:
-            col = abs(move)  
+            col = abs(move)
             new_position = position.copy()
             if new_position.popout_piece(col):
                 if flip_colors:
-                    player = -player  
+                    player = -player
                 score = -self.negamax(new_position, -player, depth - 1, -beta, -alpha)
                 if flip_colors:
-                    player = -player  
+                    player = -player
                 best_score = max(best_score, score)
                 alpha = max(alpha, score)
                 if alpha >= beta:
                     break
 
-        if self.difficulty == 'expert' and self.zobrist_table is not None and position.mode == "connect-4":
+        if (self.difficulty == 'expert'
+            and self.zobrist_table is not None
+            and position.mode == "connect-4"):
             self.transposition_table[tt_key] = best_score
 
         return best_score
@@ -144,20 +155,16 @@ class Negamaxer:
     def evaluate(self, position, player):
         winner = position.check_winner()
         if winner == player:
-            if position.mode == "anti":
-                return -10000  
-            return 10000
+            return -10000 if position.mode == "anti" else 10000
         elif winner == -player:
-            if position.mode == "anti":
-                return 10000  
-            return -10000
+            return 10000 if position.mode == "anti" else -10000
 
         score = 0
         for r in range(position.ROWS):
             for c in range(position.COLS):
-                if position.array_board[r][c] == player:
+                cell_value = position.array_board[r][c]
+                if cell_value == player:
                     score += position.count_alignments(position.array_board, r, c, player, self.difficulty)
-                elif position.array_board[r][c] == -player:
+                elif cell_value == -player:
                     score -= position.count_alignments(position.array_board, r, c, -player, self.difficulty)
-
         return score
