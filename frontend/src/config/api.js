@@ -5,7 +5,8 @@ import {
   getGameModeConfig,
 } from "../utilities/gameState";
 
-const API_BASE = "http://127.0.0.1:5000";
+// Use environment variable if available, otherwise default to Heroku production URL
+const API_BASE = process.env.REACT_APP_API_URL || "https://connected-backend-flask-e91b571feaa1.herokuapp.com";
 
 // request wrapper (handles errors pretty much)
 const handleRequest = async (requestFn) => {
