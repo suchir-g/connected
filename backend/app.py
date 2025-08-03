@@ -59,11 +59,9 @@ def simulate_board(moves):
 
 @app.route('/bestmove', methods=['POST'])
 def best_move():
-    print("Received request for /bestmove")
     data = request.get_json()
 
     if not data:
-        print("No data sent in request")
         return jsonify({'error': 'No data sent'}), 400
 
     board = data.get('board')
@@ -71,14 +69,11 @@ def best_move():
     game_mode = data.get('game_mode', 'connect-4')  
     difficulty = data.get('difficulty', 'medium')
 
-    print(f"Request data: {data}")
 
     if not validate_board(board, game_mode):
-        print(f"Invalid board format: {board}")
         return jsonify({'error': 'Invalid board format'}), 400
 
     if current_player not in [1, -1]:
-        print(f"Invalid current_player value: {current_player}")
         return jsonify({'error': 'Invalid current_player value - must be 1 or -1.'}), 400
 
     try:
@@ -86,7 +81,6 @@ def best_move():
 
         winner = game_position.check_winner()
         if winner is not None:
-            print(f"Game already over. Winner: {winner}")
             
             if game_mode == "anti":
                 return jsonify({'best_move': None, 'board': board, 'outcome': current_player * -1}), 200
@@ -99,7 +93,6 @@ def best_move():
         
 
         if game_position.is_draw():
-            print("Game is a draw.")
             return jsonify({
                 'best_move': None,
                 'board': game_position.array_board, 
@@ -109,26 +102,21 @@ def best_move():
         negamaxer = Negamaxer(difficulty=difficulty, mode=game_mode)
         best_col = negamaxer.choose_move(game_position, current_player)
         if best_col is None:
-            print("Failed to calculate the best move!")
             return jsonify({'error': "Couldn't calculate the best move!"}), 500
 
         if game_mode == "popout" and best_col < 0:
             success = game_position.popout_piece(abs(best_col))
             if not success:
-                print(f"Popout failed for column {abs(best_col)}")
                 return jsonify({'error': 'Invalid popout move'}), 400
         else:
             success = game_position.drop_piece(best_col, current_player)
             if not success:
-                print(f"Drop failed for column {best_col}")
                 return jsonify({'error': 'Invalid drop move'}), 400
 
         outcome = game_position.check_winner()
         if outcome is None:
             outcome = 0 if not game_position.is_draw() else -1 
 
-        print(f"Best move: {best_col}, Outcome: {outcome}")
-        print(f"Updated board: {game_position.array_board}")
         return jsonify({
             'best_move': best_col,
             'board': game_position.array_board, 
@@ -136,13 +124,11 @@ def best_move():
         }), 200
 
     except Exception as e:
-        print("An unexpected error occurred while processing the request.")
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/generate-board', methods=['POST'])
 def generate_board():
     data = request.get_json()
-    print(data)
     moves = data.get('moves', 0)
 
     if not isinstance(moves, int) or moves < 0:
@@ -152,5 +138,6 @@ def generate_board():
     return jsonify({"board": board})
 
 if __name__ == '__main__':
-    print("Starting the Flask application on port 5000")
-    app.run(debug=True, port=5000)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
