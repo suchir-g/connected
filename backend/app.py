@@ -1,5 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import os
+import sys
+
+# Debug: Print current working directory and Python path
+print(f"Current working directory: {os.getcwd()}")
+print(f"Python path: {sys.path}")
+print(f"Files in current directory: {os.listdir('.')}")
+
 try:
     from Position import Position
     from Negamaxer import Negamaxer
@@ -8,6 +16,8 @@ try:
 except ImportError as e:
     GAME_ENGINE_AVAILABLE = False
     print(f"Warning: Game engine modules not available. Import error: {e}")
+    print(f"Looking for Position.py in: {os.path.exists('Position.py')}")
+    print(f"Looking for Negamaxer.py in: {os.path.exists('Negamaxer.py')}")
 except Exception as e:
     GAME_ENGINE_AVAILABLE = False
     print(f"Warning: Game engine modules failed to load. Error: {e}")
