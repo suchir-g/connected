@@ -35,6 +35,8 @@ class Position:
             self.p2_bitboard = p2_bitboard
         else:
             self.array_board = array_board
+            if len(array_board) != self.ROWS or any(len(row) != self.COLS for row in array_board):
+                raise ValueError("Invalid dimensions for the board")
             self.p1_bitboard = 0
             self.p2_bitboard = 0
             for r in range(self.ROWS):
