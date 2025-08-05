@@ -27,70 +27,75 @@ import SearchUser from "./components/friends/SearchUser";
 
 import Loading from "./components/loading/Loading";
 import NotFound from "./pages/404";
+
+import { Analytics } from "@vercel/analytics/react";
+
 const App = () => {
   return (
     <div className="mainContainer">
-      <Router>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
+      <Analytics>
+        <Router>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
 
-          <Route path="/player/:username" element={<Profile />} />
-          <Route path="/review/:playerId/:gameId" element={<ReviewGame />} />
+            <Route path="/player/:username" element={<Profile />} />
+            <Route path="/review/:playerId/:gameId" element={<ReviewGame />} />
 
-          <Route path="/trainer" element={<PositionTrainer />} />
+            <Route path="/trainer" element={<PositionTrainer />} />
 
-          <Route path="/search" element={<SearchUser />} />
-          <Route path="/social" element={<Social />} />
+            <Route path="/search" element={<SearchUser />} />
+            <Route path="/social" element={<Social />} />
 
-          <Route path="/loading" element={<Loading />} />
+            <Route path="/loading" element={<Loading />} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/play/local"
-            element={
-              <ProtectedRoute>
-                <PlayLocal />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/play/bot"
-            element={
-              <ProtectedRoute>
-                <PlayBot />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/stats"
-            element={
-              <ProtectedRoute>
-                <Stats />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Footer />
-      </Router>
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/play/local"
+              element={
+                <ProtectedRoute>
+                  <PlayLocal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/play/bot"
+              element={
+                <ProtectedRoute>
+                  <PlayBot />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/stats"
+              element={
+                <ProtectedRoute>
+                  <Stats />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Footer />
+        </Router>
+      </Analytics>
     </div>
   );
 };

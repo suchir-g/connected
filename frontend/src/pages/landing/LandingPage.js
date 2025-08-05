@@ -102,10 +102,11 @@ const LandingPage = () => {
     <div className={`landing-page ${darkMode ? "dark" : "light"}`}>
       <div className="landing-left">
         <h5 className="h4">Test your skills!</h5>
+        <i>AI Difficulty: Hard</i>
         {winner && (
           <div
-            className={`alert ${
-              winner === "AI" ? "alert-success" : "alert-primary"
+            className={`badge ${
+              winner === "AI" ? "bg-danger" : "bg-success"
             }`}
           >
             Winner: {winner}
@@ -152,7 +153,10 @@ const LandingPage = () => {
             </p>
           </div>
           <div>
-            <a href="/register" className="btn btn-primary mt-1 landingButton d-block p-2">
+            <a
+              href="/register"
+              className="btn btn-primary mt-1 landingButton d-block p-2"
+            >
               Sign Up
             </a>
           </div>
