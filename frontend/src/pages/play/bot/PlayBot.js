@@ -48,6 +48,10 @@ const PlayBot = () => {
   const [firstPlayer, setFirstPlayer] = useState("player");
   const movesRef = useRef("");
   const [error, setError] = useState(null);
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const animationDuration = 1000; // Animation duration in milliseconds
+  const minAiDelay = 600; // Minimum delay before AI makes a move (in milliseconds)
 
   useEffect(() => {
     const queryDifficulty = searchParams.get("difficulty");
@@ -81,6 +85,18 @@ const PlayBot = () => {
     resetGame();
   }, [rows, cols]);
 
+  useEffect(() => {
+    if (showRulesModal) {
+      document.body.classList.add("modal-open");
+    } else {
+      document.body.classList.remove("modal-open");
+    }
+
+    return () => {
+      document.body.classList.remove("modal-open");
+    };
+  }, [showRulesModal]);
+
   const resetGame = async () => {
     const newBoard = initializeBoard(rows, cols);
     setBoard(newBoard);
@@ -110,6 +126,22 @@ const PlayBot = () => {
         }
 
         const newTotalMoves = totalMoves + 1;
+
+        // Check AI win BEFORE color flipping
+        if (
+          (checkWinner(updatedBoardAI, -1, gameMode) && gameMode !== "anti") ||
+          (checkWinner(updatedBoardAI, 1, gameMode) && gameMode === "anti")
+        ) {
+          // No color flipping when there's a winner - just set the board
+          setBoard(updatedBoardAI);
+          setTotalMoves(newTotalMoves);
+          setWinner("AI");
+          recordGameResult(-1, false);
+          setIsLocked(false);
+          return;
+        }
+
+        // Only flip if there's no winner
         let finalBoard = updatedBoardAI;
         if (gameMode === "colour-switch" && newTotalMoves % 3 === 0) {
           finalBoard = flipBoardColours(finalBoard);
@@ -118,12 +150,13 @@ const PlayBot = () => {
         setBoard(finalBoard);
         setTotalMoves(newTotalMoves);
 
+        // Check for player win after color flip
         if (
-          (checkWinner(finalBoard, -1, gameMode) && gameMode !== "anti") ||
-          (checkWinner(finalBoard, 1, gameMode) && gameMode === "anti")
+          (checkWinner(finalBoard, 1, gameMode) && gameMode !== "anti") ||
+          (checkWinner(finalBoard, -1, gameMode) && gameMode === "anti")
         ) {
-          setWinner("AI");
-          recordGameResult(-1, false);
+          setWinner("Player");
+          recordGameResult(1, false);
           setIsLocked(false);
           return;
         }
@@ -144,7 +177,7 @@ const PlayBot = () => {
   };
 
   const handleMakeMove = async (column) => {
-    if (isLocked || winner || isDraw) return;
+    if (isLocked || winner || isDraw || isAnimating) return;
 
     if (!isValidMove(board, column, gameMode, actionMode)) {
       const moveError = getMoveError(board, column, actionMode);
@@ -165,22 +198,60 @@ const PlayBot = () => {
     setMoves(movesRef.current);
 
     const newTotalMoves = totalMoves + 1;
-    if (gameMode === "colour-switch" && newTotalMoves % 3 === 0) {
-      finalBoard = flipBoardColours(finalBoard);
-    }
 
-    setBoard(finalBoard);
-    setTotalMoves(newTotalMoves);
-
+    // Check win condition BEFORE color flipping
     if (
       (checkWinner(finalBoard, 1, gameMode) && gameMode !== "anti") ||
       (checkWinner(finalBoard, -1, gameMode) && gameMode === "anti")
     ) {
+      // No color flipping when there's a winner - just set the board
+      setBoard(finalBoard);
+      setTotalMoves(newTotalMoves);
       setWinner("Player");
       recordGameResult(1, false);
       return;
     }
 
+    // Now flip colors if needed - only when there's no winner
+    if (gameMode === "colour-switch" && newTotalMoves % 3 === 0) {
+      setIsAnimating(true);
+      setBoard(finalBoard); // First set the board before flip
+      
+      // Wait for animation to complete before actually flipping colors
+      setTimeout(() => {
+        const flippedBoard = flipBoardColours(finalBoard);
+        setBoard(flippedBoard);
+        finalBoard = flippedBoard;
+        setIsAnimating(false);
+        
+        // Check for AI win after color flip
+        if (
+          (checkWinner(finalBoard, -1, gameMode) && gameMode !== "anti") ||
+          (checkWinner(finalBoard, 1, gameMode) && gameMode === "anti")
+        ) {
+          setWinner("AI");
+          recordGameResult(-1, false);
+          return;
+        }
+
+        if (isDrawCondition(finalBoard)) {
+          setIsDraw(true);
+          recordGameResult(-1, true);
+          return;
+        }
+        
+        // Continue with AI move after animation
+        makeAIMove(finalBoard, newTotalMoves);
+      }, animationDuration);
+      
+      setTotalMoves(newTotalMoves);
+      return;
+    }
+
+    setBoard(finalBoard);
+    setTotalMoves(newTotalMoves);
+
+    // Check for AI win after color flip
     if (
       (checkWinner(finalBoard, -1, gameMode) && gameMode !== "anti") ||
       (checkWinner(finalBoard, 1, gameMode) && gameMode === "anti")
@@ -196,11 +267,25 @@ const PlayBot = () => {
       return;
     }
 
+    makeAIMove(finalBoard, newTotalMoves);
+  };
+  
+  // Enhanced makeAIMove function with minimum delay
+  const makeAIMove = async (currentBoard, currentTotalMoves) => {
     setIsLocked(true);
-
+    
+    // Add minimum delay for better UX and memory purposes
+    const startTime = Date.now();
+    
     try {
-      const response = await getBestMove(finalBoard, -1, gameMode, difficulty);
+      const response = await getBestMove(currentBoard, -1, gameMode, difficulty);
       const { best_move: aiMove, board: updatedBoardAI } = response.data;
+      
+      // Calculate elapsed time and wait if needed
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < minAiDelay) {
+        await new Promise(resolve => setTimeout(resolve, minAiDelay - elapsedTime));
+      }
 
       let finalBoardAI = updatedBoardAI;
 
@@ -214,48 +299,73 @@ const PlayBot = () => {
         setMoves(movesRef.current);
       }
 
-      const newTotalMovesAI = newTotalMoves + 1; // because newTotalMoves was after player's move
-      if (gameMode === "colour-switch" && newTotalMovesAI % 3 === 0) {
-        finalBoardAI = flipBoardColours(finalBoardAI);
-      }
+      const newTotalMovesAI = currentTotalMoves + 1;
 
-      setBoard(finalBoardAI);
-      setTotalMoves(newTotalMovesAI);
-
+      // Check AI win BEFORE color flipping
       if (
         (checkWinner(finalBoardAI, -1, gameMode) && gameMode !== "anti") ||
         (checkWinner(finalBoardAI, 1, gameMode) && gameMode === "anti")
       ) {
+        // No color flipping when there's a winner - just set the board
+        setBoard(finalBoardAI);
+        setTotalMoves(newTotalMovesAI);
         setWinner("AI");
         recordGameResult(-1, false);
         setIsLocked(false);
         return;
       }
 
-      if (
-        (checkWinner(finalBoardAI, 1, gameMode) && gameMode !== "anti") ||
-        (checkWinner(finalBoardAI, -1, gameMode) && gameMode === "anti")
-      ) {
-        setWinner("Player");
-        recordGameResult(1, false);
-        setIsLocked(false);
-        return;
-      }
+      // Now flip colors if needed - only when there's no winner
+      if (gameMode === "colour-switch" && newTotalMovesAI % 3 === 0) {
+        setIsAnimating(true);
+        setBoard(finalBoardAI); // Set board before flip
+        
+        setTimeout(() => {
+          const flippedBoard = flipBoardColours(finalBoardAI);
+          setBoard(flippedBoard);
+          finalBoardAI = flippedBoard;
+          
+          // Check for player win after color flip
+          if (
+            (checkWinner(finalBoardAI, 1, gameMode) && gameMode !== "anti") ||
+            (checkWinner(finalBoardAI, -1, gameMode) && gameMode === "anti")
+          ) {
+            setWinner("Player");
+            recordGameResult(1, false);
+          } else if (isDrawCondition(finalBoardAI)) {
+            setIsDraw(true);
+            recordGameResult(-1, true);
+          }
+          
+          setIsAnimating(false);
+          setIsLocked(false);
+        }, animationDuration);
+      } else {
+        setBoard(finalBoardAI);
 
-      if (isDrawCondition(finalBoardAI)) {
-        setIsDraw(true);
-        recordGameResult(-1, true);
+        // Check for player win after normal move
+        if (
+          (checkWinner(finalBoardAI, 1, gameMode) && gameMode !== "anti") ||
+          (checkWinner(finalBoardAI, -1, gameMode) && gameMode === "anti")
+        ) {
+          setWinner("Player");
+          recordGameResult(1, false);
+        } else if (isDrawCondition(finalBoardAI)) {
+          setIsDraw(true);
+          recordGameResult(-1, true);
+        }
+        
         setIsLocked(false);
-        return;
       }
+      
+      setTotalMoves(newTotalMovesAI);
     } catch (error) {
       console.error("Error fetching AI move:", error);
       setError("Could not fetch AI move.");
-    } finally {
       setIsLocked(false);
     }
   };
-
+  
   const recordGameResult = async (gameOutcome, draw) => {
     if (!auth.currentUser) {
       console.error("User not authenticated");
@@ -293,6 +403,34 @@ const PlayBot = () => {
     setFirstPlayer(event.target.value);
   };
 
+  const handleRulesModal = () => {
+    setShowRulesModal(!showRulesModal);
+  };
+
+  const getGameModeRules = (mode) => {
+    switch (mode) {
+      case "connect-4":
+        return "Connect four of your pieces in a row, column, or diagonal to win. Players take turns dropping pieces from the top.";
+      case "connect-5":
+        return "Similar to Connect 4, but you need to connect five pieces in a row, column, or diagonal on a larger board.";
+      case "popout":
+        return "Like Connect 4, but with an added twist: you can either add a piece at the top or remove one of your own pieces from the bottom row, causing all pieces above to fall down.";
+      case "anti":
+        return "In Anti mode, if you create a line of four pieces, you lose! Force your opponent to connect four in a row.";
+      case "colour-switch":
+        return "Every three moves, all pieces on the board switch colors. Plan carefully, as your opponent's pieces can become yours and vice versa!";
+      default:
+        return "Select a game mode to see its rules.";
+    }
+  };
+
+  // Calculate moves until next flip
+  const getMovesUntilFlip = () => {
+    if (gameMode !== "colour-switch") return null;
+    const currentCyclePosition = totalMoves % 3;
+    return 3 - currentCyclePosition;
+  };
+
   return (
     <div className="container mt-4 text-center" style={{ minHeight: "100vh" }}>
       {error && <div className="alert alert-warning w-100">{error}</div>}
@@ -300,7 +438,7 @@ const PlayBot = () => {
       <h1 className="my-4">Play against Bot</h1>
 
       <div className="d-flex justify-content-center">
-        <div className="board-container">
+        <div className={`board-container ${isAnimating ? 'board-color-switching' : ''}`}>
           <Board
             rows={rows}
             cols={cols}
@@ -310,6 +448,25 @@ const PlayBot = () => {
           />
         </div>
       </div>
+      
+      {/* Color flip counter */}
+      {gameMode === "colour-switch" && (
+        <div className="row mt-2">
+          <div className="col d-flex justify-content-center">
+            <div className="color-flip-indicator">
+              <p>
+                {isAnimating ? (
+                  <span className="text-warning">Colors flipping...</span>
+                ) : (
+                  <>
+                    Next color flip in: <strong>{getMovesUntilFlip()}</strong> move{getMovesUntilFlip() !== 1 ? 's' : ''}
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="row mt-4">
         <div className="col d-flex justify-content-center">
@@ -389,6 +546,12 @@ const PlayBot = () => {
                 </option>
               ))}
             </select>
+            <button
+              className="btn btn-secondary btn-sm ms-2"
+              onClick={handleRulesModal}
+            >
+              Variant Rules
+            </button>
           </div>
         </div>
       </div>
@@ -411,8 +574,159 @@ const PlayBot = () => {
       {isDraw && (
         <div className="alert alert-warning mt-4 w-100">It's a draw!</div>
       )}
+
+      {/* Rules Modal */}
+      {showRulesModal && (
+        <>
+          <div
+            className="modal fade show"
+            style={{
+              display: "block",
+              zIndex: 1050,
+            }}
+            tabIndex="-1"
+            role="dialog"
+          >
+            <div className="modal-dialog" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Variant Rules</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={handleRulesModal}
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div
+                  className="modal-body text-start"
+                  style={{ maxHeight: "70vh", overflowY: "auto" }}
+                >
+                  <h5 className="mb-3">
+                    How to Play:{" "}
+                    {gameMode
+                      .split("-")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
+                      .join(" ")}
+                  </h5>
+                  <p>{getGameModeRules(gameMode)}</p>
+
+                  <hr />
+
+                  <h6 className="mb-3">All Game Variants:</h6>
+                  <ul className="list-group list-group-flush border-0">
+                    {gameModes.map((mode) => (
+                      <li key={mode} className="list-group-item border-0">
+                        <strong>
+                          {mode
+                            .split("-")
+                            .map(
+                              (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                            )
+                            .join(" ")}
+                          :
+                        </strong>{" "}
+                        {getGameModeRules(mode)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleRulesModal}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop fade show"
+            onClick={handleRulesModal}
+            style={{
+              backgroundColor: "rgba(0,0,0,0.3)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1040,
+            }}
+          ></div>
+
+          <style jsx="true">{`
+            body.modal-open {
+              overflow: hidden;
+              padding-right: 0 !important;
+            }
+            .modal-content {
+              box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            }
+            /* Let Bootstrap handle dark mode styling */
+            @media (prefers-color-scheme: dark) {
+              .list-group-item {
+                background-color: inherit;
+                color: inherit;
+              }
+            }
+            /* Remove list group borders */
+            .list-group-flush .list-group-item {
+              border-width: 0;
+              border-radius: 0;
+              padding: 0.5rem 0;
+            }
+          `}</style>
+        </>
+      )}
+
+      <style jsx="true">{`
+        .board-color-switching {
+          animation: fadeAnimation ${animationDuration}ms ease-in-out;
+        }
+        
+        @keyframes fadeAnimation {
+          0% { opacity: 1; }
+          45% { opacity: 0.3; }
+          55% { opacity: 0.3; }
+          100% { opacity: 1; }
+        }
+        
+        .color-flip-indicator {
+          background-color: ${gameMode === "colour-switch" ? "rgba(0,0,0,0.1)" : "transparent"};
+          padding: 5px 15px;
+          border-radius: 15px;
+          display: inline-block;
+        }
+        
+        /* Add transition to counters in the board */
+        :global(.board-container .cell .counter) {
+          transition: background-color ${animationDuration/2}ms ease-in-out, 
+                      box-shadow ${animationDuration/2}ms ease-in-out,
+                      transform ${animationDuration/3}ms ease;
+        }
+        
+        .board-color-switching :global(.cell .counter) {
+          animation: counterTransition ${animationDuration}ms ease-in-out;
+        }
+        
+        @keyframes counterTransition {
+          0% { transform: scale(1); }
+          45% { transform: scale(0.9); filter: blur(1px); }
+          55% { transform: scale(0.9); filter: blur(1px); }
+          100% { transform: scale(1); filter: blur(0); }
+        }
+      `}</style>
     </div>
   );
 };
 
 export default PlayBot;
+        
