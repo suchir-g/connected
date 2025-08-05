@@ -10,6 +10,7 @@ import {
 import { doc, deleteDoc } from "firebase/firestore";
 import ToggleThemeButton from "../../components/navbar/ToggleThemeButton";
 import { useTheme } from "../../contexts/ThemeContext";
+import { getFirebaseErrorMessage } from "../../config/errors";
 import "./Settings.css";
 
 const Settings = () => {
@@ -46,7 +47,7 @@ const Settings = () => {
       setNewPassword("");
       setCurrentPassword("");
     } catch (err) {
-      setError(err.message);
+      setError(getFirebaseErrorMessage(err));
     }
   };
 
@@ -75,7 +76,7 @@ const Settings = () => {
       await signOut(auth);
       window.location.reload();
     } catch (err) {
-      setError(err.message);
+      setError(getFirebaseErrorMessage(err));
     }
   };
 
@@ -84,7 +85,7 @@ const Settings = () => {
       await signOut(auth);
       window.location.reload();
     } catch (err) {
-      setError(err.message);
+      setError(getFirebaseErrorMessage(err));
     }
   };
 
@@ -125,7 +126,6 @@ const Settings = () => {
         </div>
       )}
 
-      {/* Change Password Section */}
       <div className="card mb-4">
         <div className="card-header">
           <h5 className="mb-0">Change Password</h5>
@@ -174,7 +174,6 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Delete Account Section */}
       <div className="card mb-4">
         <div className="card-header">
           <h5 className="mb-0">Delete Account</h5>
@@ -209,7 +208,6 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Sign Out Section */}
       <div className="card mb-4">
         <div className="card-header">
           <h5 className="mb-0">Sign Out</h5>
@@ -220,8 +218,6 @@ const Settings = () => {
           </button>
         </div>
       </div>
-
-      {/* Theme Toggle Button */}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 export const getFirebaseErrorMessage = (error) => {
   switch (error.code) {
     case "auth/invalid-credential":
-      return "The email address is not valid. Please check and try again.";
+      return "The password is not valid. Please check and try again.";
     case "auth/user-disabled":
       return "This user account has been disabled. Please contact support.";
     case "auth/user-not-found":

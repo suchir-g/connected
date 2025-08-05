@@ -10,7 +10,8 @@ import {
 } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-
+import styles from './SearchUser.module.css';
+import { useTheme } from "../../contexts/ThemeContext";
 const levCache = {};
 
 const lev = (a, b) => {
@@ -22,11 +23,13 @@ const lev = (a, b) => {
   if (b.length === 0) return a.length;
   if (a[0] === b[0]) return lev(a.slice(1), b.slice(1));
 
-  const result = 1 + Math.min(
-    lev(a.slice(1), b),
-    lev(a, b.slice(1)),
-    lev(a.slice(1), b.slice(1))
-  );
+  const result =
+    1 +
+    Math.min(
+      lev(a.slice(1), b),
+      lev(a, b.slice(1)),
+      lev(a.slice(1), b.slice(1))
+    );
 
   levCache[key] = result;
   return result;
@@ -38,6 +41,7 @@ const SearchUser = () => {
   const [results, setResults] = useState([]);
   const [friends, setFriends] = useState([]);
   const [error, setError] = useState("");
+const { darkMode } = useTheme(); 
 
   useEffect(() => {
     const fetchFriends = async () => {
@@ -138,13 +142,15 @@ const SearchUser = () => {
           placeholder="Enter username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="form-control"
+          className={`form-control ${
+            darkMode ? styles.placeholderWhite : styles.placeholderDark
+          }`}
         />
         <button onClick={handleSearch} className="btn btn-primary">
           Search
         </button>
       </div>
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && <div className="alert alert-danger w-100">{error}</div>}
       <ul className="list-group">
         {results.map((user) => (
           <li

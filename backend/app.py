@@ -13,20 +13,20 @@ if current_dir not in sys.path:
 try:
     # Try to import using direct file paths for more reliability
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    
+
     # Try both uppercase and lowercase filenames for cross-platform compatibility
     position_files = ['Position.py', 'position.py']
     negamaxer_files = ['Negamaxer.py', 'negamaxer.py']
-    
+
     position_path = None
     negamaxer_path = None
-    
+
     for filename in position_files:
         path = os.path.join(current_dir, filename)
         if os.path.exists(path):
             position_path = path
             break
-    
+
     for filename in negamaxer_files:
         path = os.path.join(current_dir, filename)
         if os.path.exists(path):
@@ -63,9 +63,11 @@ except Exception as e:
     print(f"Current directory: {current_dir}")
     print(f"Files in directory: {os.listdir(current_dir)}")
     if 'position_path' in locals():
-        print(f"Position.py exists: {os.path.exists(position_path) if position_path else 'No valid path found'}")
+        print(
+            f"Position.py exists: {os.path.exists(position_path) if position_path else 'No valid path found'}")
     if 'negamaxer_path' in locals():
-        print(f"Negamaxer.py exists: {os.path.exists(negamaxer_path) if negamaxer_path else 'No valid path found'}")
+        print(
+            f"Negamaxer.py exists: {os.path.exists(negamaxer_path) if negamaxer_path else 'No valid path found'}")
 
 
 app = Flask(__name__)
@@ -131,7 +133,7 @@ def simulate_board(moves):
 def best_move():
     if not GAME_ENGINE_AVAILABLE:
         return jsonify({'error': 'Game engine not available'}), 503
-        
+
     data = request.get_json()
 
     if not data:
@@ -218,9 +220,11 @@ def health_check():
         'game_engine_available': GAME_ENGINE_AVAILABLE
     })
 
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({'status': 'healthy'})
+
 
 if __name__ == '__main__':
     import os

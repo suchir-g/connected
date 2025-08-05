@@ -1,0 +1,8 @@
+
+.placeholderWhite::placeholder {
+    color: #bababa;
+  }
+
+    .placeholderDark::placeholder {
+    color: #282828;
+  }

@@ -8,7 +8,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import {
   initializeBoard,
   getGameModeConfig,
-  flipBoardColors,
+  flipBoardColours,
   applyMove,
 } from "../../utilities/gameState";
 import Loading from "../../components/loading/Loading";
@@ -86,12 +86,15 @@ const ReviewGame = () => {
     setEvaluating(true);
     const config = getGameModeConfig(currentGameMode);
     let tempBoard = initializeBoard(config.rows, config.cols);
+
     const bestMoves = [];
     for (let i = 0; i < movesArr.length; i++) {
       const player = i % 2 === 0 ? 1 : -1;
+
       if (currentGameMode === "colour-switch" && i > 0 && i % 3 === 0) {
-        tempBoard = flipBoardColors(tempBoard);
+        tempBoard = flipBoardColours(tempBoard);
       }
+
       try {
         const response = await getBestMove(
           tempBoard,
@@ -103,8 +106,18 @@ const ReviewGame = () => {
       } catch (err) {
         bestMoves.push(null);
       }
-      tempBoard = applyMove(tempBoard, movesArr[i], player, currentGameMode);
+
+      const isPopout = movesArr[i] < 0;
+      const colIndex = isPopout ? Math.abs(movesArr[i]) - 1 : movesArr[i];
+      tempBoard = applyMove(
+        tempBoard,
+        colIndex,
+        player,
+        currentGameMode,
+        isPopout ? "popout" : "place"
+      );
     }
+
     try {
       await updateDoc(gameRef, { bestMoves });
       setPrecomputedBestMoves(bestMoves);
@@ -118,20 +131,42 @@ const ReviewGame = () => {
     const config = getGameModeConfig(gameMode);
     let tempBoard = initializeBoard(config.rows, config.cols);
     let latest = null;
+
     for (let i = 0; i <= moveIndex; i++) {
       const player = i % 2 === 0 ? 1 : -1;
+
       if (gameMode === "colour-switch" && i > 0 && i % 3 === 0) {
-        tempBoard = flipBoardColors(tempBoard);
+        tempBoard = flipBoardColours(tempBoard);
       }
-      tempBoard = applyMove(tempBoard, moves[i], player, gameMode);
-      const col = moves[i] < 0 ? Math.abs(moves[i]) - 1 : moves[i];
-      for (let r = tempBoard.length - 1; r >= 0; r--) {
-        if (tempBoard[r][col] === player) {
-          latest = { row: r, column: col };
-          break;
+
+      const isPopout = moves[i] < 0;
+      const colIndex = isPopout ? Math.abs(moves[i]) - 1 : moves[i];
+
+      tempBoard = applyMove(
+        tempBoard,
+        colIndex,
+        player,
+        gameMode,
+        isPopout ? "popout" : "place"
+      );
+
+      if (isPopout) {
+        for (let r = tempBoard.length - 1; r >= 0; r--) {
+          if (tempBoard[r][colIndex] === 0) {
+            latest = { row: r, column: colIndex };
+            break;
+          }
+        }
+      } else {
+        for (let r = 0; r < tempBoard.length; r++) {
+          if (tempBoard[r][colIndex] === player) {
+            latest = { row: r, column: colIndex };
+            break;
+          }
         }
       }
     }
+
     return { board: tempBoard, latestMove: latest };
   };
 
@@ -163,10 +198,9 @@ const ReviewGame = () => {
   }, [moves, currentMoveIndex, gameMode]);
 
   if (loading) {
-    return (
-      <Loading />
-    );
+    return <Loading />;
   }
+
   if (error) {
     return (
       <div className="container mt-4">
@@ -176,6 +210,7 @@ const ReviewGame = () => {
       </div>
     );
   }
+
   if (evaluating) {
     return (
       <div
@@ -183,7 +218,7 @@ const ReviewGame = () => {
         style={{ height: "100vh" }}
       >
         <div className="spinner-border text-warning" role="status">
-          <span className="visually-hidden">Computing evaluation...</span>
+          <span className="visually-hidden">Evaluating...</span>
         </div>
       </div>
     );
@@ -244,6 +279,8 @@ const ReviewGame = () => {
             board={board}
             highlightedColumns={[precomputedBestMoves[currentMoveIndex]]}
             latestMove={latestMove}
+            rows={board.length}
+            cols={board[0].length}
           />
           <div className="mt-3">
             <strong>Best Move for this turn:</strong>{" "}

@@ -4,7 +4,7 @@ import Board from "../../../components/board/Board";
 import {
   getGameModeConfig,
   initializeBoard,
-  flipBoardColors,
+  flipBoardColours,
   checkWinner,
   isDrawCondition,
   applyMove,
@@ -30,7 +30,7 @@ const PlayLocal = () => {
   const [moves, setMoves] = useState("");
   const [totalMoves, setTotalMoves] = useState(0);
 
-  const [colorReversed, setColorReversed] = useState(false);
+  const [colourReversed, setcolourReversed] = useState(false);
 
   const [error, setError] = useState(null);
 
@@ -52,7 +52,7 @@ const PlayLocal = () => {
     setIsDraw(false);
     setMoves("");
     setTotalMoves(0);
-    setColorReversed(false);
+    setcolourReversed(false);
     setError(null);
   };
 
@@ -91,19 +91,14 @@ const PlayLocal = () => {
       return;
     }
 
+    if (gameMode === "colour-switch" && (totalMoves + 1) % 3 === 0) {
+      const flippedBoard = flipBoardColours(updatedBoard);
+      setBoard(flippedBoard);
+      setcolourReversed((prev) => !prev);
+    }
+
     setCurrentPlayer((prev) => -prev);
   };
-  useEffect(() => {
-    if (
-      gameMode === "colour-switch" &&
-      totalMoves > 0 &&
-      totalMoves % 3 === 0
-    ) {
-      const flippedBoard = flipBoardColors(board);
-      setBoard(flippedBoard);
-      setColorReversed((prev) => !prev);
-    }
-  }, [totalMoves, gameMode]);
 
   const handleGameModeChange = (event) => {
     const selectedMode = event.target.value;
@@ -174,7 +169,7 @@ const PlayLocal = () => {
       {gameMode === "colour-switch" && (
         <div className="row mt-4">
           <div className="col d-flex justify-content-center">
-            <p>Colour switch activated: Colors reverse every 3 moves.</p>
+            <p>Colour switch activated: colours reverse every 3 moves.</p>
           </div>
         </div>
       )}
@@ -206,9 +201,9 @@ const PlayLocal = () => {
         <div className="row mt-2">
           <div className="col d-flex justify-content-center">
             <p>
-              {colorReversed
-                ? "Colors are currently reversed."
-                : "Colors are in normal order."}
+              {colourReversed
+                ? "colours are currently reversed."
+                : "colours are in normal order."}
             </p>
           </div>
         </div>

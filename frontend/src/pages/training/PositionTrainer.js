@@ -84,28 +84,34 @@ const PositionTrainer = () => {
       if (loading || error || moveMade) return;
 
       try {
-        if (board[0][column] !== 0) {
-          setFeedback(`Column ${column + 1} is full. Choose another column.`);
-          return;
+        if (actionMode === "place") {
+          if (board[0][column] !== 0) {
+            setFeedback(`Column ${column + 1} is full. Choose another column.`);
+            return;
+          }
+        } else if (actionMode === "popout") {
+          if (board[board.length - 1][column] === 0) {
+            setFeedback(
+              `Nothing to pop out at the bottom of column ${column + 1}.`
+            );
+            return;
+          }
         }
 
         const oldBoard = board;
 
         const updatedBoard = applyMove(
           board,
-          column,
-          1,
-          gameMode,
-          rows,
-          cols,
-          actionMode
+          column, 
+          1, 
+          gameMode, 
+          actionMode 
         );
         setBoard(updatedBoard);
         setFeedback("");
 
-        const moveNotation =
-          actionMode === "place" ? `${column + 1}` : `-${column + 1}`;
-        movesRef.current += moveNotation;
+        movesRef.current +=
+          actionMode === "popout" ? `-${column + 1}` : `${column + 1}`;
 
         setMoveMade(true);
         setUserMove(column);
@@ -124,7 +130,7 @@ const PositionTrainer = () => {
         setLoading(true);
         const aiMoveResponse = await getBestMove(
           oldBoard,
-          -1,
+          -1, 
           gameMode,
           difficulty
         );
@@ -140,7 +146,7 @@ const PositionTrainer = () => {
           let aiMoveColumn = aiMoveVal;
           if (aiMoveVal < 0) {
             aiMoveAction = "popout";
-            aiMoveColumn = -aiMoveVal;
+            aiMoveColumn = -aiMoveVal; 
           }
 
           if (actionMode === aiMoveAction && aiMoveColumn === column) {
@@ -151,9 +157,8 @@ const PositionTrainer = () => {
             if (aiMoveAction === "place") {
               bestMoveDescription = `place in column ${aiMoveColumn + 1}`;
             } else {
-              bestMoveDescription = `popout from column ${aiMoveColumn + 1}`;
+              bestMoveDescription = `pop out from column ${aiMoveColumn + 1}`;
             }
-
             setFeedback(
               `Wrong move. You chose to ${actionMode} column ${
                 column + 1
@@ -174,14 +179,12 @@ const PositionTrainer = () => {
       }
     },
     [
-      loading,
-      error,
-      moveMade,
       board,
       actionMode,
       gameMode,
-      rows,
-      cols,
+      loading,
+      error,
+      moveMade,
       difficulty,
       recordTrainingResult,
     ]
@@ -252,7 +255,7 @@ const PositionTrainer = () => {
 
     setTrainingType(type);
     generateTrainingPosition(type);
-  }, [searchParams, setDefaultGrid, generateTrainingPosition]);
+  }, []);
 
   const handleGameModeChange = (event) => {
     const selectedMode = event.target.value;
@@ -302,7 +305,7 @@ const PositionTrainer = () => {
           board={board}
           highlightedColumns={[]}
           onColumnClick={handlePlayerMove}
-          disabled={moveMade || loading}
+          disabled={loading}
         />
       </div>
 
@@ -319,7 +322,6 @@ const PositionTrainer = () => {
               value={gameMode}
               onChange={handleGameModeChange}
               className="form-select w-auto"
-              disabled={moveMade}
             >
               {GAME_MODES.map((mode) => (
                 <option key={mode} value={mode}>
@@ -342,7 +344,6 @@ const PositionTrainer = () => {
                 value={actionMode}
                 onChange={(e) => setActionMode(e.target.value)}
                 className="form-select w-auto"
-                disabled={moveMade}
               >
                 <option value="place">Place</option>
                 <option value="popout">Popout</option>

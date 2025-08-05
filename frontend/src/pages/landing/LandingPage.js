@@ -115,7 +115,7 @@ const LandingPage = () => {
         <Board rows={6} cols={7} board={board} onColumnClick={handleMakeMove} />
         <button
           onClick={resetGame}
-          className="btn btn-primary mt-1 landingButtonn"
+          className="btn btn-secondary mt-1 landingButtonn"
         >
           Play Again
         </button>
@@ -150,6 +150,11 @@ const LandingPage = () => {
               Practice smarter with recommendations crafted to help you overcome
               your toughest challenges and master the game.
             </p>
+          </div>
+          <div>
+            <a href="/register" className="btn btn-primary mt-1 landingButton d-block p-2">
+              Sign Up
+            </a>
           </div>
         </div>
       </div>

@@ -8,7 +8,7 @@ import { doc, collection, addDoc } from "firebase/firestore";
 import {
   getGameModeConfig,
   initializeBoard,
-  flipBoardColors,
+  flipBoardColours,
   checkWinner,
   isDrawCondition,
   applyMove,
@@ -75,12 +75,10 @@ const PlayBot = () => {
 
   useEffect(() => {
     resetGame();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstPlayer]);
 
   useEffect(() => {
     resetGame();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, cols]);
 
   const resetGame = async () => {
@@ -100,20 +98,26 @@ const PlayBot = () => {
       try {
         const response = await getBestMove(newBoard, -1, gameMode, difficulty);
         const { best_move: aiMove, board: updatedBoardAI } = response.data;
-        let finalBoard = updatedBoardAI;
-
-        if (gameMode === "colour-switch" && (totalMoves + 1) % 3 === 0) {
-          finalBoard = flipBoardColors(finalBoard);
-        }
-
-        setBoard(finalBoard);
 
         if (aiMove !== null) {
-          movesRef.current += `${aiMove}`;
+          const colIndex = Math.abs(aiMove);
+          if (aiMove < 0) {
+            movesRef.current += `-${colIndex + 1}`;
+          } else {
+            movesRef.current += (colIndex + 1).toString();
+          }
           setMoves(movesRef.current);
         }
 
-        // >>> AI's immediate winner check <<<
+        const newTotalMoves = totalMoves + 1;
+        let finalBoard = updatedBoardAI;
+        if (gameMode === "colour-switch" && newTotalMoves % 3 === 0) {
+          finalBoard = flipBoardColours(finalBoard);
+        }
+
+        setBoard(finalBoard);
+        setTotalMoves(newTotalMoves);
+
         if (
           (checkWinner(finalBoard, -1, gameMode) && gameMode !== "anti") ||
           (checkWinner(finalBoard, 1, gameMode) && gameMode === "anti")
@@ -130,8 +134,6 @@ const PlayBot = () => {
           setIsLocked(false);
           return;
         }
-
-        setTotalMoves((prev) => prev + 1);
       } catch (error) {
         console.error("Error fetching AI move:", error);
         setError("Could not fetch AI move.");
@@ -151,19 +153,28 @@ const PlayBot = () => {
     }
 
     setError(null);
+
     const updatedBoard = applyMove(board, column, 1, gameMode, actionMode);
-    setBoard(updatedBoard);
+    let finalBoard = updatedBoard;
 
-    const moveNotation =
-      actionMode === "place" ? (column + 1).toString() : `-${column + 1}`;
-    movesRef.current += moveNotation;
+    if (actionMode === "place") {
+      movesRef.current += (column + 1).toString();
+    } else {
+      movesRef.current += `-${column + 1}`;
+    }
     setMoves(movesRef.current);
-    setTotalMoves((prev) => prev + 1);
 
-    // >>> Player's immediate winner check <<<
+    const newTotalMoves = totalMoves + 1;
+    if (gameMode === "colour-switch" && newTotalMoves % 3 === 0) {
+      finalBoard = flipBoardColours(finalBoard);
+    }
+
+    setBoard(finalBoard);
+    setTotalMoves(newTotalMoves);
+
     if (
-      (checkWinner(updatedBoard, 1, gameMode) && gameMode !== "anti") ||
-      (checkWinner(updatedBoard, -1, gameMode) && gameMode === "anti")
+      (checkWinner(finalBoard, 1, gameMode) && gameMode !== "anti") ||
+      (checkWinner(finalBoard, -1, gameMode) && gameMode === "anti")
     ) {
       setWinner("Player");
       recordGameResult(1, false);
@@ -171,15 +182,15 @@ const PlayBot = () => {
     }
 
     if (
-      (checkWinner(updatedBoard, -1, gameMode) && gameMode !== "anti") ||
-      (checkWinner(updatedBoard, 1, gameMode) && gameMode === "anti")
+      (checkWinner(finalBoard, -1, gameMode) && gameMode !== "anti") ||
+      (checkWinner(finalBoard, 1, gameMode) && gameMode === "anti")
     ) {
       setWinner("AI");
       recordGameResult(-1, false);
       return;
     }
 
-    if (isDrawCondition(updatedBoard)) {
+    if (isDrawCondition(finalBoard)) {
       setIsDraw(true);
       recordGameResult(-1, true);
       return;
@@ -188,30 +199,32 @@ const PlayBot = () => {
     setIsLocked(true);
 
     try {
-      const response = await getBestMove(
-        updatedBoard,
-        -1,
-        gameMode,
-        difficulty
-      );
+      const response = await getBestMove(finalBoard, -1, gameMode, difficulty);
       const { best_move: aiMove, board: updatedBoardAI } = response.data;
 
-      let finalBoard = updatedBoardAI;
-      if (gameMode === "colour-switch" && (totalMoves + 1) % 3 === 0) {
-        finalBoard = flipBoardColors(finalBoard);
-      }
-
-      setBoard(finalBoard);
+      let finalBoardAI = updatedBoardAI;
 
       if (aiMove !== null) {
-        const aiMoveNotation = aiMove < 0 ? `${aiMove}` : `${aiMove + 1}`;
-        movesRef.current += aiMoveNotation;
+        const colIndex = Math.abs(aiMove);
+        if (aiMove < 0) {
+          movesRef.current += `-${colIndex + 1}`;
+        } else {
+          movesRef.current += (colIndex + 1).toString();
+        }
         setMoves(movesRef.current);
       }
 
+      const newTotalMovesAI = newTotalMoves + 1; // because newTotalMoves was after player's move
+      if (gameMode === "colour-switch" && newTotalMovesAI % 3 === 0) {
+        finalBoardAI = flipBoardColours(finalBoardAI);
+      }
+
+      setBoard(finalBoardAI);
+      setTotalMoves(newTotalMovesAI);
+
       if (
-        (checkWinner(finalBoard, -1, gameMode) && gameMode !== "anti") ||
-        (checkWinner(finalBoard, 1, gameMode) && gameMode === "anti")
+        (checkWinner(finalBoardAI, -1, gameMode) && gameMode !== "anti") ||
+        (checkWinner(finalBoardAI, 1, gameMode) && gameMode === "anti")
       ) {
         setWinner("AI");
         recordGameResult(-1, false);
@@ -220,8 +233,8 @@ const PlayBot = () => {
       }
 
       if (
-        (checkWinner(finalBoard, 1, gameMode) && gameMode !== "anti") ||
-        (checkWinner(finalBoard, -1, gameMode) && gameMode === "anti")
+        (checkWinner(finalBoardAI, 1, gameMode) && gameMode !== "anti") ||
+        (checkWinner(finalBoardAI, -1, gameMode) && gameMode === "anti")
       ) {
         setWinner("Player");
         recordGameResult(1, false);
@@ -229,14 +242,12 @@ const PlayBot = () => {
         return;
       }
 
-      if (isDrawCondition(finalBoard)) {
+      if (isDrawCondition(finalBoardAI)) {
         setIsDraw(true);
         recordGameResult(-1, true);
         setIsLocked(false);
         return;
       }
-
-      setTotalMoves((prev) => prev + 1);
     } catch (error) {
       console.error("Error fetching AI move:", error);
       setError("Could not fetch AI move.");

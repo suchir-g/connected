@@ -13,7 +13,7 @@ export const getGameModeConfig = (mode) => {
   return config[mode] || config["connect-4"];
 };
 
-export const flipBoardColors = (board) => {
+export const flipBoardColours = (board) => {
   return board.map((row) => row.map((cell) => -cell));
 };
 
@@ -50,7 +50,7 @@ export const resetGameState = (rows, cols) => {
     isDraw: false,
     moves: "",
     totalMoves: 0,
-    colorReversed: false,
+    ColourReversed: false,
     error: null,
   };
 };

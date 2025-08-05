@@ -14,7 +14,7 @@ const Footer = () => {
             Register
           </a>
           <a href="https://synapse.education/" className="px-3 text-secondary">
-            Synapse Education
+            Login
           </a>
           <a href="https://github.com/suchir-g" className="px-3 text-secondary">
             My Github
