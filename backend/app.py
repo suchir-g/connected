@@ -1,42 +1,54 @@
+import random
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import sys
+import importlib.util
 
-# Debug: Print current working directory and Python path
-print(f"Current working directory: {os.getcwd()}")
-print(f"Python path: {sys.path}")
-print(f"Files in current directory: {os.listdir('.')}")
+# Add current directory to path if not already there
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
 
 try:
-    from Position import Position
-    from Negamaxer import Negamaxer
-    GAME_ENGINE_AVAILABLE = True
-    print("Game engine modules loaded successfully!")
-except ImportError as e:
-    GAME_ENGINE_AVAILABLE = False
-    print(f"Warning: Game engine modules not available. Import error: {e}")
-    print(f"Looking for Position.py in: {os.path.exists('Position.py')}")
-    print(f"Looking for Negamaxer.py in: {os.path.exists('Negamaxer.py')}")
+    # Try to import using direct file paths for more reliability
+    position_path = os.path.join(current_dir, 'Position.py')
+    negamaxer_path = os.path.join(current_dir, 'Negamaxer.py')
+
+    if os.path.exists(position_path) and os.path.exists(negamaxer_path):
+        # Import modules from file paths
+        spec_position = importlib.util.spec_from_file_location(
+            "Position", position_path)
+        position_module = importlib.util.module_from_spec(spec_position)
+        spec_position.loader.exec_module(position_module)
+        Position = position_module.Position
+
+        spec_negamaxer = importlib.util.spec_from_file_location(
+            "Negamaxer", negamaxer_path)
+        negamaxer_module = importlib.util.module_from_spec(spec_negamaxer)
+        spec_negamaxer.loader.exec_module(negamaxer_module)
+        Negamaxer = negamaxer_module.Negamaxer
+
+        GAME_ENGINE_AVAILABLE = True
+        print(f"Game engine modules loaded successfully from file paths!")
+    else:
+        # Regular import as fallback
+        from Position import Position
+        from Negamaxer import Negamaxer
+        GAME_ENGINE_AVAILABLE = True
+        print(f"Game engine modules loaded successfully via regular import!")
 except Exception as e:
     GAME_ENGINE_AVAILABLE = False
     print(f"Warning: Game engine modules failed to load. Error: {e}")
-import random
+    print(f"Current directory: {current_dir}")
+    print(f"Files in directory: {os.listdir(current_dir)}")
+    print(f"Position.py exists: {os.path.exists(position_path)}")
+    print(f"Negamaxer.py exists: {os.path.exists(negamaxer_path)}")
+
 
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/', methods=['GET'])
-def health_check():
-    return jsonify({
-        'status': 'ok',
-        'message': 'Connected backend is running!',
-        'game_engine_available': GAME_ENGINE_AVAILABLE
-    })
-
-@app.route('/health', methods=['GET'])
-def health():
-    return jsonify({'status': 'healthy'})
 
 def validate_board(board, game_mode):
     mode_dimensions = {
@@ -61,6 +73,7 @@ def validate_board(board, game_mode):
 
     return True
 
+
 def simulate_board(moves):
     while True:
         # initialises a 2d empty array (weird python syntax but it's just a list of lists)
@@ -71,7 +84,7 @@ def simulate_board(moves):
             # randomly select a valid column
             valid_columns = [col for col in range(7) if board[0][col] == 0]
             if not valid_columns:
-                break 
+                break
             column = random.choice(valid_columns)
 
             # drop piece in the selected column
@@ -96,6 +109,7 @@ def simulate_board(moves):
 def best_move():
     if not GAME_ENGINE_AVAILABLE:
         return jsonify({'error': 'Game engine not available'}), 503
+        
     data = request.get_json()
 
     if not data:
@@ -103,9 +117,8 @@ def best_move():
 
     board = data.get('board')
     current_player = data.get('current_player')
-    game_mode = data.get('game_mode', 'connect-4')  
+    game_mode = data.get('game_mode', 'connect-4')
     difficulty = data.get('difficulty', 'medium')
-
 
     if not validate_board(board, game_mode):
         return jsonify({'error': 'Invalid board format'}), 400
@@ -118,22 +131,21 @@ def best_move():
 
         winner = game_position.check_winner()
         if winner is not None:
-            
+
             if game_mode == "anti":
                 return jsonify({'best_move': None, 'board': board, 'outcome': current_player * -1}), 200
-            
+
             return jsonify({
                 'best_move': None,
-                'board': game_position.array_board, 
+                'board': game_position.array_board,
                 'outcome': winner
             }), 200
-        
 
         if game_position.is_draw():
             return jsonify({
                 'best_move': None,
-                'board': game_position.array_board, 
-                'outcome': -1  
+                'board': game_position.array_board,
+                'outcome': -1
             }), 200
 
         negamaxer = Negamaxer(difficulty=difficulty, mode=game_mode)
@@ -152,16 +164,17 @@ def best_move():
 
         outcome = game_position.check_winner()
         if outcome is None:
-            outcome = 0 if not game_position.is_draw() else -1 
+            outcome = 0 if not game_position.is_draw() else -1
 
         return jsonify({
             'best_move': best_col,
-            'board': game_position.array_board, 
+            'board': game_position.array_board,
             'outcome': outcome
         }), 200
 
     except Exception as e:
         return jsonify({'error': 'Internal server error'}), 500
+
 
 @app.route('/generate-board', methods=['POST'])
 def generate_board():
@@ -173,6 +186,19 @@ def generate_board():
 
     board = simulate_board(moves)
     return jsonify({"board": board})
+
+
+@app.route('/', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'ok',
+        'message': 'Connected backend is running!',
+        'game_engine_available': GAME_ENGINE_AVAILABLE
+    })
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'healthy'})
 
 if __name__ == '__main__':
     import os
