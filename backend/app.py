@@ -12,10 +12,28 @@ if current_dir not in sys.path:
 
 try:
     # Try to import using direct file paths for more reliability
-    position_path = os.path.join(current_dir, 'Position.py')
-    negamaxer_path = os.path.join(current_dir, 'Negamaxer.py')
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Try both uppercase and lowercase filenames for cross-platform compatibility
+    position_files = ['Position.py', 'position.py']
+    negamaxer_files = ['Negamaxer.py', 'negamaxer.py']
+    
+    position_path = None
+    negamaxer_path = None
+    
+    for filename in position_files:
+        path = os.path.join(current_dir, filename)
+        if os.path.exists(path):
+            position_path = path
+            break
+    
+    for filename in negamaxer_files:
+        path = os.path.join(current_dir, filename)
+        if os.path.exists(path):
+            negamaxer_path = path
+            break
 
-    if os.path.exists(position_path) and os.path.exists(negamaxer_path):
+    if position_path and negamaxer_path:
         # Import modules from file paths
         spec_position = importlib.util.spec_from_file_location(
             "Position", position_path)
@@ -31,6 +49,8 @@ try:
 
         GAME_ENGINE_AVAILABLE = True
         print(f"Game engine modules loaded successfully from file paths!")
+        print(f"Position loaded from: {position_path}")
+        print(f"Negamaxer loaded from: {negamaxer_path}")
     else:
         # Regular import as fallback
         from Position import Position
@@ -42,8 +62,10 @@ except Exception as e:
     print(f"Warning: Game engine modules failed to load. Error: {e}")
     print(f"Current directory: {current_dir}")
     print(f"Files in directory: {os.listdir(current_dir)}")
-    print(f"Position.py exists: {os.path.exists(position_path)}")
-    print(f"Negamaxer.py exists: {os.path.exists(negamaxer_path)}")
+    if 'position_path' in locals():
+        print(f"Position.py exists: {os.path.exists(position_path) if position_path else 'No valid path found'}")
+    if 'negamaxer_path' in locals():
+        print(f"Negamaxer.py exists: {os.path.exists(negamaxer_path) if negamaxer_path else 'No valid path found'}")
 
 
 app = Flask(__name__)
