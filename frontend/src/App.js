@@ -1,9 +1,11 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { GameRedirectProvider } from "./contexts/GameRedirectContext";
 
 import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/footer/Footer";
+import ActiveGameIndicator from "./components/ActiveGameIndicator";
 
 import Landing from "./pages/landing/LandingPage";
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -14,6 +16,8 @@ import Settings from "./pages/auth/Settings";
 
 import PlayLocal from "./pages/play/local/PlayLocal";
 import PlayBot from "./pages/play/bot/PlayBot";
+import GameLobby from "./pages/play/online/GameLobby";
+import PlayOnline from "./pages/play/online/PlayOnline";
 
 import Stats from "./pages/stats/Stats";
 
@@ -33,9 +37,11 @@ import { Analytics } from "@vercel/analytics/react";
 const App = () => {
   return (
     <div className="mainContainer">
-      <Analytics>
-        <Router>
+      <Analytics />
+      <Router>
+        <GameRedirectProvider>
           <Navbar />
+          <ActiveGameIndicator />
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/register" element={<Register />} />
@@ -83,6 +89,8 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+            <Route path="/play/online" element={<GameLobby />} />
+            <Route path="/play/online/:gameId" element={<PlayOnline />} />
             <Route
               path="/stats"
               element={
@@ -94,8 +102,8 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Footer />
-        </Router>
-      </Analytics>
+        </GameRedirectProvider>
+      </Router>
     </div>
   );
 };

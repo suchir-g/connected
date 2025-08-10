@@ -1,0 +1,113 @@
+/* Friends Components Styling */
+
+.search-user-container,
+.friends-list-container,
+.friend-requests-container,
+.friend-recommendations-container,
+.add-friend-container {
+  padding: 1rem;
+  border-radius: 8px;
+  height: 100%;
+}
+
+.search-user-container h4,
+.friends-list-container h4,
+.friend-requests-container h4,
+.friend-recommendations-container h4 {
+  color: var(--bs-body-color);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.card {
+  border: 1px solid var(--bs-border-color);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.text-muted {
+  opacity: 0.7;
+}
+
+/* Add Friend Component */
+.add-friend-container {
+  padding: 0;
+}
+
+.add-friend-container .alert {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* Invite Friends Dropdown */
+.dropdown-menu {
+  min-width: 200px;
+}
+
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+/* Dark theme adjustments */
+.dark .card {
+  background-color: var(--bs-dark);
+  border-color: #444;
+}
+
+.dark .card:hover {
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+.dark .dropdown-menu {
+  background-color: var(--bs-dark);
+  border-color: #444;
+}
+
+.dark .dropdown-item:hover {
+  background-color: var(--bs-primary);
+}
+
+/* Loading states */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-user-container,
+  .friends-list-container,
+  .friend-requests-container,
+  .friend-recommendations-container {
+    padding: 0.75rem;
+  }
+  
+  .card-body {
+    padding: 0.75rem !important;
+  }
+  
+  .dropdown-menu {
+    min-width: 150px;
+  }
+}

@@ -8,7 +8,6 @@ const Social = () => {
   return (
     <div className="container mt-4" style={{ minHeight: "100vh" }}>
       <h2 className="mb-4">Social</h2>
-
       <div className="row mb-4">
         <div className="col-12">
           <div className="p-3 border rounded-3">
@@ -16,7 +15,7 @@ const Social = () => {
           </div>
         </div>
       </div>
-
+      {/* THIS SECTION */}
       <div className="row g-4">
         <div className="col-lg-4 col-md-6">
           <div className="p-3 border rounded-3 h-100">
@@ -34,6 +33,8 @@ const Social = () => {
           </div>
         </div>
       </div>
+
+      {/* THIS SECTION ENDS */}
     </div>
   );
 };

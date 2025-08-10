@@ -1,90 +1,107 @@
-import React, { useState } from "react";
-import { db } from "../../config/firebase";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { useAuth } from "../../contexts/AuthContext";
+import React, { useState } from 'react';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../config/firebase';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import './Friends.css';
 
 const AddFriend = ({ targetUsername }) => {
-  const [message, setMessage] = useState("");
   const { currentUser, userData } = useAuth();
+  const { darkMode } = useTheme();
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
-  const handleAddFriend = async () => {
-    if (!targetUsername) {
-      setMessage("Username is required.");
+  const handleSendFriendRequest = async () => {
+    if (!currentUser || !userData || !targetUsername) {
+      setError('Missing required information');
       return;
     }
 
+    if (targetUsername === userData.username) {
+      setError("You can't add yourself as a friend");
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setMessage('');
+
     try {
-      const usersRef = collection(db, "players");
-      const q = query(
-        usersRef,
-        where("username", "==", targetUsername.trim().toLowerCase())
+      // Check if friend request already exists
+      const existingRequestQuery = query(
+        collection(db, 'friendRequests'),
+        where('from', '==', userData.username),
+        where('to', '==', targetUsername)
       );
-      const querySnapshot = await getDocs(q);
+      const existingRequests = await getDocs(existingRequestQuery);
 
-      if (querySnapshot.empty) {
-        setMessage("User not found.");
+      if (!existingRequests.empty) {
+        setError('Friend request already sent');
+        setLoading(false);
         return;
       }
 
-      const targetUserDoc = querySnapshot.docs[0];
-      const targetUser = targetUserDoc.data();
-      const targetUserID = targetUserDoc.id; // the document id IS the user id
-
-      console.log("Target User Data:", targetUser);
-      console.log("Target User ID:", targetUserID);
-
-      if (targetUserID === currentUser.uid) {
-        setMessage("You cannot add yourself as a friend.");
-        return;
-      }
-
-      const friendsRef = collection(db, "friends");
-      const existingQuery = query(
-        friendsRef,
-        where("user1", "in", [currentUser.uid, targetUserID]),
-        where("user2", "in", [currentUser.uid, targetUserID])
+      // Check if they're already friends
+      const friendshipQuery = query(
+        collection(db, 'friendRequests'),
+        where('from', 'in', [userData.username, targetUsername]),
+        where('to', 'in', [userData.username, targetUsername]),
+        where('status', '==', 'accepted')
       );
-      const existingSnapshot = await getDocs(existingQuery);
+      const friendships = await getDocs(friendshipQuery);
 
-      if (!existingSnapshot.empty) {
-        const existingFriendship = existingSnapshot.docs[0].data();
-        console.log("Existing Friendship:", existingFriendship);
-        if (existingFriendship.status === "pending") {
-          setMessage("Friend request already pending");
-        } else if (existingFriendship.status === "accepted") {
-          setMessage("You are already friends");
-        } else if (existingFriendship.status === "rejected") {
-          setMessage("Friend request was rejected");
-        }
+      if (!friendships.empty) {
+        setError('You are already friends with this user');
+        setLoading(false);
         return;
       }
 
-      await addDoc(friendsRef, {
-        user1: currentUser.uid,
-        user2: targetUserID,
-        status: "pending",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+      // Send friend request
+      await addDoc(collection(db, 'friendRequests'), {
+        from: userData.username,
+        to: targetUsername,
+        status: 'pending',
+        timestamp: serverTimestamp()
       });
 
-      setMessage("Friend request sent");
+      setMessage('Friend request sent successfully!');
     } catch (error) {
-      console.error("Error adding friend:", error);
-      setMessage("Friend request failed");
+      console.error('Error sending friend request:', error);
+      setError('Failed to send friend request');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <button onClick={handleAddFriend} className="btn btn-primary">Add Friend</button>
-      {message && <p>{message}</p>}
+    <div className="add-friend-container">
+      <button 
+        className={`btn ${darkMode ? 'btn-outline-light' : 'btn-outline-primary'} btn-sm`}
+        onClick={handleSendFriendRequest}
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Sending...
+          </>
+        ) : (
+          'Add Friend'
+        )}
+      </button>
+      
+      {message && (
+        <div className="alert alert-success mt-2 mb-0 py-2" role="alert">
+          <small>{message}</small>
+        </div>
+      )}
+      
+      {error && (
+        <div className="alert alert-danger mt-2 mb-0 py-2" role="alert">
+          <small>{error}</small>
+        </div>
+      )}
     </div>
   );
 };

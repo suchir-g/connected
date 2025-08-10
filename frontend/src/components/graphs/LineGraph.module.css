@@ -1,9 +1,31 @@
 .graphContainer {
-    width: 100%;
-    max-width: 600px;
-    height: 400px;
-    margin: 0 auto;
-    background-color: var(--graph-bg);
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  height: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  background: transparent;
+  border-radius: 8px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.canvas {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  cursor: crosshair;
+  transition: all 0.2s ease;
+}
+
+.canvas:hover {
+  transform: scale(1.01);
+}
+
+@media (max-width: 768px) {
+  .graphContainer {
+    min-height: 250px;
+    padding: 12px;
   }
+}

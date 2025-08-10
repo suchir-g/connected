@@ -2,11 +2,13 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import InviteDropdown from "../invites/InviteDropdown";
+import InviteNotifications from "../invites/InviteNotifications";
 import styles from "./Navbar.module.css";
 
 const Navbar = () => {
-  const { currentUser, userData } = useAuth(); 
-  const { darkMode } = useTheme(); 
+  const { currentUser, userData } = useAuth();
+  const { darkMode } = useTheme();
 
   return (
     <nav
@@ -18,7 +20,7 @@ const Navbar = () => {
         <NavLink
           className={`navbar-brand fw-bold ${styles.navLink}`}
           to={currentUser ? "/dashboard" : "/"}
-          style={{letterSpacing: "2px"}}
+          style={{ letterSpacing: "2px" }}
         >
           <span style={{ color: darkMode ? "#ffffff" : "#000000" }}>
             CONNECTED
@@ -68,6 +70,14 @@ const Navbar = () => {
                     <li>
                       <NavLink
                         className={`dropdown-item ${styles.navLink}`}
+                        to="/play/online"
+                      >
+                        Play Online
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink
+                        className={`dropdown-item ${styles.navLink}`}
                         to="/play/bot"
                       >
                         Play Bot
@@ -94,6 +104,15 @@ const Navbar = () => {
             ) : (
               <>
                 <li className="nav-item">
+                  <NavLink
+                    className={`nav-link ${styles.navLink}`}
+                    to="/play/online"
+                  >
+                    Play Online
+                  </NavLink>
+                </li>
+
+                <li className="nav-item">
                   <NavLink className={`nav-link ${styles.navLink}`} to="/login">
                     Login
                   </NavLink>
@@ -113,6 +132,7 @@ const Navbar = () => {
 
           {currentUser && (
             <ul className="navbar-nav ms-auto">
+              <InviteDropdown />
               {userData ? (
                 <li className="nav-item">
                   <NavLink
@@ -132,6 +152,9 @@ const Navbar = () => {
             </ul>
           )}
         </div>
+
+        {/* Global invite notifications */}
+        <InviteNotifications />
       </div>
     </nav>
   );
