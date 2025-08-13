@@ -26,7 +26,7 @@ const difficultyLabels = [
 ];
 
 const Profile = () => {
-  const { username } = useParams(); 
+  const { username } = useParams();
   const [playerData, setPlayerData] = useState(null);
   const [allGames, setAllGames] = useState([]);
   const [recentGames, setRecentGames] = useState([]);
@@ -237,7 +237,7 @@ const Profile = () => {
                   labels={statsData.map((stat) => stat.label)}
                   values={statsData.map((stat) => stat.wins)}
                   title="Wins by Difficulty"
-                  color="green"
+                  color="#22c55e"
                 />
               </div>
               <div className="col-md-4">
@@ -250,7 +250,7 @@ const Profile = () => {
                       : parseFloat((stat.wins / stat.losses).toFixed(2))
                   )}
                   title="Win-to-Loss Ratio"
-                  color="blue"
+                  color="#3b82f6"
                 />
               </div>
               <div className="col-md-4">
@@ -259,7 +259,7 @@ const Profile = () => {
                   labels={statsData.map((stat) => stat.label)}
                   values={statsData.map((stat) => stat.losses)}
                   title="Losses by Difficulty"
-                  color="red"
+                  color="#ef4444"
                 />
               </div>
             </div>

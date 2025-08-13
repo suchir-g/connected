@@ -52,6 +52,9 @@ const PlayOnline = () => {
   const [currentInvite, setCurrentInvite] = useState(null);
   const [cancellingInvite, setCancellingInvite] = useState(false);
   const [timeUntilDeletion, setTimeUntilDeletion] = useState(null);
+  const [drawOfferReceived, setDrawOfferReceived] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   // Memoize player list to prevent flickering from reordering
   const sortedPlayers = useMemo(() => {
@@ -133,6 +136,13 @@ const PlayOnline = () => {
                 userId = currentUser.uid;
               } else if (guestInfo?.id) {
                 userId = guestInfo.id;
+              }
+
+              // Check for draw offer received
+              if (userId && data.drawOffer && data.drawOffer.from !== userId) {
+                setDrawOfferReceived(true);
+              } else {
+                setDrawOfferReceived(false);
               }
 
               // Join game if not already a player and game is waiting
@@ -948,12 +958,12 @@ const PlayOnline = () => {
   };
 
   const handleOfferDraw = async () => {
-    const userId = currentUser?.uid || guestInfo?.id;
-    if (!userId) return;
+    const currentUserId = currentUser?.uid || guestInfo?.id;
+    if (!currentUserId) return;
 
     // Check if there's already a pending draw offer
     if (gameState.drawOffer) {
-      if (gameState.drawOffer.from === userId) {
+      if (gameState.drawOffer.from === currentUserId) {
         setNotification({
           type: "warning",
           message:
@@ -963,7 +973,7 @@ const PlayOnline = () => {
       }
 
       // If opponent offered draw and we're accepting it
-      if (gameState.drawOffer.from !== userId) {
+      if (gameState.drawOffer.from !== currentUserId) {
         if (
           window.confirm("Your opponent has offered a draw. Do you accept?")
         ) {
@@ -1006,7 +1016,7 @@ const PlayOnline = () => {
         const gameRef = doc(db, "live-games", actualGameId || gameId);
         await updateDoc(gameRef, {
           drawOffer: {
-            from: userId,
+            from: currentUserId,
             timestamp: serverTimestamp(),
           },
           lastActivity: serverTimestamp(),
@@ -1023,6 +1033,55 @@ const PlayOnline = () => {
           message: "Failed to offer draw. Please try again.",
         });
       }
+    }
+  };
+
+  const handleDrawResponse = async (accept) => {
+    const currentUserId = currentUser?.uid || guestInfo?.id;
+    if (!currentUserId) return;
+
+    try {
+      const gameRef = doc(db, "live-games", actualGameId || gameId);
+
+      if (accept) {
+        // Accept the draw
+        const updateData = {
+          status: "completed",
+          winner: "draw",
+          winType: "agreement",
+          endedAt: serverTimestamp(),
+          drawOffer: null,
+        };
+
+        // If this game involves guest players, mark it for deletion
+        if (gameState.hasGuestPlayer || gameState.isGuest) {
+          updateData.deleteAfterCompletion = true;
+        }
+
+        await updateDoc(gameRef, updateData);
+        setNotification({
+          type: "success",
+          message: "Draw accepted! Game ended in a draw.",
+        });
+      } else {
+        // Decline the draw
+        await updateDoc(gameRef, {
+          drawOffer: null,
+          lastActivity: serverTimestamp(),
+        });
+        setNotification({
+          type: "info",
+          message: "Draw offer declined.",
+        });
+      }
+
+      setDrawOfferReceived(false);
+    } catch (error) {
+      console.error("Error responding to draw offer:", error);
+      setNotification({
+        type: "error",
+        message: "Failed to respond to draw offer. Please try again.",
+      });
     }
   };
 
@@ -1229,448 +1288,565 @@ const PlayOnline = () => {
   }
 
   return (
-    <div className="container mt-4">
-      <div className="row justify-content-center">
-        <div className="col-lg-8">
-          {/* Game Header */}
-          <div
-            className={`card mb-4 ${
-              darkMode ? "bg-dark text-white" : "bg-light"
-            }`}
-          >
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <h3 className="mb-0">Online Game</h3>
-                <div className="d-flex gap-2">
-                  {currentUser &&
-                    gameState.status === "waiting" &&
-                    gameState.players?.length === 1 && (
-                      <>
-                        <div className="dropdown">
-                          <button
-                            className="btn btn-outline-primary btn-sm dropdown-toggle"
-                            type="button"
-                            id="inviteFriendsDropdown"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                          >
-                            {currentInvite
-                              ? "Manage Invite"
-                              : `Invite Friends ${
-                                  friends.length > 0
-                                    ? `(${friends.length})`
-                                    : ""
-                                }`}
-                          </button>
-                          <ul
-                            className="dropdown-menu"
-                            aria-labelledby="inviteFriendsDropdown"
-                            style={{ maxHeight: "300px", overflowY: "auto" }}
-                          >
-                            {currentInvite ? (
-                              // Show current invite status and cancel option
-                              <>
-                                <li>
-                                  <span className="dropdown-item-text">
-                                    <div className="d-flex justify-content-between align-items-center">
-                                      <div>
-                                        <strong>Invite sent to:</strong>
-                                        <br />
-                                        <small className="text-muted">
-                                          {currentInvite.inviteeName}
-                                        </small>
-                                      </div>
-                                      <span className="badge bg-warning text-dark">
-                                        Pending
-                                      </span>
-                                    </div>
-                                  </span>
-                                </li>
-                                <li>
-                                  <hr className="dropdown-divider" />
-                                </li>
-                                <li>
-                                  <button
-                                    className="dropdown-item text-danger d-flex justify-content-between align-items-center"
-                                    onClick={cancelGameInvite}
-                                    disabled={cancellingInvite}
-                                  >
-                                    <span>Cancel Invite</span>
-                                    {cancellingInvite && (
-                                      <span
-                                        className="spinner-border spinner-border-sm"
-                                        role="status"
-                                        aria-hidden="true"
-                                      ></span>
-                                    )}
-                                  </button>
-                                </li>
-                              </>
-                            ) : friends.length > 0 ? (
-                              // Show friends list when no current invite
-                              <>
-                                {friends.map((friend) => (
-                                  <li key={friend.uid}>
-                                    <button
-                                      className="dropdown-item d-flex justify-content-between align-items-center"
-                                      onClick={() =>
-                                        sendGameInvite(
-                                          friend.uid,
-                                          friend.username
-                                        )
-                                      }
-                                      disabled={sendingInvite === friend.uid}
-                                    >
-                                      <span>{friend.username}</span>
-                                      {sendingInvite === friend.uid && (
-                                        <span
-                                          className="spinner-border spinner-border-sm"
-                                          role="status"
-                                          aria-hidden="true"
-                                        ></span>
-                                      )}
-                                    </button>
-                                  </li>
-                                ))}
-                              </>
-                            ) : (
-                              // Show when no friends available
-                              <>
-                                <li>
-                                  <span className="dropdown-item-text text-muted">
-                                    <small>No friends found</small>
-                                  </span>
-                                </li>
-                                <li>
-                                  <span className="dropdown-item-text text-muted">
-                                    <small>
-                                      Add friends to invite them directly!
-                                    </small>
-                                  </span>
-                                </li>
-                              </>
-                            )}
-                          </ul>
-                        </div>
-                      </>
-                    )}
-                  {gameState.status === "waiting" && (
-                    <button
-                      className="btn btn-outline-info btn-sm"
-                      onClick={copyGameLink}
-                      title="Copy game link to share with friends"
-                    >
-                      Copy Link
-                    </button>
-                  )}
-                  {!gameOver && gameState.status === "active" && (
-                    <>
-                      <button
-                        className="btn btn-outline-danger btn-sm me-2"
-                        onClick={handleResign}
-                      >
-                        Resign
-                      </button>
-                      <button
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={handleOfferDraw}
-                      >
-                        Offer Draw
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="container mt-3 px-3" style={{ maxWidth: "1200px" }}>
+      <h1 className="text-center mb-3 h3">Play Online</h1>
 
-          {/* Notification Toast */}
-          {notification && (
-            <div
-              className={`alert alert-${
-                notification.type === "error"
-                  ? "danger"
-                  : notification.type === "warning"
-                  ? "warning"
-                  : "success"
-              } alert-dismissible fade show mb-4`}
-              role="alert"
-              style={{
-                position: "fixed",
-                top: "20px",
-                right: "20px",
-                zIndex: 1050,
-                minWidth: "300px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-              }}
-            >
-              <div className="d-flex align-items-center">
-                <span className="me-2">
-                  {notification.type === "success" && "[SUCCESS]"}
-                  {notification.type === "warning" && "[WARNING]"}
-                  {notification.type === "error" && "[ERROR]"}
-                </span>
-                {notification.message}
+      <div className="row g-3">
+        {/* Sidebar - Game Controls & Info */}
+        <div className="col-12 col-md-6 col-lg-5 order-2 order-lg-1">
+          <div className="d-flex flex-column gap-3 h-100">
+            {/* Game Actions Card */}
+            <div className="card" style={{ border: "1px solid #808080" }}>
+              <div className="card-header">
+                <h6 className="card-title mb-0">Game Actions</h6>
               </div>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setNotification(null)}
-                aria-label="Close"
-              ></button>
-            </div>
-          )}
-
-          {/* Guest Warning */}
-          {!currentUser && guestInfo && (
-            <div className={`alert alert-warning mb-4 w-100 text-center`}>
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6>Playing as Guest: {guestInfo.username}</h6>
-                  <p className="mb-0">
-                    Your game will be lost if you leave this page or close your
-                    browser.
-                  </p>
-                </div>
-                <button
-                  className="btn btn-outline-warning btn-sm"
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        "Are you sure you want to clear your guest session? This will reset your username."
-                      )
-                    ) {
-                      sessionStorage.removeItem("guestInfo");
-                      setGuestInfo(null);
-                      navigate("/play/online");
-                    }
-                  }}
-                >
-                  Clear Session
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Player Status */}
-          <div className="row mb-4">
-            {sortedPlayers.map(([playerId, color]) => (
-              <div key={playerId} className="col-md-6">
-                <PlayerStatus
-                  playerId={playerId}
-                  playerName={gameState.playerNames?.[playerId] || "Loading..."}
-                  color={color}
-                  isCurrentPlayer={gameState.currentPlayerId === playerId}
-                  isMe={playerId === (currentUser?.uid || guestInfo?.id)}
-                  isOnline={isPlayerOnline(playerId)}
-                  darkMode={darkMode}
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* Game Status */}
-          {gameState.status === "waiting" &&
-            gameState.isPrivate !== true &&
-            !currentInvite &&
-            gameState.players?.length === 1 &&
-            gameState.players[0] === currentUser?.uid && (
-              <div className={`alert alert-info mb-4 w-100 text-center`}>
-                <h5>Waiting for opponent</h5>
-                <p className="mb-2">
-                  Share the game link with a friend to start playing!
-                </p>
-                {timeUntilDeletion && (
-                  <p className="mb-2">
-                    <small className="text-warning">
-                      Game will be automatically deleted in {timeUntilDeletion}{" "}
-                      if no one joins
-                    </small>
-                  </p>
-                )}
+              <div className="card-body p-2 p-md-3">
+                {/* Invite Friends */}
                 {currentUser &&
-                  gameState.players?.length === 1 &&
-                  gameState.players[0] === currentUser.uid &&
-                  !currentInvite && (
-                    <div className="mt-3">
-                      <button
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={deleteSoloGame}
-                      >
-                        Leave Game
-                      </button>
-                      <small className="text-muted d-block mt-1">
-                        Games with no invites are automatically deleted when you
-                        leave
-                      </small>
+                  gameState.status === "waiting" &&
+                  gameState.players?.length === 1 && (
+                    <div className="row g-2 mb-2">
+                      <div className="col-6">
+                        <button
+                          className="btn btn-outline-primary btn-sm w-100"
+                          onClick={() => setShowInviteModal(true)}
+                        >
+                          {currentInvite
+                            ? "Manage Invite"
+                            : `Invite ${
+                                friends.length > 0 ? `(${friends.length})` : ""
+                              }`}
+                        </button>
+                      </div>
+                      <div className="col-6">
+                        {/* Copy Link Button */}
+                        <button
+                          className="btn btn-outline-info btn-sm w-100"
+                          onClick={copyGameLink}
+                          title="Copy game link"
+                        >
+                          📋 Copy Link
+                        </button>
+                      </div>
                     </div>
                   )}
-              </div>
-            )}
 
-          {gameState.status === "waiting" && currentInvite && (
-            <div className={`alert alert-warning mb-4 w-100 text-center`}>
-              <h5>Waiting for {currentInvite.inviteeName}</h5>
-              <p className="mb-2">
-                You've invited <strong>{currentInvite.inviteeName}</strong> to
-                play. They'll receive a notification to join your game.
-              </p>
-              <small className="text-muted">
-                You can cancel the invite and invite someone else from the
-                dropdown above.
-              </small>
-            </div>
-          )}
+                {/* Copy Link Button - Show when not logged in */}
+                {!currentUser && gameState.status === "waiting" && (
+                  <button
+                    className="btn btn-outline-info btn-sm w-100 mb-2"
+                    onClick={copyGameLink}
+                    title="Copy game link to share with friends"
+                  >
+                    📋 Copy Game Link
+                  </button>
+                )}
 
-          {gameState.status === "waiting" &&
-            gameState.isPrivate === true &&
-            !currentInvite && (
-              <div className={`alert alert-secondary mb-4 w-100 text-center`}>
-                <h5>Private Game Lobby</h5>
-                <p className="mb-2">
-                  This is a private game. Invite a friend to start playing!
-                </p>
-              </div>
-            )}
-
-          {gameState.status === "active" && !gameOver && (
-            <div
-              className={`alert ${
-                isMyTurn ? "alert-success" : "alert-warning"
-              } mb-4 w-100 text-center`}
-            >
-              <h5>
-                {isMyTurn
-                  ? "Your turn!"
-                  : `Waiting for ${
-                      gameState.playerNames?.[gameState.currentPlayerId]
-                    }'s move`}
-              </h5>
-              <p className="mb-0">
-                You are playing as <strong>{myColor}</strong> pieces
-              </p>
-            </div>
-          )}
-
-          {/* Draw Offer Status */}
-          {gameState.drawOffer &&
-            gameState.status === "active" &&
-            !gameOver && (
-              <div className={`alert alert-info mb-4 w-100 text-center`}>
-                <h6>Draw Offer</h6>
-                <p className="mb-0">
-                  {gameState.drawOffer.from ===
-                  (currentUser?.uid || guestInfo?.id)
-                    ? "You offered a draw. Waiting for your opponent's response."
-                    : `${
-                        gameState.playerNames?.[gameState.drawOffer.from]
-                      } offered a draw.`}
-                </p>
-                {gameState.drawOffer.from !==
-                  (currentUser?.uid || guestInfo?.id) && (
-                  <div className="d-flex justify-content-center gap-2 mt-2">
+                {/* Game Actions */}
+                {!gameOver && gameState.status === "active" && (
+                  <div className="d-grid gap-2">
                     <button
-                      className="btn btn-success btn-sm"
-                      onClick={handleOfferDraw}
+                      className="btn btn-outline-danger btn-sm"
+                      onClick={handleResign}
                     >
-                      Accept
+                      🏳️ Resign Game
                     </button>
                     <button
                       className="btn btn-outline-secondary btn-sm"
-                      onClick={handleDeclineDraw}
+                      onClick={handleOfferDraw}
                     >
-                      Decline
+                      🤝 Offer Draw
                     </button>
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Game Status Card */}
+            <div className="card" style={{ border: "1px solid #808080" }}>
+              <div className="card-header">
+                <h6 className="card-title mb-0">🎮 Game Status</h6>
+              </div>
+              <div className="card-body p-2 p-md-3">
+                <div
+                  className={`p-2 rounded ${
+                    gameState.status === "waiting"
+                      ? darkMode
+                        ? "bg-info bg-opacity-25 text-white"
+                        : "bg-info bg-opacity-15"
+                      : gameState.status === "active" && !gameOver
+                      ? gameState.drawOffer
+                        ? darkMode
+                          ? "bg-warning bg-opacity-25 text-white"
+                          : "bg-warning bg-opacity-15"
+                        : isMyTurn
+                        ? darkMode
+                          ? "bg-success bg-opacity-25 text-white"
+                          : "bg-success bg-opacity-15"
+                        : darkMode
+                        ? "bg-secondary bg-opacity-25 text-white"
+                        : "bg-secondary bg-opacity-15"
+                      : gameOver
+                      ? darkMode
+                        ? "bg-primary bg-opacity-25 text-white"
+                        : "bg-primary bg-opacity-15"
+                      : darkMode
+                      ? "bg-secondary bg-opacity-25 text-white"
+                      : "bg-secondary bg-opacity-15"
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="h5 mb-2">
+                      {gameState.status === "waiting" && "⏳"}
+                      {gameState.status === "active" &&
+                        !gameOver &&
+                        (gameState.drawOffer ? "🤝" : isMyTurn ? "🎯" : "⏸️")}
+                      {gameOver && "🏁"}
+                    </div>
+                    <div className="fw-bold mb-1">
+                      {gameState.status === "waiting" &&
+                        currentInvite &&
+                        "Waiting for Friend"}
+                      {gameState.status === "waiting" &&
+                        !currentInvite &&
+                        "Waiting for Opponent"}
+                      {gameState.status === "active" &&
+                        !gameOver &&
+                        gameState.drawOffer &&
+                        "Draw Offer"}
+                      {gameState.status === "active" &&
+                        !gameOver &&
+                        !gameState.drawOffer &&
+                        isMyTurn &&
+                        "Your Turn"}
+                      {gameState.status === "active" &&
+                        !gameOver &&
+                        !gameState.drawOffer &&
+                        !isMyTurn &&
+                        "Opponent's Turn"}
+                      {gameOver &&
+                        (gameState.winner === "draw" ? "Draw" : "Game Over")}
+                    </div>
+                    <small className={darkMode ? "text-light" : "text-muted"}>
+                      {gameState.status === "waiting" &&
+                        currentInvite &&
+                        `${currentInvite.inviteeName} will be notified`}
+                      {gameState.status === "waiting" &&
+                        !currentInvite &&
+                        "Share the game link to invite someone"}
+                      {gameState.status === "active" &&
+                        !gameOver &&
+                        gameState.drawOffer &&
+                        (gameState.drawOffer.from ===
+                        (currentUser?.uid || guestInfo?.id)
+                          ? "Waiting for opponent's response"
+                          : "Respond in the special alerts section")}
+                      {gameState.status === "active" &&
+                        !gameOver &&
+                        !gameState.drawOffer &&
+                        isMyTurn &&
+                        "Click a column to make your move"}
+                      {gameState.status === "active" &&
+                        !gameOver &&
+                        !gameState.drawOffer &&
+                        !isMyTurn &&
+                        `${
+                          gameState.playerNames?.[gameState.currentPlayerId]
+                        } is thinking...`}
+                      {gameOver &&
+                        (gameState.winner === "draw"
+                          ? "Nobody wins this time"
+                          : `${
+                              gameState.playerNames?.[gameState.winner]
+                            } is the winner!`)}
+                    </small>
+                    {gameState.status === "waiting" && timeUntilDeletion && (
+                      <div className="mt-2">
+                        <small className="badge bg-warning text-dark">
+                          Auto-delete in {timeUntilDeletion}
+                        </small>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Players Card */}
+            {gameState.status === "active" && (
+              <div className="card" style={{ border: "1px solid #808080" }}>
+                <div className="card-header">
+                  <h6 className="card-title mb-0">Players</h6>
+                </div>
+                <div className="card-body p-2 p-md-3">
+                  <div className="d-flex flex-column gap-2">
+                    <div
+                      className={`p-2 rounded ${
+                        Object.keys(gameState.playerNames || {})[0] ===
+                        (currentUser?.uid || guestInfo?.id)
+                          ? "bg-success text-white"
+                          : darkMode
+                          ? "bg-dark text-white border"
+                          : "bg-light text-dark border"
+                      }`}
+                    >
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>
+                            {Object.values(gameState.playerNames || {})[0] ||
+                              "Player 1"}
+                            {Object.keys(gameState.playerNames || {})[0] ===
+                              (currentUser?.uid || guestInfo?.id) && " (you)"}
+                          </strong>
+                          {gameState.currentPlayerId ===
+                            Object.keys(gameState.playerNames || {})[0] && (
+                            <div className="mt-1">
+                              <small className="text-warning">
+                                {" "}
+                                Current Turn
+                              </small>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-end">
+                          <span className="badge bg-danger">🔴</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`p-2 rounded ${
+                        Object.keys(gameState.playerNames || {})[1] ===
+                        (currentUser?.uid || guestInfo?.id)
+                          ? "bg-success text-white"
+                          : darkMode
+                          ? "bg-dark text-white border"
+                          : "bg-light text-dark border"
+                      }`}
+                    >
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>
+                            {Object.values(gameState.playerNames || {})[1] ||
+                              "Player 2"}
+                            {Object.keys(gameState.playerNames || {})[1] ===
+                              (currentUser?.uid || guestInfo?.id) && " (you)"}
+                          </strong>
+                          {gameState.currentPlayerId ===
+                            Object.keys(gameState.playerNames || {})[1] && (
+                            <div className="mt-1">
+                              <small className="text-warning">
+                                🎯 Current Turn
+                              </small>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-end">
+                          <span className="badge bg-warning">🟡</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
-          {gameOver && (
-            <div className={`alert alert-info mb-4 w-100 text-center`}>
-              <h5>Game Over!</h5>
-              <p className="mb-2">
-                {gameState.winner === "draw"
-                  ? "It's a draw!"
-                  : `${
-                      gameState.playerNames?.[gameState.winner] ||
-                      "Unknown player"
-                    } wins!`}
-              </p>
-              <p className="mb-3">
-                Win type:{" "}
-                {gameState.winType === "resignation"
-                  ? "Resignation"
-                  : gameState.winType === "agreement"
-                  ? "Draw by Agreement"
-                  : "Connection"}
-              </p>
-              <button className="btn btn-primary" onClick={handleRematch}>
-                New Game
-              </button>
+            {/* Game Info Card */}
+            <div className="card" style={{ border: "1px solid #808080" }}>
+              <div className="card-header">
+                <h6 className="card-title mb-0">Game Info</h6>
+              </div>
+              <div className="card-body p-2 p-md-3">
+                <div className="row g-2">
+                  <div className="col-6">
+                    <div
+                      className={`text-center p-2 rounded ${
+                        darkMode
+                          ? "bg-primary bg-opacity-25 text-white"
+                          : "bg-primary bg-opacity-15"
+                      }`}
+                    >
+                      <div
+                        className={`fw-bold ${
+                          darkMode ? "text-info" : "text-primary"
+                        }`}
+                      >
+                        {gameState.gameMode}
+                      </div>
+                      <small className={darkMode ? "text-light" : "text-muted"}>
+                        Mode
+                      </small>
+                    </div>
+                  </div>
+                  <div className="col-6">
+                    <div
+                      className={`text-center p-2 rounded ${
+                        darkMode
+                          ? "bg-success bg-opacity-25 text-white"
+                          : "bg-success bg-opacity-15"
+                      }`}
+                    >
+                      <div
+                        className={`fw-bold ${
+                          darkMode ? "text-success" : "text-success"
+                        }`}
+                      >
+                        {gameState.moves?.length || 0}
+                      </div>
+                      <small className={darkMode ? "text-light" : "text-muted"}>
+                        Moves
+                      </small>
+                    </div>
+                  </div>
+                  <div className="col-12 mt-2">
+                    <hr className="my-2" />
+                    <div
+                      className={`small ${
+                        darkMode ? "text-light" : "text-muted"
+                      }`}
+                    >
+                      <div>
+                        <strong>Started:</strong>{" "}
+                        {new Date(
+                          gameState.createdAt?.toDate()
+                        ).toLocaleString()}
+                      </div>
+                      <div>
+                        <strong>Last Move:</strong>{" "}
+                        {new Date(
+                          gameState.lastActivity?.toDate()
+                        ).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
 
-          {/* Game Board */}
-          <div className="d-flex justify-content-center">
-            <Board
-              board={flattenedTo2D(gameState.board)}
-              onColumnClick={makeMove}
-              disabled={!isMyTurn || gameOver || gameState.status !== "active"}
-              latestMove={lastMove}
-              rows={6}
-              cols={7}
-            />
+            {/* Special Alerts */}
+            {drawOfferReceived && (
+              <div
+                className="card border-warning"
+                style={{ border: "2px solid #ffc107 !important" }}
+              >
+                <div className="card-header bg-warning text-dark">
+                  <h6 className="card-title mb-0">🤝 Draw Offer</h6>
+                </div>
+                <div className="card-body p-2 p-md-3">
+                  <p className="mb-3">Your opponent has offered a draw.</p>
+                  <div className="d-grid gap-2">
+                    <button
+                      className="btn btn-success btn-sm"
+                      onClick={() => handleDrawResponse(true)}
+                    >
+                      ✅ Accept Draw
+                    </button>
+                    <button
+                      className="btn btn-outline-danger btn-sm"
+                      onClick={() => handleDrawResponse(false)}
+                    >
+                      ❌ Decline Draw
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!currentUser && guestInfo && (
+              <div
+                className="card border-warning"
+                style={{ border: "2px solid #ffc107 !important" }}
+              >
+                <div className="card-header bg-warning text-dark">
+                  <h6 className="card-title mb-0">👤 Guest Account</h6>
+                </div>
+                <div className="card-body p-2 p-md-3">
+                  <p className="mb-2">
+                    <strong>Playing as:</strong> {guestInfo.username}
+                  </p>
+                  <p className="small text-muted mb-3">
+                    Your game will be lost if you leave this page.
+                  </p>
+                  <button
+                    className="btn btn-outline-warning btn-sm w-100"
+                    onClick={() => setShowGuestModal(true)}
+                  >
+                    📝 Create Account
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Game Info */}
-          <div
-            className={`card mt-4 ${
-              darkMode ? "bg-dark text-white" : "bg-light"
-            }`}
-          >
-            <div className="card-body">
-              <h6>Game Info</h6>
-              <div className="row">
-                <div className="col-md-6">
-                  <small>
-                    <strong>Mode:</strong> {gameState.gameMode}
-                  </small>
-                </div>
-                <div className="col-md-6">
-                  <small>
-                    <strong>Moves:</strong> {gameState.moves?.length || 0}
-                  </small>
-                </div>
-              </div>
-              <div className="row mt-2">
-                <div className="col-md-6">
-                  <small>
-                    <strong>Game Code:</strong> {gameState.gameCode || "Legacy"}
-                  </small>
-                </div>
-                <div className="col-md-6">
-                  <small>
-                    <strong>Started:</strong>{" "}
-                    {new Date(gameState.createdAt?.toDate()).toLocaleString()}
-                  </small>
-                </div>
-              </div>
-              <div className="row mt-2">
-                <div className="col-md-6"></div>
-                <div className="col-md-6">
-                  <small>
-                    <strong>Last Move:</strong>{" "}
-                    {new Date(
-                      gameState.lastActivity?.toDate()
-                    ).toLocaleString()}
-                  </small>
-                </div>
+        {/* Main Game Area - Board Only */}
+        <div className="col-12 col-md-6 col-lg-7 order-1 order-lg-2">
+          <div className="card h-100" style={{ border: "1px solid #808080" }}>
+            <div className="card-body p-2 p-md-3 d-flex flex-column align-items-center justify-content-center">
+              {/* Game Board */}
+              <div className="d-flex justify-content-center">
+                <Board
+                  board={flattenedTo2D(gameState.board)}
+                  onColumnClick={makeMove}
+                  disabled={
+                    !isMyTurn || gameOver || gameState.status !== "active"
+                  }
+                  latestMove={lastMove}
+                  rows={6}
+                  cols={7}
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Notification Toast */}
+      {notification && (
+        <div
+          className={`alert alert-${
+            notification.type === "error"
+              ? "danger"
+              : notification.type === "warning"
+              ? "warning"
+              : "success"
+          } alert-dismissible fade show mb-4`}
+          role="alert"
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            zIndex: 1050,
+            minWidth: "300px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          }}
+        >
+          <div className="d-flex align-items-center">
+            {notification.message}
+          </div>
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setNotification(null)}
+            aria-label="Close"
+          ></button>
+        </div>
+      )}
+
+      {/* Invite Friends Modal */}
+      {showInviteModal && (
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div
+              className={`modal-content ${
+                darkMode ? "bg-dark text-white" : ""
+              }`}
+            >
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  {currentInvite ? "Manage Game Invite" : "Invite Friends"}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowInviteModal(false)}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                {currentInvite ? (
+                  // Show current invite status and cancel option
+                  <div className="text-center">
+                    <div className="alert alert-warning">
+                      <h6>Invite Sent!</h6>
+                      <p className="mb-2">
+                        You've invited{" "}
+                        <strong>{currentInvite.inviteeName}</strong> to play.
+                      </p>
+                      <p className="mb-0">
+                        <small>
+                          They'll receive a notification to join your game.
+                        </small>
+                      </p>
+                    </div>
+                    <button
+                      className="btn btn-danger"
+                      onClick={cancelGameInvite}
+                      disabled={cancellingInvite}
+                    >
+                      {cancellingInvite ? (
+                        <>
+                          <span
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                          ></span>
+                          Cancelling...
+                        </>
+                      ) : (
+                        "Cancel Invite"
+                      )}
+                    </button>
+                  </div>
+                ) : friends.length > 0 ? (
+                  // Show friends list
+                  <div>
+                    <p className="mb-3">Select a friend to invite:</p>
+                    <div className="list-group">
+                      {friends.map((friend) => (
+                        <button
+                          key={friend.uid}
+                          className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                          onClick={() => {
+                            sendGameInvite(friend.uid, friend.username);
+                            setShowInviteModal(false);
+                          }}
+                          disabled={sendingInvite === friend.uid}
+                        >
+                          <span>{friend.username}</span>
+                          {sendingInvite === friend.uid && (
+                            <span
+                              className="spinner-border spinner-border-sm"
+                              role="status"
+                            ></span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  // Show when no friends available
+                  <div className="text-center">
+                    <div className="alert alert-info">
+                      <h6>No Friends Found</h6>
+                      <p className="mb-0">
+                        Add friends to invite them directly to your games!
+                      </p>
+                    </div>
+                    <p className="text-muted">
+                      <small>
+                        You can still share the game link to invite anyone.
+                      </small>
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowInviteModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

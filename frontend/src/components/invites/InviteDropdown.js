@@ -156,29 +156,43 @@ const InviteDropdown = () => {
         style={{ minWidth: "320px" }}
       >
         <li>
-          <h6 className="dropdown-header">
+          <h6 
+            className="dropdown-header"
+            style={{ color: darkMode ? '#fff' : '#000' }}
+          >
             <i className="bi bi-controller me-2"></i>
             Game Invites
           </h6>
         </li>
         {gameInvites.length === 0 ? (
           <li>
-            <span className="dropdown-item-text text-muted">
+            <span 
+              className="dropdown-item-text"
+              style={{ color: darkMode ? '#adb5bd' : '#6c757d' }}
+            >
               No pending invites
             </span>
           </li>
         ) : (
           gameInvites.map((invite) => (
             <li key={invite.id} className={styles.inviteItem}>
-              <div className="dropdown-item-text">
+              <div 
+                className="dropdown-item-text"
+                style={{ color: darkMode ? '#fff' : '#000' }}
+              >
                 <div className="d-flex justify-content-between align-items-start mb-2">
                   <div className="flex-grow-1">
-                    <div className="fw-semibold">{invite.inviterName}</div>
-                    <small className="text-muted">
+                    <div 
+                      className="fw-semibold"
+                      style={{ color: darkMode ? '#fff' : '#000' }}
+                    >
+                      {invite.inviterName}
+                    </div>
+                    <small style={{ color: darkMode ? '#adb5bd' : '#6c757d' }}>
                       wants to play Connect 4
                     </small>
                     <br />
-                    <small className="text-muted">
+                    <small style={{ color: darkMode ? '#adb5bd' : '#6c757d' }}>
                       {new Date(invite.createdAt?.toDate()).toLocaleString()}
                     </small>
                   </div>
@@ -191,7 +205,7 @@ const InviteDropdown = () => {
                     Accept
                   </button>
                   <button
-                    className="btn btn-outline-secondary btn-sm flex-fill"
+                    className={`btn btn-sm flex-fill ${darkMode ? 'btn-outline-light' : 'btn-outline-secondary'}`}
                     onClick={() => rejectInvite(invite.id)}
                   >
                     Decline
@@ -209,6 +223,7 @@ const InviteDropdown = () => {
             <li>
               <button
                 className="dropdown-item text-center"
+                style={{ color: darkMode ? '#fff' : '#000' }}
                 onClick={() => navigate("/play/online")}
               >
                 View All in Game Lobby

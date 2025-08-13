@@ -25,13 +25,13 @@ const ReviewGame = () => {
   const [latestMove, setLatestMove] = useState(null);
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
+  const [evaluationProgress, setEvaluationProgress] = useState(0);
   const [error, setError] = useState("");
   const [difficulty, setDifficulty] = useState("expert");
 
   useEffect(() => {
     const fetchGame = async () => {
       try {
-        setLoading(true);
         const gameRef = doc(db, "players", playerId, "games", gameId);
         const gameSnap = await getDoc(gameRef);
         if (gameSnap.exists()) {
@@ -49,15 +49,17 @@ const ReviewGame = () => {
 
           if (gameData.bestMoves && gameData.bestMoves.length > 0) {
             setPrecomputedBestMoves(gameData.bestMoves);
+            setLoading(false);
           } else {
+            setLoading(false);
             await precomputeBestMoves(parsedMoves, currentGameMode, gameRef);
           }
         } else {
           setError("Game not found.");
+          setLoading(false);
         }
       } catch (err) {
         setError("Failed to fetch game. Please try again later.");
-      } finally {
         setLoading(false);
       }
     };
@@ -84,6 +86,7 @@ const ReviewGame = () => {
 
   const precomputeBestMoves = async (movesArr, currentGameMode, gameRef) => {
     setEvaluating(true);
+    setEvaluationProgress(0);
     const config = getGameModeConfig(currentGameMode);
     let tempBoard = initializeBoard(config.rows, config.cols);
 
@@ -107,6 +110,10 @@ const ReviewGame = () => {
         bestMoves.push(null);
       }
 
+      // Update progress
+      const progress = ((i + 1) / movesArr.length) * 100;
+      setEvaluationProgress(progress);
+
       const isPopout = movesArr[i] < 0;
       const colIndex = isPopout ? Math.abs(movesArr[i]) - 1 : movesArr[i];
       tempBoard = applyMove(
@@ -125,6 +132,7 @@ const ReviewGame = () => {
       console.error("Error saving best moves:", err);
     }
     setEvaluating(false);
+    setEvaluationProgress(0);
   };
 
   const computeBoardUpToMove = (moveIndex) => {
@@ -203,7 +211,7 @@ const ReviewGame = () => {
 
   if (error) {
     return (
-      <div className="container mt-4">
+      <div className="container mt-4" style={{ minHeight: "100vh" }}>
         <div className="alert alert-danger" role="alert">
           {error}
         </div>
@@ -213,22 +221,57 @@ const ReviewGame = () => {
 
   if (evaluating) {
     return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "100vh" }}
-      >
-        <div className="spinner-border text-warning" role="status">
-          <span className="visually-hidden">Evaluating...</span>
+      <div className="container py-4" style={{ minHeight: "100vh" }}>
+        <div className="row justify-content-center">
+          <div className="col-12 col-md-8 col-lg-6">
+            <div className={`card shadow-lg ${darkMode ? "bg-dark text-light" : "bg-light"}`}>
+              <div className="card-body text-center py-5">
+                <div className="mb-4">
+                  <div className="d-flex justify-content-center mb-3">
+                    <div className="spinner-grow text-danger me-2" style={{ animationDelay: "0s", width: "1rem", height: "1rem" }}></div>
+                    <div className="spinner-grow text-warning me-2" style={{ animationDelay: "0.2s", width: "1rem", height: "1rem" }}></div>
+                    <div className="spinner-grow text-danger me-2" style={{ animationDelay: "0.4s", width: "1rem", height: "1rem" }}></div>
+                    <div className="spinner-grow text-warning me-2" style={{ animationDelay: "0.6s", width: "1rem", height: "1rem" }}></div>
+                    <div className="spinner-grow text-danger" style={{ animationDelay: "0.8s", width: "1rem", height: "1rem" }}></div>
+                  </div>
+                </div>
+                <h4 className={`mb-3 ${darkMode ? 'text-light' : 'text-dark'}`}>
+                  Computing Best Moves
+                </h4>
+                <p className={`mb-4 ${darkMode ? 'text-light-emphasis' : 'text-muted'}`}>
+                  Analyzing game positions and calculating optimal moves...
+                </p>
+                <div className="progress mb-3" style={{ height: "12px" }}>
+                  <div 
+                    className="progress-bar progress-bar-striped progress-bar-animated bg-warning" 
+                    role="progressbar" 
+                    style={{ width: `${evaluationProgress}%` }}
+                    aria-valuenow={evaluationProgress}
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  ></div>
+                </div>
+                <div className={`mb-2 ${darkMode ? 'text-light' : 'text-dark'}`}>
+                  <strong>{Math.round(evaluationProgress)}% Complete</strong>
+                </div>
+                <small className={`${darkMode ? 'text-light-emphasis' : 'text-muted'}`}>
+                  {evaluationProgress < 50 
+                    ? "Analyzing early game positions..." 
+                    : evaluationProgress < 80 
+                    ? "Computing mid-game strategies..." 
+                    : "Finalizing optimal moves..."}
+                </small>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container py-4">
-      <div
-        className={`card mb-4 shadow-sm border-${darkMode ? "white" : "dark"}`}
-      >
+    <div className="container py-4" style={{ minHeight: "100vh" }}>
+      <div className={`card mb-4 shadow-sm ${darkMode ? "bg-dark text-light" : "bg-light"}`}>
         <div className="card-body">
           <div className="row align-items-center">
             <div className="col-md-8">
@@ -239,7 +282,7 @@ const ReviewGame = () => {
             </div>
             <div className="col-md-4 text-md-end text-center mt-3 mt-md-0">
               <button
-                className={`btn btn-primary me-2 ${
+                className={`btn btn-warning me-2 ${
                   currentMoveIndex === 0 ? "disabled" : ""
                 }`}
                 onClick={() => {
@@ -253,7 +296,7 @@ const ReviewGame = () => {
                 <i className="bi bi-arrow-left"></i> Previous Move
               </button>
               <button
-                className={`btn btn-primary ${
+                className={`btn btn-warning ${
                   currentMoveIndex === moves.length - 1 ? "disabled" : ""
                 }`}
                 onClick={() => {
@@ -271,9 +314,7 @@ const ReviewGame = () => {
         </div>
       </div>
 
-      <div
-        className={`card mb-4 shadow-sm border-${darkMode ? "white" : "dark"}`}
-      >
+      <div className={`card mb-4 shadow-sm ${darkMode ? "bg-dark text-light" : "bg-light"}`}>
         <div className="card-body text-center">
           <Board
             board={board}
