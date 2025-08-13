@@ -224,41 +224,90 @@ const ReviewGame = () => {
       <div className="container py-4" style={{ minHeight: "100vh" }}>
         <div className="row justify-content-center">
           <div className="col-12 col-md-8 col-lg-6">
-            <div className={`card shadow-lg ${darkMode ? "bg-dark text-light" : "bg-light"}`}>
+            <div
+              className={`card shadow-lg ${
+                darkMode ? "bg-dark text-light" : "bg-light"
+              }`}
+            >
               <div className="card-body text-center py-5">
                 <div className="mb-4">
                   <div className="d-flex justify-content-center mb-3">
-                    <div className="spinner-grow text-danger me-2" style={{ animationDelay: "0s", width: "1rem", height: "1rem" }}></div>
-                    <div className="spinner-grow text-warning me-2" style={{ animationDelay: "0.2s", width: "1rem", height: "1rem" }}></div>
-                    <div className="spinner-grow text-danger me-2" style={{ animationDelay: "0.4s", width: "1rem", height: "1rem" }}></div>
-                    <div className="spinner-grow text-warning me-2" style={{ animationDelay: "0.6s", width: "1rem", height: "1rem" }}></div>
-                    <div className="spinner-grow text-danger" style={{ animationDelay: "0.8s", width: "1rem", height: "1rem" }}></div>
+                    <div
+                      className="spinner-grow text-danger me-2"
+                      style={{
+                        animationDelay: "0s",
+                        width: "1rem",
+                        height: "1rem",
+                      }}
+                    ></div>
+                    <div
+                      className="spinner-grow text-warning me-2"
+                      style={{
+                        animationDelay: "0.2s",
+                        width: "1rem",
+                        height: "1rem",
+                      }}
+                    ></div>
+                    <div
+                      className="spinner-grow text-danger me-2"
+                      style={{
+                        animationDelay: "0.4s",
+                        width: "1rem",
+                        height: "1rem",
+                      }}
+                    ></div>
+                    <div
+                      className="spinner-grow text-warning me-2"
+                      style={{
+                        animationDelay: "0.6s",
+                        width: "1rem",
+                        height: "1rem",
+                      }}
+                    ></div>
+                    <div
+                      className="spinner-grow text-danger"
+                      style={{
+                        animationDelay: "0.8s",
+                        width: "1rem",
+                        height: "1rem",
+                      }}
+                    ></div>
                   </div>
                 </div>
-                <h4 className={`mb-3 ${darkMode ? 'text-light' : 'text-dark'}`}>
+                <h4 className={`mb-3 ${darkMode ? "text-light" : "text-dark"}`}>
                   Computing Best Moves
                 </h4>
-                <p className={`mb-4 ${darkMode ? 'text-light-emphasis' : 'text-muted'}`}>
+                <p
+                  className={`mb-4 ${
+                    darkMode ? "text-light-emphasis" : "text-muted"
+                  }`}
+                >
                   Analyzing game positions and calculating optimal moves...
                 </p>
                 <div className="progress mb-3" style={{ height: "12px" }}>
-                  <div 
-                    className="progress-bar progress-bar-striped progress-bar-animated bg-warning" 
-                    role="progressbar" 
+                  <div
+                    className="progress-bar progress-bar-striped progress-bar-animated bg-warning"
+                    role="progressbar"
                     style={{ width: `${evaluationProgress}%` }}
                     aria-valuenow={evaluationProgress}
                     aria-valuemin="0"
                     aria-valuemax="100"
                   ></div>
                 </div>
-                <div className={`mb-2 ${darkMode ? 'text-light' : 'text-dark'}`}>
+                <div
+                  className={`mb-2 ${darkMode ? "text-light" : "text-dark"}`}
+                >
                   <strong>{Math.round(evaluationProgress)}% Complete</strong>
                 </div>
-                <small className={`${darkMode ? 'text-light-emphasis' : 'text-muted'}`}>
-                  {evaluationProgress < 50 
-                    ? "Analyzing early game positions..." 
-                    : evaluationProgress < 80 
-                    ? "Computing mid-game strategies..." 
+                <small
+                  className={`${
+                    darkMode ? "text-light-emphasis" : "text-muted"
+                  }`}
+                >
+                  {evaluationProgress < 50
+                    ? "Analyzing early game positions..."
+                    : evaluationProgress < 80
+                    ? "Computing mid-game strategies..."
                     : "Finalizing optimal moves..."}
                 </small>
               </div>
@@ -271,7 +320,11 @@ const ReviewGame = () => {
 
   return (
     <div className="container py-4" style={{ minHeight: "100vh" }}>
-      <div className={`card mb-4 shadow-sm ${darkMode ? "bg-dark text-light" : "bg-light"}`}>
+      <div
+        className={`card mb-4 shadow-sm ${
+          darkMode ? "bg-dark text-light" : "bg-light"
+        }`}
+      >
         <div className="card-body">
           <div className="row align-items-center">
             <div className="col-md-8">
@@ -314,7 +367,11 @@ const ReviewGame = () => {
         </div>
       </div>
 
-      <div className={`card mb-4 shadow-sm ${darkMode ? "bg-dark text-light" : "bg-light"}`}>
+      <div
+        className={`card mb-4 shadow-sm ${
+          darkMode ? "bg-dark text-light" : "bg-light"
+        }`}
+      >
         <div className="card-body text-center">
           <Board
             board={board}
