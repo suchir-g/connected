@@ -501,34 +501,39 @@ const Dashboard = () => {
                     {recentOnlineGames.length > 0 ? (
                       <div className="d-flex justify-content-center gap-2 flex-wrap">
                         {recentOnlineGames.map((game) => (
-                          <div
+                          <Link
+                            to={`/review/online/${game.id}`}
                             key={game.id}
-                            className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              backgroundColor:
-                                game.result === "win"
-                                  ? "#28a745"
-                                  : game.result === "loss"
-                                  ? "#dc3545"
-                                  : "#ffc107",
-                              fontSize: "16px",
-                            }}
-                            title={`${game.result.toUpperCase()} vs ${
-                              game.opponent
-                            } on ${
-                              game.endedAt?.toDate
-                                ? game.endedAt.toDate().toLocaleDateString()
-                                : "Unknown date"
-                            }`}
+                            className="text-decoration-none"
                           >
-                            {game.result === "win"
-                              ? "W"
-                              : game.result === "loss"
-                              ? "L"
-                              : "D"}
-                          </div>
+                            <div
+                              className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                              style={{
+                                width: "50px",
+                                height: "50px",
+                                backgroundColor:
+                                  game.result === "win"
+                                    ? "#28a745"
+                                    : game.result === "loss"
+                                    ? "#dc3545"
+                                    : "#ffc107",
+                                fontSize: "16px",
+                              }}
+                              title={`${game.result.toUpperCase()} vs ${
+                                game.opponent
+                              } on ${
+                                game.endedAt?.toDate
+                                  ? game.endedAt.toDate().toLocaleDateString()
+                                  : "Unknown date"
+                              }`}
+                            >
+                              {game.result === "win"
+                                ? "W"
+                                : game.result === "loss"
+                                ? "L"
+                                : "D"}
+                            </div>
+                          </Link>
                         ))}
                       </div>
                     ) : (
@@ -575,7 +580,12 @@ const Dashboard = () => {
                                       : "text-warning"
                                   }`}
                                 >
-                                  {game.result.toUpperCase()}
+                                  <Link
+                                    to={`/review/online/${game.id}`}
+                                    className="text-decoration-none"
+                                  >
+                                    {game.result.toUpperCase()}
+                                  </Link>
                                 </td>
                                 <td className="small">{game.opponent}</td>
                               </tr>

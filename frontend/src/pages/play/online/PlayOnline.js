@@ -875,12 +875,21 @@ const PlayOnline = () => {
         ([playerId, color]) => color === nextPlayer
       )?.[0];
 
+      // Store moves as a string like local games (columnIndex + 1 because UI is 1-indexed)
+      const moveString = gameState.movesString 
+        ? gameState.movesString + (columnIndex + 1).toString() 
+        : (columnIndex + 1).toString();
+      
+      // Also maintain the array format for backward compatibility
+      const updatedMoves = [...(gameState.moves || []), columnIndex];
+
       const moveData = {
         board: newFlatBoard,
         currentPlayer: nextPlayer,
         currentPlayerId: nextPlayerId,
         lastActivity: serverTimestamp(),
-        moves: arrayUnion(columnIndex), // Just store the column number
+        moves: updatedMoves, // Keep array for backward compatibility
+        movesString: moveString, // Add string format to match local games
       };
 
       // Check for win or draw
@@ -912,6 +921,7 @@ const PlayOnline = () => {
       const gameRef = doc(db, "live-games", actualGameId || gameId); // Use actualGameId if available, fallback to gameId
       await updateDoc(gameRef, moveData);
 
+      console.log("Move made, updated moves array:", updatedMoves);
       setLastMove({ column: columnIndex, player: gameState.currentPlayer });
     } catch (error) {
       console.error("Error making move:", error);

@@ -225,7 +225,7 @@ const Stats = () => {
                   ? "win"
                   : "loss",
               winType: game.winType || "connection",
-              moves: game.moves?.length || 0,
+              moves: game.movesString?.length || game.moves?.length || 0,
               endedAt: game.endedAt,
               gameCode: game.gameCode,
             });
@@ -437,7 +437,7 @@ const Stats = () => {
           opponent: game.opponent,
           date: game.endedAt ? new Date(game.endedAt.toDate()) : new Date(),
           isOnline: true,
-          moves: game.moves || 0,
+          moves: game.movesString?.length || game.moves?.length || 0,
           gameMode: "Multiplayer",
         }))
       : [];
@@ -611,9 +611,10 @@ const Stats = () => {
         </div>
       )}
 
+
       {!loading && (
-        <div className="accordion" id="statsAccordion">
-          {/* Online Games Section */}
+        <div className="accordion d-none d-md-block" id="statsAccordion">
+          {/* Online Games Section - Hidden on mobile, visible on desktop */}
           <div className="accordion-item">
             <h2 className="accordion-header" id="headingOnline">
               <button
@@ -1008,26 +1009,26 @@ const Stats = () => {
 
             {/* Filter and Sort Controls */}
             <div className="row mb-3">
-              <div className="col-md-6">
+              <div className="col-12 col-md-6 mb-2 mb-md-0">
                 <div
-                  className="btn-group"
+                  className="btn-group w-100 w-md-auto"
                   role="group"
                   aria-label="Game type filter"
                 >
                   <button
                     type="button"
-                    className={`btn ${
+                    className={`btn btn-sm ${
                       gameFilter === "all"
                         ? "btn-primary"
                         : "btn-outline-primary"
                     }`}
                     onClick={() => handleFilterChange("all")}
                   >
-                    All Games ({getAllGames().length})
+                    All ({getAllGames().length})
                   </button>
                   <button
                     type="button"
-                    className={`btn ${
+                    className={`btn btn-sm ${
                       gameFilter === "online"
                         ? "btn-primary"
                         : "btn-outline-primary"
@@ -1038,7 +1039,7 @@ const Stats = () => {
                   </button>
                   <button
                     type="button"
-                    className={`btn ${
+                    className={`btn btn-sm ${
                       gameFilter === "ai"
                         ? "btn-primary"
                         : "btn-outline-primary"
@@ -1049,7 +1050,8 @@ const Stats = () => {
                   </button>
                 </div>
               </div>
-              <div className="col-md-6 text-end">
+              {/* Sort controls - visible on desktop only */}
+              <div className="col-md-6 text-end d-none d-md-block">
                 <div className="btn-group" role="group" aria-label="Sort order">
                   <button
                     type="button"
@@ -1082,9 +1084,14 @@ const Stats = () => {
               <table
                 className={`table table-striped table-hover ${
                   darkMode ? "table-dark" : ""
-                }`}
+                } table-sm`}
               >
-                <thead className={darkMode ? "table-dark" : "table-light"}>
+                {/* Desktop Headers */}
+                <thead
+                  className={`${
+                    darkMode ? "table-dark" : "table-light"
+                  } d-none d-md-table-header-group`}
+                >
                   <tr>
                     <th scope="col">Date</th>
                     <th scope="col">Game Type</th>
@@ -1095,6 +1102,21 @@ const Stats = () => {
                     <th scope="col">Action</th>
                   </tr>
                 </thead>
+
+                {/* Mobile Headers - Simplified */}
+                <thead
+                  className={`${
+                    darkMode ? "table-dark" : "table-light"
+                  } d-md-none`}
+                >
+                  <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Opponent</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">Review</th>
+                  </tr>
+                </thead>
+
                 <tbody>
                   {currentGames.length > 0 ? (
                     currentGames.map((game, index) => (
@@ -1105,11 +1127,11 @@ const Stats = () => {
                             : `ai-${game.id}`
                         }
                       >
-                        <td>
+                        {/* Date - Visible on both desktop and mobile */}
+                        <td className="p-2">
                           <small>
                             {game.date.toLocaleDateString()}
-                            <br />
-                            <span className="text-muted">
+                            <span className="d-none d-md-block text-muted">
                               {game.date.toLocaleTimeString([], {
                                 hour: "2-digit",
                                 minute: "2-digit",
@@ -1117,7 +1139,9 @@ const Stats = () => {
                             </span>
                           </small>
                         </td>
-                        <td>
+
+                        {/* Game Type - Desktop only */}
+                        <td className="p-2 d-none d-md-table-cell">
                           <span
                             className={`badge ${
                               game.isOnline ? "bg-primary" : "bg-info"
@@ -1126,8 +1150,23 @@ const Stats = () => {
                             {game.gameType}
                           </span>
                         </td>
-                        <td>{game.opponent}</td>
-                        <td>
+
+                        {/* Opponent - Both desktop and mobile but styled differently */}
+                        <td className="p-2">
+                          <span className="d-md-none">
+                            <small>
+                              {game.opponent.length > 10
+                                ? game.opponent.substring(0, 10) + "..."
+                                : game.opponent}
+                            </small>
+                          </span>
+                          <span className="d-none d-md-inline">
+                            {game.opponent}
+                          </span>
+                        </td>
+
+                        {/* Result - Both desktop and mobile */}
+                        <td className="p-2">
                           <span
                             className={`badge ${
                               game.result === "win"
@@ -1137,12 +1176,21 @@ const Stats = () => {
                                 : "bg-warning text-dark"
                             }`}
                           >
-                            {game.result.charAt(0).toUpperCase() +
-                              game.result.slice(1)}
+                            {game.result === "win"
+                              ? "W"
+                              : game.result === "loss"
+                              ? "L"
+                              : "D"}
                           </span>
                         </td>
-                        <td>{game.moves}</td>
-                        <td>
+
+                        {/* Moves - Desktop only */}
+                        <td className="p-2 d-none d-md-table-cell">
+                          {game.moves}
+                        </td>
+
+                        {/* Game Mode - Desktop only */}
+                        <td className="p-2 d-none d-md-table-cell">
                           <small>
                             {game.isOnline
                               ? "Multiplayer"
@@ -1151,18 +1199,38 @@ const Stats = () => {
                                   .toUpperCase()}
                           </small>
                         </td>
-                        <td>
+
+                        {/* Action - Both desktop and mobile but styled differently */}
+                        <td className="p-2">
                           {!game.isOnline ? (
                             <Link
                               to={`/review/${currentUser.uid}/${game.id}`}
-                              className="btn btn-sm btn-outline-primary"
+                              className="btn btn-sm btn-outline-primary d-none d-md-inline-block"
                             >
                               <i className="bi bi-play-circle me-1"></i>
                               Review
                             </Link>
                           ) : (
-                            <span className="text-muted">-</span>
+                            <Link
+                              to={`/review/online/${game.id}`}
+                              className="btn btn-sm btn-outline-primary d-none d-md-inline-block"
+                            >
+                              <i className="bi bi-play-circle me-1"></i>
+                              Review
+                            </Link>
                           )}
+
+                          {/* Mobile Review button - icon only */}
+                          <Link
+                            to={
+                              !game.isOnline
+                                ? `/review/${currentUser.uid}/${game.id}`
+                                : `/review/online/${game.id}`
+                            }
+                            className="btn btn-sm btn-outline-primary p-1 d-md-none"
+                          >
+                            <i className="bi bi-play-circle"></i>
+                          </Link>
                         </td>
                       </tr>
                     ))
@@ -1178,13 +1246,47 @@ const Stats = () => {
               </table>
             </div>
 
+            {/* Mobile Sort Controls - at the bottom */}
+            <div className="d-md-none mt-3 mb-2">
+              <div
+                className="btn-group w-100"
+                role="group"
+                aria-label="Sort order"
+              >
+                <button
+                  type="button"
+                  className={`btn btn-sm ${
+                    sortOrder === "desc"
+                      ? "btn-secondary"
+                      : "btn-outline-secondary"
+                  }`}
+                  onClick={() => handleSortChange("desc")}
+                >
+                  <i className="bi bi-sort-down me-1"></i>Newest First
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${
+                    sortOrder === "asc"
+                      ? "btn-secondary"
+                      : "btn-outline-secondary"
+                  }`}
+                  onClick={() => handleSortChange("asc")}
+                >
+                  <i className="bi bi-sort-up me-1"></i>Oldest First
+                </button>
+              </div>
+            </div>
+
             {/* Pagination Controls */}
             {totalPages > 1 && (
               <nav aria-label="Game history pagination">
-                <div className="d-flex justify-content-between align-items-center mt-3">
-                  <div className="text-muted">
-                    Showing {startIndex + 1} to {Math.min(endIndex, totalGames)}{" "}
-                    of {totalGames} games
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3">
+                  <div className="text-muted text-center text-md-start mb-2 mb-md-0">
+                    <small>
+                      Showing {startIndex + 1} to{" "}
+                      {Math.min(endIndex, totalGames)} of {totalGames} games
+                    </small>
                   </div>
 
                   <div className="d-flex align-items-center gap-2">
@@ -1193,10 +1295,11 @@ const Stats = () => {
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                     >
-                      <i className="bi bi-chevron-left"></i> Last
+                      <i className="bi bi-chevron-left"></i>{" "}
+                      <span className="d-none d-md-inline">Last</span>
                     </button>
 
-                    <span className={`text px-3`}>
+                    <span className={`text px-2 px-md-3`}>
                       Page {currentPage} of {totalPages}
                     </span>
 
@@ -1205,7 +1308,8 @@ const Stats = () => {
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
                     >
-                      Next <i className="bi bi-chevron-right"></i>
+                      <span className="d-none d-md-inline">Next</span>{" "}
+                      <i className="bi bi-chevron-right"></i>
                     </button>
                   </div>
                 </div>

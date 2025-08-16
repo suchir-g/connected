@@ -27,6 +27,7 @@ import Profile from "./pages/social/Profile";
 import Social from "./pages/social/Social";
 
 import ReviewGame from "./pages/review/ReviewGame";
+import OnlineReviewGame from "./pages/review/OnlineReviewGame";
 import SearchUser from "./components/friends/SearchUser";
 
 import Loading from "./components/loading/Loading";
@@ -48,6 +49,10 @@ const App = () => {
             <Route path="/login" element={<Login />} />
 
             <Route path="/player/:username" element={<Profile />} />
+            <Route
+              path="/review/online/:gameId"
+              element={<OnlineReviewGame />}
+            />
             <Route path="/review/:playerId/:gameId" element={<ReviewGame />} />
 
             <Route path="/trainer" element={<PositionTrainer />} />

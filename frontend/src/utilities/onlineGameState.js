@@ -32,6 +32,7 @@ export const initializeOnlineGameState = (hostUserId, hostUsername) => {
     status: "waiting", // waiting, active, completed
     gameMode: "standard",
     moves: [],
+    movesString: "", // String format to match local/bot games
     createdAt: new Date(),
     lastActivity: new Date(),
   };
