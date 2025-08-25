@@ -1,3 +1,25 @@
+# robots.txt for Connected App
 # https://www.robotstxt.org/robotstxt.html
+
+# Allow all crawlers
 User-agent: *
-Disallow:
+Allow: /
+
+# Disallow private and authentication pages
+Disallow: /login
+Disallow: /register
+Disallow: /settings
+Disallow: /dashboard
+
+# Disallow dynamic game pages
+Disallow: /play/online/
+Disallow: /review/*/
+
+# Allow main pages
+Allow: /play
+Allow: /trainer
+Allow: /stats
+Allow: /social
+
+# Sitemap location
+Sitemap: https://connected-app.netlify.app/sitemap.xml

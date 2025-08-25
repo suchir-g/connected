@@ -8,6 +8,7 @@ import {
 } from "../../utilities/gameState";
 import "./LandingPage.css";
 import { useTheme } from "../../contexts/ThemeContext"; // Import useTheme
+import SEO from "../../components/seo/SEO";
 
 const LandingPage = () => {
   const { darkMode } = useTheme(); // Destructure darkMode from ThemeContext
@@ -100,14 +101,17 @@ const LandingPage = () => {
 
   return (
     <div className={`landing-page ${darkMode ? "dark" : "light"}`}>
+      <SEO
+        title="Connected - Chess Training and Community Platform"
+        description="Welcome to Connected, the ultimate Connect 4 training software! Sharpen your skills, learn from our advanced AI, and enjoy a sleek modern gaming experience."
+        canonicalUrl="/"
+      />
       <div className="landing-left">
         <h5 className="h4">Test your skills!</h5>
         <i>AI Difficulty: Hard</i>
         {winner && (
           <div
-            className={`badge ${
-              winner === "AI" ? "bg-danger" : "bg-success"
-            }`}
+            className={`badge ${winner === "AI" ? "bg-danger" : "bg-success"}`}
           >
             Winner: {winner}
           </div>

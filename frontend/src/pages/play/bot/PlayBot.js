@@ -4,6 +4,7 @@ import Board from "../../../components/board/Board";
 import { getBestMove } from "../../../config/api";
 import { auth, db } from "../../../config/firebase";
 import { doc, collection, addDoc } from "firebase/firestore";
+import SEO from "../../../components/seo/SEO";
 
 import {
   getGameModeConfig,
@@ -216,14 +217,14 @@ const PlayBot = () => {
     if (gameMode === "colour-switch" && newTotalMoves % 3 === 0) {
       setIsAnimating(true);
       setBoard(finalBoard); // First set the board before flip
-      
+
       // Wait for animation to complete before actually flipping colors
       setTimeout(() => {
         const flippedBoard = flipBoardColours(finalBoard);
         setBoard(flippedBoard);
         finalBoard = flippedBoard;
         setIsAnimating(false);
-        
+
         // Check for AI win after color flip
         if (
           (checkWinner(finalBoard, -1, gameMode) && gameMode !== "anti") ||
@@ -239,11 +240,11 @@ const PlayBot = () => {
           recordGameResult(-1, true);
           return;
         }
-        
+
         // Continue with AI move after animation
         makeAIMove(finalBoard, newTotalMoves);
       }, animationDuration);
-      
+
       setTotalMoves(newTotalMoves);
       return;
     }
@@ -269,22 +270,29 @@ const PlayBot = () => {
 
     makeAIMove(finalBoard, newTotalMoves);
   };
-  
+
   // Enhanced makeAIMove function with minimum delay
   const makeAIMove = async (currentBoard, currentTotalMoves) => {
     setIsLocked(true);
-    
+
     // Add minimum delay for better UX and memory purposes
     const startTime = Date.now();
-    
+
     try {
-      const response = await getBestMove(currentBoard, -1, gameMode, difficulty);
+      const response = await getBestMove(
+        currentBoard,
+        -1,
+        gameMode,
+        difficulty
+      );
       const { best_move: aiMove, board: updatedBoardAI } = response.data;
-      
+
       // Calculate elapsed time and wait if needed
       const elapsedTime = Date.now() - startTime;
       if (elapsedTime < minAiDelay) {
-        await new Promise(resolve => setTimeout(resolve, minAiDelay - elapsedTime));
+        await new Promise((resolve) =>
+          setTimeout(resolve, minAiDelay - elapsedTime)
+        );
       }
 
       let finalBoardAI = updatedBoardAI;
@@ -319,12 +327,12 @@ const PlayBot = () => {
       if (gameMode === "colour-switch" && newTotalMovesAI % 3 === 0) {
         setIsAnimating(true);
         setBoard(finalBoardAI); // Set board before flip
-        
+
         setTimeout(() => {
           const flippedBoard = flipBoardColours(finalBoardAI);
           setBoard(flippedBoard);
           finalBoardAI = flippedBoard;
-          
+
           // Check for player win after color flip
           if (
             (checkWinner(finalBoardAI, 1, gameMode) && gameMode !== "anti") ||
@@ -336,7 +344,7 @@ const PlayBot = () => {
             setIsDraw(true);
             recordGameResult(-1, true);
           }
-          
+
           setIsAnimating(false);
           setIsLocked(false);
         }, animationDuration);
@@ -354,10 +362,10 @@ const PlayBot = () => {
           setIsDraw(true);
           recordGameResult(-1, true);
         }
-        
+
         setIsLocked(false);
       }
-      
+
       setTotalMoves(newTotalMovesAI);
     } catch (error) {
       console.error("Error fetching AI move:", error);
@@ -365,7 +373,7 @@ const PlayBot = () => {
       setIsLocked(false);
     }
   };
-  
+
   const recordGameResult = async (gameOutcome, draw) => {
     if (!auth.currentUser) {
       console.error("User not authenticated");
@@ -433,12 +441,21 @@ const PlayBot = () => {
 
   return (
     <div className="container mt-4 text-center" style={{ minHeight: "100vh" }}>
+      <SEO
+        title="Play Against AI Bot - Connected"
+        description="Challenge our AI bot at various difficulty levels in multiple game variants including Connect-4, Popout, and Color Switch."
+        canonicalUrl="/play/bot"
+      />
       {error && <div className="alert alert-warning w-100">{error}</div>}
 
       <h1 className="my-4">Play against Bot</h1>
 
       <div className="d-flex justify-content-center">
-        <div className={`board-container ${isAnimating ? 'board-color-switching' : ''}`}>
+        <div
+          className={`board-container ${
+            isAnimating ? "board-color-switching" : ""
+          }`}
+        >
           <Board
             rows={rows}
             cols={cols}
@@ -448,7 +465,7 @@ const PlayBot = () => {
           />
         </div>
       </div>
-      
+
       {/* Color flip counter */}
       {gameMode === "colour-switch" && (
         <div className="row mt-2">
@@ -459,7 +476,8 @@ const PlayBot = () => {
                   <span className="text-warning">Colors flipping...</span>
                 ) : (
                   <>
-                    Next color flip in: <strong>{getMovesUntilFlip()}</strong> move{getMovesUntilFlip() !== 1 ? 's' : ''}
+                    Next color flip in: <strong>{getMovesUntilFlip()}</strong>{" "}
+                    move{getMovesUntilFlip() !== 1 ? "s" : ""}
                   </>
                 )}
               </p>
@@ -691,37 +709,58 @@ const PlayBot = () => {
         .board-color-switching {
           animation: fadeAnimation ${animationDuration}ms ease-in-out;
         }
-        
+
         @keyframes fadeAnimation {
-          0% { opacity: 1; }
-          45% { opacity: 0.3; }
-          55% { opacity: 0.3; }
-          100% { opacity: 1; }
+          0% {
+            opacity: 1;
+          }
+          45% {
+            opacity: 0.3;
+          }
+          55% {
+            opacity: 0.3;
+          }
+          100% {
+            opacity: 1;
+          }
         }
-        
+
         .color-flip-indicator {
-          background-color: ${gameMode === "colour-switch" ? "rgba(0,0,0,0.1)" : "transparent"};
+          background-color: ${gameMode === "colour-switch"
+            ? "rgba(0,0,0,0.1)"
+            : "transparent"};
           padding: 5px 15px;
           border-radius: 15px;
           display: inline-block;
         }
-        
+
         /* Add transition to counters in the board */
         :global(.board-container .cell .counter) {
-          transition: background-color ${animationDuration/2}ms ease-in-out, 
-                      box-shadow ${animationDuration/2}ms ease-in-out,
-                      transform ${animationDuration/3}ms ease;
+          transition: background-color ${animationDuration / 2}ms ease-in-out,
+            box-shadow ${animationDuration / 2}ms ease-in-out,
+            transform ${animationDuration / 3}ms ease;
         }
-        
+
         .board-color-switching :global(.cell .counter) {
           animation: counterTransition ${animationDuration}ms ease-in-out;
         }
-        
+
         @keyframes counterTransition {
-          0% { transform: scale(1); }
-          45% { transform: scale(0.9); filter: blur(1px); }
-          55% { transform: scale(0.9); filter: blur(1px); }
-          100% { transform: scale(1); filter: blur(0); }
+          0% {
+            transform: scale(1);
+          }
+          45% {
+            transform: scale(0.9);
+            filter: blur(1px);
+          }
+          55% {
+            transform: scale(0.9);
+            filter: blur(1px);
+          }
+          100% {
+            transform: scale(1);
+            filter: blur(0);
+          }
         }
       `}</style>
     </div>
@@ -729,4 +768,3 @@ const PlayBot = () => {
 };
 
 export default PlayBot;
-        
