@@ -19,7 +19,7 @@ const LandingPage = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [winner, setWinner] = useState(null);
   const [isDraw, setIsDraw] = useState(false);
-  const difficulty = "hard";
+  const difficulty = "easy";
   const gameMode = "connect-4";
 
   useEffect(() => {
@@ -108,22 +108,44 @@ const LandingPage = () => {
       />
       <div className="landing-left">
         <h5 className="h4">Test your skills!</h5>
-        <i>AI Difficulty: Hard</i>
-        {winner && (
-          <div
-            className={`badge ${winner === "AI" ? "bg-danger" : "bg-success"}`}
+        <div className="game-controls mb-3">
+          <i>AI Difficulty: Easy</i>
+          <button
+            onClick={resetGame}
+            className="btn btn-secondary ms-3"
+            disabled={isLocked}
           >
-            Winner: {winner}
+            New Game
+          </button>
+        </div>
+
+        {winner === "Player" && (
+          <div className="register-prompt success-prompt mb-3">
+            <span>
+              <strong>Congratulations!</strong>
+            </span>
+            <p>Ready for more challenges?</p>
+            <a href="/register" className="btn btn-outline-success">
+              Register Now
+            </a>
           </div>
         )}
-        {isDraw && <div className="alert alert-warning">It's a draw!</div>}
+
+        {winner === "AI" && (
+          <div className="register-prompt danger-prompt mb-3">
+            <span>
+              <strong>Nice try!</strong>
+            </span>
+            <p>Want to improve your skills?</p>
+            <a href="/register" className="btn btn-outline-danger">
+              Register Now
+            </a>
+          </div>
+        )}
+
+        {isDraw && <div className="alert alert-warning mb-3">It's a draw!</div>}
+
         <Board rows={6} cols={7} board={board} onColumnClick={handleMakeMove} />
-        <button
-          onClick={resetGame}
-          className="btn btn-secondary mt-1 landingButtonn"
-        >
-          Play Again
-        </button>
       </div>
 
       <div className="landing-right">

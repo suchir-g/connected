@@ -1,6 +1,5 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { HelmetProvider } from "react-helmet-async";
 import GoogleSearchConsole from "./components/seo/GoogleSearchConsole";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { GameRedirectProvider } from "./contexts/GameRedirectContext";
@@ -41,82 +40,77 @@ const App = () => {
   return (
     <div className="mainContainer">
       <Analytics />
-      <HelmetProvider>
-        <GoogleSearchConsole />
-        <Router>
-          <GameRedirectProvider>
-            <Navbar />
-            <ActiveGameIndicator />
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/login" element={<Login />} />
+      <GoogleSearchConsole />
+      <Router>
+        <GameRedirectProvider>
+          <Navbar />
+          <ActiveGameIndicator />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
 
-              <Route path="/player/:username" element={<Profile />} />
-              <Route
-                path="/review/online/:gameId"
-                element={<OnlineReviewGame />}
-              />
-              <Route
-                path="/review/:playerId/:gameId"
-                element={<ReviewGame />}
-              />
+            <Route path="/player/:username" element={<Profile />} />
+            <Route
+              path="/review/online/:gameId"
+              element={<OnlineReviewGame />}
+            />
+            <Route path="/review/:playerId/:gameId" element={<ReviewGame />} />
 
-              <Route path="/trainer" element={<PositionTrainer />} />
+            <Route path="/trainer" element={<PositionTrainer />} />
 
-              <Route path="/search" element={<SearchUser />} />
-              <Route path="/social" element={<Social />} />
+            <Route path="/search" element={<SearchUser />} />
+            <Route path="/social" element={<Social />} />
 
-              <Route path="/loading" element={<Loading />} />
+            <Route path="/loading" element={<Loading />} />
 
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/play/local"
-                element={
-                  <ProtectedRoute>
-                    <PlayLocal />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/play/bot"
-                element={
-                  <ProtectedRoute>
-                    <PlayBot />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/play/online" element={<GameLobby />} />
-              <Route path="/play/online/:gameId" element={<PlayOnline />} />
-              <Route
-                path="/stats"
-                element={
-                  <ProtectedRoute>
-                    <Stats />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Footer />
-          </GameRedirectProvider>
-        </Router>
-      </HelmetProvider>
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/play/local"
+              element={
+                <ProtectedRoute>
+                  <PlayLocal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/play/bot"
+              element={
+                <ProtectedRoute>
+                  <PlayBot />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/play/online" element={<GameLobby />} />
+            <Route path="/play/online/:gameId" element={<PlayOnline />} />
+            <Route
+              path="/stats"
+              element={
+                <ProtectedRoute>
+                  <Stats />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Footer />
+        </GameRedirectProvider>
+      </Router>
     </div>
   );
 };
