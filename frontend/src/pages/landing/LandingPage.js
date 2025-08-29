@@ -108,14 +108,34 @@ const LandingPage = () => {
       />
       <div className="landing-left">
         <h5 className="h4">Test your skills!</h5>
+
+        {/* Board placed first for mobile view */}
+        <div className="board-container">
+          <Board
+            rows={6}
+            cols={7}
+            board={board}
+            onColumnClick={handleMakeMove}
+          />
+        </div>
+
+        {/* Sign Up button moved to center for mobile */}
+        <div className="signup-mobile">
+          <a href="/register" className="btn btn-primary">
+            Sign Up
+          </a>
+        </div>
+
         <div className="game-controls mb-3">
-          <i>AI Difficulty: Easy</i>
+          <div className="difficulty-indicator">
+            <small>AI: Easy</small>
+          </div>
           <button
             onClick={resetGame}
-            className="btn btn-secondary ms-3"
+            className="btn btn-sm btn-secondary"
             disabled={isLocked}
           >
-            New Game
+            <i className="bi bi-arrow-repeat me-1"></i>New
           </button>
         </div>
 
@@ -144,8 +164,6 @@ const LandingPage = () => {
         )}
 
         {isDraw && <div className="alert alert-warning mb-3">It's a draw!</div>}
-
-        <Board rows={6} cols={7} board={board} onColumnClick={handleMakeMove} />
       </div>
 
       <div className="landing-right">
@@ -155,6 +173,16 @@ const LandingPage = () => {
           Sharpen your skills, learn from our advanced AI, and enjoy a sleek
           modern gaming experience.
         </p>
+
+        <div className="signup-container main-signup">
+          <a
+            href="/register"
+            className="btn btn-primary mb-4 landingButton p-2"
+          >
+            Sign Up Now
+          </a>
+        </div>
+
         <div className="features">
           <div className="feature-item">
             <h3>Smart AI</h3>
@@ -177,14 +205,6 @@ const LandingPage = () => {
               Practice smarter with recommendations crafted to help you overcome
               your toughest challenges and master the game.
             </p>
-          </div>
-          <div>
-            <a
-              href="/register"
-              className="btn btn-primary mt-1 landingButton d-block p-2"
-            >
-              Sign Up
-            </a>
           </div>
         </div>
       </div>
