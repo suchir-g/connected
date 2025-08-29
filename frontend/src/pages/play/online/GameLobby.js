@@ -23,6 +23,7 @@ const GameLobby = () => {
   const [myGames, setMyGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [guestUsername, setGuestUsername] = useState("");
+  const [gameCode, setGameCode] = useState("");
   const [showGuestForm, setShowGuestForm] = useState(!currentUser);
   const [persistedGuestInfo, setPersistedGuestInfo] = useState(null);
 
@@ -273,13 +274,20 @@ const GameLobby = () => {
       } else if (persistedGuestInfo) {
         // Create new game with existing guest session
         playerId = `guest_${Math.random().toString(36).substr(2, 9)}`;
-        // Ensure the name has (Guest) suffix if it doesn't already
-        const baseName = persistedGuestInfo.username.replace(/ \(Guest\)$/, "");
+        // Ensure the name has exactly one (Guest) suffix
+        const baseName = persistedGuestInfo.username
+          .replace(/ \(Guest\)$/, "")
+          .trim();
         playerName = `${baseName} (Guest)`;
       } else {
         // Create new guest session
         playerId = getGuestId();
-        playerName = `${guestUsername.trim()} (Guest)`;
+        // Ensure username doesn't already have (Guest) suffix before adding it
+        const baseName = guestUsername
+          .trim()
+          .replace(/ \(Guest\)$/, "")
+          .trim();
+        playerName = `${baseName} (Guest)`;
       }
 
       const gameCode = generateGameCode(); // Generate the game code
@@ -337,176 +345,336 @@ const GameLobby = () => {
     });
   };
 
+  const saveGuestInfo = () => {
+    if (!guestUsername.trim()) {
+      alert("Please enter a username to play as guest");
+      return;
+    } else if (guestUsername.length < 2) {
+      alert("Username must be at least 2 characters long");
+      return;
+    }
+
+    // Clean the username and ensure it has (Guest) suffix only once
+    const baseName = guestUsername
+      .trim()
+      .replace(/ \(Guest\)$/, "")
+      .trim();
+    const guestName = `${baseName} (Guest)`;
+
+    // Create a guest info object
+    const guestInfo = {
+      id: getGuestId(),
+      username: guestName,
+    };
+
+    // Save to session storage
+    sessionStorage.setItem("guestInfo", JSON.stringify(guestInfo));
+    setPersistedGuestInfo(guestInfo);
+    setGuestUsername(guestName);
+    setShowGuestForm(false);
+  };
+
   return (
     <div style={{ minHeight: "100vh" }}>
-      <div className="container mt-2 px-2" style={{ maxWidth: "1200px" }}>
-        <h1 className="text-center mb-3 h4 d-block d-md-none">Game Lobby</h1>
-        <h1 className="text-center mb-4 h3 d-none d-md-block">
+      <div className="container mt-4 px-3" style={{ maxWidth: "1000px" }}>
+        <h1 className="text-center mb-4" style={{ fontWeight: "600" }}>
           Online Game Lobby
         </h1>
 
-        <div className="row justify-content-center">
-          <div className="col-12 col-lg-10">
-            {/* Guest Username Form */}
-            {!currentUser && !persistedGuestInfo && (
+        {/* Guest Username Form - Moved to top for better visibility */}
+        {!currentUser && !persistedGuestInfo && (
+          <div className="row justify-content-center mb-3">
+            <div className="col-12 col-lg-8 col-xl-6">
               <div
-                className="card mb-3"
-                style={{ border: "1px solid #808080" }}
+                style={{
+                  padding: "15px",
+                  borderRadius: "8px",
+                  background: darkMode
+                    ? "rgba(52, 58, 64, 0.6)"
+                    : "rgba(248, 249, 250, 0.8)",
+                  borderLeft: "4px solid #0d6efd",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                }}
               >
-                <div className="card-header py-2">
-                  <h6 className="card-title mb-0 small">Guest Setup</h6>
-                </div>
-                <div className="card-body p-2 p-md-3">
-                  <div
-                    className={`alert ${
-                      darkMode ? "alert-dark" : "alert-info"
-                    } mb-2 py-2 w-100`}
+                <div className="mb-2">
+                  <label
+                    className={`form-label fw-bold small mb-2 ${
+                      darkMode ? "text-light" : ""
+                    }`}
                   >
-                    <h6 className="small mb-1">Playing as Guest</h6>
-                    <p className="mb-1 small">
-                      You're playing without an account. Your game will be lost
-                      if you leave the page.
-                    </p>
-                    <small className="d-block d-md-inline">
-                      To save games and track stats, please{" "}
-                      <a href="/register" className="text-decoration-none">
-                        create an account
-                      </a>{" "}
-                      or{" "}
-                      <a href="/login" className="text-decoration-none">
-                        sign in
-                      </a>
-                      .
-                    </small>
-                  </div>
-                  <div className="mb-0">
-                    <label className="form-label fw-bold small">
-                      Enter Username
-                    </label>
-                    <input
-                      type="text"
-                      className={`form-control form-control-sm ${
+                    Enter Guest Name to Play
+                  </label>
+                  <div className="input-group">
+                    <span
+                      className={`input-group-text ${
                         darkMode ? "bg-dark text-white border-secondary" : ""
                       }`}
-                      placeholder="Your display name for this game"
+                      id="guest-username-label"
+                    >
+                      Guest
+                    </span>
+                    <input
+                      type="text"
+                      className={`form-control ${
+                        darkMode ? "bg-dark text-light border-secondary" : ""
+                      }`}
+                      style={{ color: darkMode ? "#e9ecef" : "inherit" }}
+                      aria-label="Guest username"
+                      aria-describedby="guest-username-label"
+                      placeholder="Enter your name"
                       value={guestUsername}
                       onChange={(e) => setGuestUsername(e.target.value)}
                       maxLength={20}
                     />
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Persisted Guest Info */}
-            {!currentUser && persistedGuestInfo && (
-              <div
-                className="card mb-3 border-warning"
-                style={{ border: "2px solid #ffc107 !important" }}
-              >
-                <div className="card-header bg-warning text-dark py-2">
-                  <h6 className="card-title mb-0 small">Guest Session</h6>
-                </div>
-                <div className="card-body p-2 p-md-3">
-                  <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
-                    <div className="flex-grow-1">
-                      <h6 className="mb-1 small">
-                        Playing as: {persistedGuestInfo.username}
-                      </h6>
-                      <p className="mb-0 text-muted small">
-                        You can continue playing with this username or clear
-                        your session to change it.
-                      </p>
-                    </div>
+                  <div className="d-flex justify-content-between align-items-center mt-2">
+                    <small className={darkMode ? "text-light" : "text-muted"}>
+                      Playing as guest.{" "}
+                      <a
+                        href="/register"
+                        className={`${
+                          darkMode ? "text-info" : ""
+                        } text-decoration-none`}
+                      >
+                        Create account
+                      </a>{" "}
+                      to save games.
+                    </small>
                     <button
-                      className="btn btn-outline-warning btn-sm"
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            "Are you sure you want to clear your guest session? This will reset your username."
-                          )
-                        ) {
-                          sessionStorage.removeItem("guestInfo");
-                          setPersistedGuestInfo(null);
-                          setGuestUsername("");
-                          setShowGuestForm(true);
-                        }
-                      }}
+                      className={`btn ${
+                        darkMode ? "btn-outline-light" : "btn-outline-primary"
+                      } btn-sm`}
+                      onClick={saveGuestInfo}
+                      disabled={!guestUsername.trim()}
                     >
-                      Clear Session
+                      Save
                     </button>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          </div>
+        )}
 
-            {/* Create New Game Section */}
-            <div className="card mb-3" style={{ border: "1px solid #808080" }}>
-              <div className="card-header py-2">
-                <h6 className="card-title mb-0 small">Create New Game</h6>
-              </div>
-              <div className="card-body p-2 p-md-3">
-                {currentUser &&
-                  myGames.some((game) => game.status === "waiting") && (
-                    <div className="alert alert-info mb-2 py-2 w-100">
-                      <div className="d-flex align-items-center">
-                        <small>
-                          <strong>Note:</strong> You already have a game waiting
-                          for an opponent. Clicking "Create New Game" will take
-                          you to your existing game.
-                        </small>
-                      </div>
-                    </div>
-                  )}
-                <div className="d-grid">
-                  <button
-                    className="btn btn-primary"
-                    onClick={createGame}
-                    disabled={
-                      loading ||
-                      (!currentUser &&
-                        !persistedGuestInfo &&
-                        !guestUsername.trim())
-                    }
-                  >
-                    {loading ? (
-                      <>
-                        <span
-                          className="spinner-border spinner-border-sm me-2"
-                          role="status"
-                        ></span>
-                        Creating...
-                      </>
-                    ) : currentUser &&
-                      myGames.some((game) => game.status === "waiting") ? (
-                      "Go to Existing Game"
-                    ) : (
-                      "Create New Game"
-                    )}
-                  </button>
+        {/* Minimized Persisted Guest Info */}
+        {!currentUser && persistedGuestInfo && (
+          <div className="row justify-content-center mb-3">
+            <div className="col-12 col-lg-8 col-xl-6">
+              <div
+                style={{
+                  padding: "12px",
+                  borderRadius: "8px",
+                  background: darkMode
+                    ? "rgba(255, 193, 7, 0.15)"
+                    : "rgba(255, 193, 7, 0.1)",
+                  borderLeft: "4px solid #ffc107",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                }}
+              >
+                <div>
+                  <small className={darkMode ? "text-light" : ""}>
+                    <span className="fw-bold">Playing as Guest:</span>{" "}
+                    {persistedGuestInfo.username}
+                  </small>
                 </div>
+                <button
+                  className={`btn ${
+                    darkMode ? "btn-outline-warning" : "btn-outline-warning"
+                  } btn-sm`}
+                  style={{ padding: "0.25rem 0.5rem", fontSize: "0.75rem" }}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Clear your guest session and reset username?"
+                      )
+                    ) {
+                      sessionStorage.removeItem("guestInfo");
+                      setPersistedGuestInfo(null);
+                      setGuestUsername("");
+                      setShowGuestForm(true);
+                    }
+                  }}
+                >
+                  Change
+                </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Game Actions - Create or Join */}
+        <div className="row justify-content-center mb-4">
+          <div className="col-12 col-lg-8 col-xl-6">
+            {currentUser &&
+              myGames.some((game) => game.status === "waiting") && (
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    marginBottom: "16px",
+                    borderRadius: "6px",
+                    background: darkMode
+                      ? "rgba(13, 110, 253, 0.1)"
+                      : "rgba(13, 110, 253, 0.05)",
+                    borderLeft: "6px solid #0d6efd",
+                  }}
+                >
+                  <small>
+                    <strong>Note:</strong> You have an existing waiting game.
+                    Clicking will take you there.
+                  </small>
+                </div>
+              )}
+
+            {/* Create Game Button */}
+            <div className="d-grid mb-3">
+              <button
+                className="btn btn-primary py-3"
+                style={{
+                  borderRadius: "8px",
+                  fontSize: "1.125rem",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                }}
+                onClick={createGame}
+                disabled={
+                  loading ||
+                  (!currentUser && !persistedGuestInfo && !guestUsername.trim())
+                }
+              >
+                {loading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                    ></span>
+                    Creating...
+                  </>
+                ) : currentUser &&
+                  myGames.some((game) => game.status === "waiting") ? (
+                  "Go to Existing Game"
+                ) : (
+                  "Create New Game"
+                )}
+              </button>
+            </div>
+
+            {/* Join Game by Code Section */}
+            <div
+              style={{
+                borderRadius: "8px",
+                padding: "16px",
+                background: darkMode
+                  ? "rgba(52, 58, 64, 0.4)"
+                  : "rgba(248, 249, 250, 0.7)",
+                borderLeft: "6px solid #0d6efd",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+              }}
+            >
+              <div className="mb-2">
+                <label
+                  className={`form-label fw-bold small mb-1 ${
+                    darkMode ? "text-light" : ""
+                  }`}
+                >
+                  Join with Game Code
+                </label>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className={`form-control ${
+                      darkMode ? "bg-dark text-light border-secondary" : ""
+                    }`}
+                    style={{
+                      borderRadius: "6px 0 0 6px",
+                      color: darkMode ? "#e9ecef" : "inherit",
+                    }}
+                    placeholder="Enter 6-digit code"
+                    maxLength={6}
+                    value={gameCode}
+                    onChange={(e) => {
+                      // Convert to uppercase as user types and set state
+                      setGameCode(e.target.value.toUpperCase());
+                    }}
+                    onKeyDown={(e) => {
+                      // Allow joining by pressing Enter key
+                      if (e.key === "Enter" && gameCode.length === 6) {
+                        navigate(`/play/online/${gameCode}`);
+                      }
+                    }}
+                  />
+                  <button
+                    className={`btn ${
+                      darkMode ? "btn-outline-light" : "btn-outline-primary"
+                    }`}
+                    style={{ borderRadius: "0 6px 6px 0" }}
+                    onClick={() => {
+                      if (gameCode && gameCode.length === 6) {
+                        navigate(`/play/online/${gameCode}`);
+                      } else {
+                        alert("Please enter a valid 6-digit game code");
+                      }
+                    }}
+                  >
+                    Join
+                  </button>
+                </div>
+                <small
+                  className={`${
+                    darkMode ? "text-light" : "text-muted"
+                  } mt-1 d-block`}
+                >
+                  Enter the 6-digit code shared by your friend
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="row justify-content-center">
+          <div className="col-12 col-lg-10">
+            {/* Guest information sections removed - now displayed at the top of the page */}
 
             {/* My Active Games Section - Only for authenticated users */}
             {currentUser && myGames.length > 0 && (
               <div
-                className="card mb-3"
-                style={{ border: "1px solid #808080" }}
+                className="card mb-4 shadow-sm"
+                style={{
+                  borderRadius: "8px",
+                  border: darkMode
+                    ? "1px solid rgba(255,255,255,0.1)"
+                    : "1px solid rgba(0,0,0,0.1)",
+                }}
               >
-                <div className="card-header py-2">
-                  <h6 className="card-title mb-0 small">My Active Games</h6>
+                <div
+                  className="card-header py-3"
+                  style={{
+                    borderBottom: darkMode
+                      ? "1px solid rgba(255,255,255,0.1)"
+                      : "1px solid rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <h6 className="card-title mb-0 fw-bold">My Active Games</h6>
                 </div>
-                <div className="card-body p-2 p-md-3">
+                <div className="card-body p-3 p-md-4">
                   <div className="d-flex flex-column gap-2">
                     {myGames.map((game) => (
                       <div
                         key={game.id}
-                        className={`p-2 rounded border ${
-                          darkMode
-                            ? "bg-dark text-white border-secondary"
-                            : "bg-light border-light"
-                        }`}
+                        style={{
+                          position: "relative",
+                          borderRadius: "6px",
+                          padding: "16px",
+                          marginBottom: "12px",
+                          background: darkMode
+                            ? "rgba(52, 58, 64, 0.4)"
+                            : "rgba(248, 249, 250, 0.7)",
+                          borderLeft: `5px solid ${
+                            game.status === "waiting" ? "#ffc107" : "#0d6efd"
+                          }`,
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                        }}
                       >
                         <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                           <div className="flex-grow-1">
@@ -570,32 +738,78 @@ const GameLobby = () => {
               </div>
             )}
 
-            {/* Info Section */}
-            <div className="card" style={{ border: "1px solid #808080" }}>
-              <div className="card-header py-2">
-                <h6 className="card-title mb-0 small">How to Play Online</h6>
+            {/* Consolidated Info Section */}
+            <div
+              className="card shadow-sm"
+              style={{
+                borderRadius: "8px",
+                border: darkMode
+                  ? "1px solid rgba(255,255,255,0.1)"
+                  : "1px solid rgba(0,0,0,0.1)",
+              }}
+            >
+              <div
+                className="card-header py-3"
+                style={{
+                  borderBottom: darkMode
+                    ? "1px solid rgba(255,255,255,0.1)"
+                    : "1px solid rgba(0,0,0,0.1)",
+                }}
+              >
+                <h6 className="card-title mb-0 fw-bold">Quick Info</h6>
               </div>
-              <div className="card-body p-2 p-md-3">
-                <div
-                  className={`alert ${
-                    darkMode ? "alert-dark" : "alert-info"
-                  } mb-2 py-2 w-100`}
-                >
-                  <ul className="mb-1 ps-3 small">
-                    <li>Create a new game and share the link with a friend</li>
-                    <li>Accept invites from other players</li>
-                    <li>Continue your active games anytime</li>
-                    <li className="d-none d-sm-list-item">
-                      No time limits - take your time to think
-                    </li>
-                  </ul>
-                </div>
-                <div className="alert alert-warning mb-0 py-2 w-100">
-                  <div className="d-flex align-items-center">
-                    <small>
-                      <strong>Note:</strong> Games involving guest players are
-                      automatically deleted and not saved permanently.
-                    </small>
+              <div className="card-body p-3 p-md-4">
+                <div className="d-flex flex-column gap-3">
+                  <div
+                    style={{
+                      padding: "16px",
+                      borderRadius: "6px",
+                      background: darkMode
+                        ? "rgba(13, 110, 253, 0.1)"
+                        : "rgba(13, 110, 253, 0.05)",
+                      borderLeft: "6px solid #0d6efd",
+                    }}
+                  >
+                    <h6 className="fw-bold mb-2">How to Play</h6>
+                    <div className="d-flex flex-wrap gap-3">
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="badge bg-primary rounded-circle p-2">
+                          1
+                        </span>
+                        <span>Create a game</span>
+                      </div>
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="badge bg-primary rounded-circle p-2">
+                          2
+                        </span>
+                        <span>Share the link</span>
+                      </div>
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="badge bg-primary rounded-circle p-2">
+                          3
+                        </span>
+                        <span>Play anytime</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      padding: "16px",
+                      borderRadius: "6px",
+                      background: darkMode
+                        ? "rgba(255, 193, 7, 0.1)"
+                        : "rgba(255, 193, 7, 0.05)",
+                      borderLeft: "6px solid #ffc107",
+                    }}
+                  >
+                    <div className="d-flex align-items-center">
+                      <div>
+                        <strong>Note:</strong> Guest games are temporary and
+                        will be deleted if inactive. Create an account to save
+                        your games permanently.
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -19,6 +19,7 @@ const LandingPage = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [winner, setWinner] = useState(null);
   const [isDraw, setIsDraw] = useState(false);
+  const [aiThinking, setAiThinking] = useState(false);
   const difficulty = "easy";
   const gameMode = "connect-4";
 
@@ -31,28 +32,46 @@ const LandingPage = () => {
     setBoard(newBoard);
     setWinner(null);
     setIsDraw(false);
-    setIsLocked(false);
+    setIsLocked(true); // Lock the board immediately
+    setAiThinking(true); // Show AI is thinking
 
-    setIsLocked(true);
     try {
       const response = await getBestMove(newBoard, -1, gameMode, difficulty);
-      const updatedBoard = response.data.board;
-      setBoard(updatedBoard);
 
-      if (checkWinner(updatedBoard, -1, gameMode)) {
-        setWinner("AI");
-        setIsLocked(false);
-        return;
-      }
-      if (isDrawCondition(updatedBoard)) {
-        setIsDraw(true);
-        setIsLocked(false);
-        return;
-      }
+      // Add minimum 300ms delay before showing AI's move
+      const startTime = Date.now();
+      const aiMoveDelay = () => {
+        const elapsedTime = Date.now() - startTime;
+
+        if (elapsedTime >= 300) {
+          // Apply AI move after minimum delay
+          const updatedBoard = response.data.board;
+          setBoard(updatedBoard);
+          setAiThinking(false); // AI finished thinking
+
+          if (checkWinner(updatedBoard, -1, gameMode)) {
+            setWinner("AI");
+            setIsLocked(false);
+            return;
+          }
+          if (isDrawCondition(updatedBoard)) {
+            setIsDraw(true);
+            setIsLocked(false);
+            return;
+          }
+          setIsLocked(false); // Unlock the board after AI move
+        } else {
+          // Not enough time has passed, wait longer
+          setTimeout(aiMoveDelay, 300 - elapsedTime);
+        }
+      };
+
+      // Start the delay process
+      aiMoveDelay();
     } catch (error) {
       console.error("Error fetching AI move:", error);
-    } finally {
-      setIsLocked(false);
+      setIsLocked(false); // Ensure board is unlocked even if there's an error
+      setAiThinking(false); // AI finished thinking (with error)
     }
   };
 
@@ -61,41 +80,65 @@ const LandingPage = () => {
 
     const updatedBoard = applyMove(board, column, 1, gameMode, 6, 7, "place");
     setBoard(updatedBoard);
+    setIsLocked(true); // Lock the board immediately after player move
+    setAiThinking(true); // Show AI is thinking
 
     if (checkWinner(updatedBoard, 1, gameMode)) {
       setWinner("Player");
+      setIsLocked(false); // Unlock since game is over
+      setAiThinking(false);
       return;
     }
     if (isDrawCondition(updatedBoard)) {
       setIsDraw(true);
+      setIsLocked(false); // Unlock since game is over
+      setAiThinking(false);
       return;
     }
 
-    setIsLocked(true);
     try {
+      // Get AI's move
       const response = await getBestMove(
         updatedBoard,
         -1,
         gameMode,
         difficulty
       );
-      const aiBoard = response.data.board;
-      setBoard(aiBoard);
 
-      if (checkWinner(aiBoard, -1, gameMode)) {
-        setWinner("AI");
-        setIsLocked(false);
-        return;
-      }
-      if (isDrawCondition(aiBoard)) {
-        setIsDraw(true);
-        setIsLocked(false);
-        return;
-      }
+      // Add minimum 300ms delay before showing AI's move
+      const startTime = Date.now();
+      const aiMoveDelay = () => {
+        const elapsedTime = Date.now() - startTime;
+
+        if (elapsedTime >= 700) {
+          // Apply AI move after minimum delay
+          const aiBoard = response.data.board;
+          setBoard(aiBoard);
+          setAiThinking(false); // AI finished thinking
+
+          if (checkWinner(aiBoard, -1, gameMode)) {
+            setWinner("AI");
+            setIsLocked(false);
+            return;
+          }
+          if (isDrawCondition(aiBoard)) {
+            setIsDraw(true);
+            setIsLocked(false);
+            return;
+          }
+          setIsLocked(false); // Unlock the board after AI move
+        } else {
+          // Not enough time has passed, wait longer
+          setTimeout(aiMoveDelay, 300 - elapsedTime);
+        }
+      };
+
+      // Start the delay process
+      aiMoveDelay();
     } catch (error) {
       console.error("Error fetching AI move:", error);
-    } finally {
-      setIsLocked(false);
+      setIsLocked(false); // Ensure board is unlocked even if there's an error
+      setAiThinking(false); // AI finished thinking (with error)
     }
   };
 
@@ -127,8 +170,12 @@ const LandingPage = () => {
         </div>
 
         <div className="game-controls mb-3">
-          <div className="difficulty-indicator">
-            <small>AI: Easy</small>
+          <div
+            className={`difficulty-indicator ${
+              aiThinking ? "ai-thinking" : ""
+            }`}
+          >
+            <small>{aiThinking ? "AI: Thinking..." : "AI: Easy"}</small>
           </div>
           <button
             onClick={resetGame}

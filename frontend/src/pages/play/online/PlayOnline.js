@@ -76,7 +76,20 @@ const PlayOnline = () => {
     if (!currentUser) {
       const storedGuestInfo = sessionStorage.getItem("guestInfo");
       if (storedGuestInfo) {
-        setGuestInfo(JSON.parse(storedGuestInfo));
+        try {
+          const parsedGuestInfo = JSON.parse(storedGuestInfo);
+          setGuestInfo(parsedGuestInfo);
+          console.log(
+            "Retrieved guest info from session storage:",
+            parsedGuestInfo
+          );
+          // Make sure we don't show the guest form
+          setShowGuestJoinForm(false);
+        } catch (error) {
+          console.error("Error parsing stored guest info:", error);
+          // Clear invalid session storage data
+          sessionStorage.removeItem("guestInfo");
+        }
       }
     }
   }, [currentUser]);
@@ -156,6 +169,7 @@ const PlayOnline = () => {
               } else if (
                 !userId &&
                 !currentUser &&
+                !sessionStorage.getItem("guestInfo") && // Check if guest info exists in session storage
                 data.status === "waiting" &&
                 data.players.length === 1
               ) {
@@ -876,10 +890,10 @@ const PlayOnline = () => {
       )?.[0];
 
       // Store moves as a string like local games (columnIndex + 1 because UI is 1-indexed)
-      const moveString = gameState.movesString 
-        ? gameState.movesString + (columnIndex + 1).toString() 
+      const moveString = gameState.movesString
+        ? gameState.movesString + (columnIndex + 1).toString()
         : (columnIndex + 1).toString();
-      
+
       // Also maintain the array format for backward compatibility
       const updatedMoves = [...(gameState.moves || []), columnIndex];
 
@@ -1137,7 +1151,14 @@ const PlayOnline = () => {
 
     try {
       const playerId = `guest_${Math.random().toString(36).substr(2, 9)}`;
-      const playerName = `${guestJoinUsername.trim()} (Guest)`;
+
+      // Clean the username and ensure it has (Guest) suffix only once
+      const cleanedName = guestJoinUsername
+        .trim()
+        .replace(/ \(Guest\)$/, "")
+        .trim();
+      const playerName = `${cleanedName} (Guest)`;
+
       const newGuestInfo = {
         id: playerId,
         username: playerName,
@@ -1229,6 +1250,7 @@ const PlayOnline = () => {
     showGuestJoinForm &&
     !currentUser &&
     !guestInfo &&
+    !sessionStorage.getItem("guestInfo") && // Double-check session storage
     gameState?.status === "waiting"
   ) {
     return (
@@ -1299,58 +1321,79 @@ const PlayOnline = () => {
 
   return (
     <div className="container mt-3 px-3" style={{ maxWidth: "1200px" }}>
-      <h1 className="text-center mb-3 h3">Play Online</h1>
+      <div className="d-flex flex-column flex-md-row align-items-center justify-content-center mb-3">
+        <h1 className="h3 mb-0">Play Online</h1>
+      </div>
 
       <div className="row g-3">
         {/* Sidebar - Game Controls & Info */}
         <div className="col-12 col-md-6 col-lg-5 order-2 order-lg-1">
           <div className="d-flex flex-column gap-3 h-100">
-            {/* Game Actions Card */}
+            {/* Game info section - simplified */}
+
+            {/* Game Actions Card - Simplified */}
             <div className="card" style={{ border: "1px solid #808080" }}>
               <div className="card-header">
                 <h6 className="card-title mb-0">Game Actions</h6>
               </div>
               <div className="card-body p-2 p-md-3">
-                {/* Invite Friends */}
+                {/* Game Code Display - Centralized here */}
+                {gameState.status === "waiting" && gameState.gameCode && (
+                  <div className="mb-3">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="fw-bold">Game Code:</span>
+                      <span
+                        className="badge bg-primary px-3 py-2"
+                        style={{
+                          fontFamily: "monospace",
+                          letterSpacing: "0.1em",
+                          fontSize: "1rem",
+                        }}
+                      >
+                        {gameState.gameCode}
+                      </span>
+                    </div>
+
+                    <div className="d-flex gap-2">
+                      <button
+                        className="btn btn-outline-primary btn-sm flex-grow-1"
+                        onClick={() => {
+                          navigator.clipboard.writeText(gameState.gameCode);
+                          setNotification({
+                            type: "success",
+                            message: "Game code copied!",
+                          });
+                        }}
+                      >
+                        📋 Copy Code
+                      </button>
+                      <button
+                        className="btn btn-outline-secondary btn-sm flex-grow-1"
+                        onClick={copyGameLink}
+                      >
+                        � Copy Link
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Invite Friends - Kept separate from code display */}
                 {currentUser &&
                   gameState.status === "waiting" &&
                   gameState.players?.length === 1 && (
-                    <div className="row g-2 mb-2">
-                      <div className="col-6">
-                        <button
-                          className="btn btn-outline-primary btn-sm w-100"
-                          onClick={() => setShowInviteModal(true)}
-                        >
-                          {currentInvite
-                            ? "Manage Invite"
-                            : `Invite ${
-                                friends.length > 0 ? `(${friends.length})` : ""
-                              }`}
-                        </button>
-                      </div>
-                      <div className="col-6">
-                        {/* Copy Link Button */}
-                        <button
-                          className="btn btn-outline-info btn-sm w-100"
-                          onClick={copyGameLink}
-                          title="Copy game link"
-                        >
-                          📋 Copy Link
-                        </button>
-                      </div>
+                    <div className="d-grid gap-2">
+                      <button
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={() => setShowInviteModal(true)}
+                      >
+                        {currentInvite
+                          ? "Manage Invite"
+                          : `Invite Friend${
+                              friends.length > 0 ? `s (${friends.length})` : ""
+                            }`}
+                      </button>
                     </div>
                   )}
-
-                {/* Copy Link Button - Show when not logged in */}
-                {!currentUser && gameState.status === "waiting" && (
-                  <button
-                    className="btn btn-outline-info btn-sm w-100 mb-2"
-                    onClick={copyGameLink}
-                    title="Copy game link to share with friends"
-                  >
-                    📋 Copy Game Link
-                  </button>
-                )}
 
                 {/* Game Actions */}
                 {!gameOver && gameState.status === "active" && (
@@ -1378,6 +1421,55 @@ const PlayOnline = () => {
                 <h6 className="card-title mb-0">🎮 Game Status</h6>
               </div>
               <div className="card-body p-2 p-md-3">
+                {gameState.status === "waiting" && gameState.gameCode && (
+                  <div
+                    className={`card mb-2 ${
+                      darkMode
+                        ? "bg-dark border-info"
+                        : "bg-light border-primary"
+                    }`}
+                  >
+                    <div className="card-body p-2 text-center">
+                      <small className="d-block mb-1 text-muted">
+                        Game Code
+                      </small>
+                      <div className="d-flex align-items-center justify-content-center">
+                        <h3
+                          className="mb-0 me-2"
+                          style={{
+                            fontFamily: "monospace",
+                            letterSpacing: "0.15em",
+                            fontWeight: "bold",
+                            color: darkMode ? "#00ccff" : "#0066cc",
+                          }}
+                        >
+                          {gameState.gameCode}
+                        </h3>
+                        <button
+                          className="btn btn-sm btn-outline-secondary border-0"
+                          onClick={() => {
+                            navigator.clipboard.writeText(gameState.gameCode);
+                            setNotification({
+                              type: "success",
+                              message: "Game code copied to clipboard!",
+                            });
+                          }}
+                          title="Copy code"
+                        >
+                          📋
+                        </button>
+                      </div>
+                      <small
+                        className={`d-block mt-1 ${
+                          darkMode ? "text-light" : "text-muted"
+                        }`}
+                      >
+                        Share this code to let others join
+                      </small>
+                    </div>
+                  </div>
+                )}
+
                 <div
                   className={`p-2 rounded ${
                     gameState.status === "waiting"
