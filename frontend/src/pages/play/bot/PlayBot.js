@@ -448,6 +448,49 @@ const PlayBot = () => {
       />
       {error && <div className="alert alert-warning w-100">{error}</div>}
 
+      {/* Winner/Draw alerts at the top */}
+      {winner && (
+        <div className="row justify-content-center mb-4">
+          <div className="col-12 col-md-8 col-lg-6">
+            <div
+              className={`winner-alert ${
+                winner === "AI" ? "ai-winner" : "player-winner"
+              }`}
+            >
+              {winner === "AI" ? (
+                <>
+                  <span className="winner-icon">🤖</span>
+                  <div className="winner-content">
+                    <div className="winner-title">AI Wins!</div>
+                    <div className="winner-subtitle">
+                      Better luck next time!
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="winner-icon">🏆</span>
+                  <div className="winner-content">
+                    <div className="winner-title">You Win!</div>
+                    <div className="winner-subtitle">Congratulations!</div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {isDraw && (
+        <div className="row justify-content-center mb-4">
+          <div className="col-12 col-md-8 col-lg-6">
+            <div className="alert alert-warning draw-alert">
+              <span className="winner-icon">🤝</span>
+              <strong>It's a draw!</strong>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h1 className="my-4">Play against Bot</h1>
 
       <div className="d-flex justify-content-center">
@@ -585,13 +628,6 @@ const PlayBot = () => {
           </button>
         </div>
       </div>
-
-      {winner && (
-        <div className="alert alert-success mt-4 w-100">Winner: {winner}</div>
-      )}
-      {isDraw && (
-        <div className="alert alert-warning mt-4 w-100">It's a draw!</div>
-      )}
 
       {/* Rules Modal */}
       {showRulesModal && (
@@ -760,6 +796,170 @@ const PlayBot = () => {
           100% {
             transform: scale(1);
             filter: blur(0);
+          }
+        }
+
+        /* Winner Alert Styles */
+        .winner-alert {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1.5rem;
+          border-radius: 12px;
+          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          border: none;
+          text-align: center;
+          margin: 0 auto;
+          max-width: 100%;
+        }
+
+        @media (max-width: 768px) {
+          .winner-alert {
+            padding: 1rem;
+            border-radius: 8px;
+            flex-direction: column;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .winner-icon {
+            margin-right: 0 !important;
+            margin-bottom: 0.5rem;
+            font-size: 2rem !important;
+          }
+
+          .winner-content {
+            text-align: center !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .winner-title {
+            font-size: 1.3rem !important;
+            margin-bottom: 0.25rem;
+            text-align: center;
+          }
+
+          .winner-subtitle {
+            font-size: 0.9rem !important;
+            text-align: center;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .winner-alert {
+            padding: 0.875rem;
+            margin: 0 0.5rem;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .winner-icon {
+            font-size: 1.8rem !important;
+          }
+
+          .winner-content {
+            text-align: center !important;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .winner-title {
+            font-size: 1.2rem !important;
+            text-align: center;
+            width: 100%;
+          }
+
+          .winner-subtitle {
+            font-size: 0.85rem !important;
+            text-align: center;
+            width: 100%;
+          }
+        }
+
+        .ai-winner {
+          background: #6366f1;
+          color: white;
+          border: 2px solid #a5b4fc;
+        }
+
+        .player-winner {
+          background: #059669;
+          color: white;
+          border: 2px solid #86efac;
+        }
+
+        .winner-icon {
+          font-size: 2.5rem;
+          margin-right: 1rem;
+        }
+
+        .winner-content {
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .winner-title {
+          font-size: 1.5rem;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          margin-bottom: 0.25rem;
+          text-align: center;
+          width: 100%;
+        }
+
+        .winner-subtitle {
+          font-size: 1rem;
+          opacity: 0.85;
+          font-weight: 400;
+          text-align: center;
+          width: 100%;
+        }
+
+        .draw-alert {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.2rem;
+          font-weight: 600;
+          padding: 1.25rem;
+          border-radius: 8px;
+          text-align: center;
+          margin: 0 auto;
+          max-width: 100%;
+        }
+
+        .draw-alert .winner-icon {
+          font-size: 1.8rem;
+          margin-right: 0.75rem;
+        }
+
+        @media (max-width: 768px) {
+          .draw-alert {
+            padding: 1rem;
+            font-size: 1rem;
+            margin: 0 0.5rem;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+          }
+
+          .draw-alert .winner-icon {
+            font-size: 1.5rem;
+            margin-right: 0;
+            margin-bottom: 0.25rem;
           }
         }
       `}</style>
