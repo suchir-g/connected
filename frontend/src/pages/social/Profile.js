@@ -72,17 +72,121 @@ const Profile = () => {
 
     const fetchPlayerData = async () => {
       setLoading(true);
+      console.log("Fetching player data for username:", username);
 
       try {
-        const normalizedUsername = username.trim().toLowerCase();
+        // Try with exact case first, then try other case variations
+        const originalUsername = username.trim();
+        const normalizedUsername = originalUsername.toLowerCase();
+        console.log("Original username for query:", originalUsername);
+        console.log("Normalized username for query:", normalizedUsername);
+
         const playersRef = collection(db, "players");
-        const playerQuery = query(
+
+        // For Kenny specifically, try to use the ID directly
+        if (normalizedUsername === "kenny" || originalUsername === "Kenny") {
+          console.log("Looking for Kenny - trying direct ID lookup first");
+          const kennyRef = doc(db, "players", "YaICDMwfx1PTUHcKyzPbWLI4YL83");
+          const kennyDoc = await getDoc(kennyRef);
+
+          if (kennyDoc.exists()) {
+            console.log("Found Kenny via direct ID lookup!");
+            const playerDoc = {
+              id: "YaICDMwfx1PTUHcKyzPbWLI4YL83",
+              data: () => kennyDoc.data(),
+            };
+            const playerSnapshot = {
+              empty: false,
+              docs: [playerDoc],
+            };
+            console.log("Kenny's data:", kennyDoc.data());
+          } else {
+            console.log(
+              "Kenny's direct ID lookup failed. Continuing with username search."
+            );
+          }
+        }
+
+        // First try with exact case
+        console.log("Executing Firestore query for player with exact case...");
+        const exactCaseQuery = query(
           playersRef,
-          where("username", "==", normalizedUsername)
+          where("username", "==", originalUsername)
         );
-        const playerSnapshot = await getDocs(playerQuery);
+        let playerSnapshot = await getDocs(exactCaseQuery);
+
+        // If no results, try with lowercase
+        if (playerSnapshot.empty) {
+          console.log("No results with exact case. Trying lowercase...");
+          const lowercaseQuery = query(
+            playersRef,
+            where("username", "==", normalizedUsername)
+          );
+          playerSnapshot = await getDocs(lowercaseQuery);
+
+          // Try with capitalized first letter as third attempt
+          if (playerSnapshot.empty && normalizedUsername.length > 0) {
+            const capitalizedUsername =
+              normalizedUsername.charAt(0).toUpperCase() +
+              normalizedUsername.slice(1);
+            console.log(
+              "No results with lowercase. Trying capitalized:",
+              capitalizedUsername
+            );
+            const capitalizedQuery = query(
+              playersRef,
+              where("username", "==", capitalizedUsername)
+            );
+            playerSnapshot = await getDocs(capitalizedQuery);
+          }
+
+          // Try with ALL CAPS as fourth attempt
+          if (playerSnapshot.empty) {
+            const allCapsUsername = originalUsername.toUpperCase();
+            console.log("Still no results. Trying ALL CAPS:", allCapsUsername);
+            const allCapsQuery = query(
+              playersRef,
+              where("username", "==", allCapsUsername)
+            );
+            playerSnapshot = await getDocs(allCapsQuery);
+          }
+        }
+        console.log(
+          "Query complete. Empty?",
+          playerSnapshot.empty,
+          "Number of docs:",
+          playerSnapshot.docs.length
+        );
 
         if (playerSnapshot.empty) {
+          console.error(`Player "${username}" not found in database.`);
+
+          // If we're specifically looking for Kenny, let's do a broader search to see what's in the database
+          if (normalizedUsername === "kenny" || originalUsername === "Kenny") {
+            console.log("Searching for any username containing 'kenny'...");
+            // Get all players and filter client-side (not efficient but helpful for debugging)
+            try {
+              const allPlayersSnapshot = await getDocs(
+                collection(db, "players")
+              );
+              const allPlayers = allPlayersSnapshot.docs.map((doc) => ({
+                id: doc.id,
+                username: doc.data().username,
+              }));
+
+              // Log any usernames containing "kenny" regardless of case
+              const kennyMatches = allPlayers.filter(
+                (player) =>
+                  player.username &&
+                  player.username.toLowerCase().includes("kenny")
+              );
+
+              console.log("Found potential matches for Kenny:", kennyMatches);
+            } catch (err) {
+              console.error("Error in broad Kenny search:", err);
+            }
+          }
+
           setError("Player not found.");
           setPlayerData(null);
           setAllGames([]);
@@ -93,28 +197,57 @@ const Profile = () => {
 
         const playerDoc = playerSnapshot.docs[0];
         const playerId = playerDoc.id;
+        console.log("Found player with ID:", playerId);
+
+        if (playerId === "YaICDMwfx1PTUHcKyzPbWLI4YL83") {
+          console.log("Found Kenny's profile!");
+        }
+
         const playerInfo = playerDoc.data();
+        console.log("Player data retrieved:", playerInfo);
         setPlayerData(playerInfo);
 
+        console.log("Attempting to fetch games for player ID:", playerId);
         const gamesRef = collection(db, "players", playerId, "games");
         const gamesQuery = query(gamesRef, orderBy("timestamp", "desc"));
-        const gamesSnapshot = await getDocs(gamesQuery);
 
-        if (!gamesSnapshot.empty) {
-          const games = gamesSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setAllGames(games);
-          setRecentGames(games.slice(0, 5));
-        } else {
+        try {
+          const gamesSnapshot = await getDocs(gamesQuery);
+          console.log(
+            "Games query complete. Empty?",
+            gamesSnapshot.empty,
+            "Number of games:",
+            gamesSnapshot.size
+          );
+
+          if (!gamesSnapshot.empty) {
+            const games = gamesSnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            console.log("Retrieved games:", games.length);
+            setAllGames(games);
+            setRecentGames(games.slice(0, 5));
+          } else {
+            console.log("No games found for this player.");
+            setAllGames([]);
+            setRecentGames([]);
+          }
+        } catch (gameError) {
+          console.error("Error fetching games:", gameError);
           setAllGames([]);
           setRecentGames([]);
         }
       } catch (err) {
         console.error("Error fetching profile:", err);
-        setError("Failed to fetch profile. Please try again later.");
+        console.error("Error details:", err.code, err.message);
+        setError(
+          `Failed to fetch profile: ${err.message}. Please try again later.`
+        );
       } finally {
+        console.log(
+          "Profile fetch process complete. Loading state set to false."
+        );
         setLoading(false);
       }
     };
@@ -138,7 +271,12 @@ const Profile = () => {
   };
 
   const statsData = getStats();
-  console.log(currentUser.uid);
+
+  // Safely log the current user ID and add more detailed debugging
+  console.log("Current user ID:", currentUser?.uid || "No user logged in");
+  console.log("Profile being viewed:", username);
+  console.log("Player data loaded:", playerData);
+
   return (
     <div
       className={`container mt-4 ${darkMode ? "bg-dark text-white" : ""}`}

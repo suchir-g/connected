@@ -202,9 +202,30 @@ const BarGraph = ({ labels = [], values = [], scale = 1, color }) => {
   const adjustBrightness = (hexColor, percent) => {
     // Ensure we have a valid hex color
     if (!hexColor || typeof hexColor !== "string") {
-      return hexColor || "#000000";
+      return "#000000";
     }
 
+    // Handle named colors by mapping them to hex
+    const namedColors = {
+      blue: "#007bff",
+      green: "#28a745",
+      red: "#dc3545",
+      yellow: "#ffc107",
+      purple: "#6f42c1",
+      orange: "#fd7e14",
+      pink: "#e83e8c",
+      teal: "#20c997",
+      cyan: "#17a2b8",
+      white: "#ffffff",
+      gray: "#6c757d",
+      black: "#000000",
+    };
+
+    if (namedColors[hexColor.toLowerCase()]) {
+      hexColor = namedColors[hexColor.toLowerCase()];
+    }
+
+    // Now process as hex color
     let hex = hexColor.replace("#", "");
 
     // Handle 3-character hex codes (e.g., #fff -> #ffffff)
@@ -215,21 +236,28 @@ const BarGraph = ({ labels = [], values = [], scale = 1, color }) => {
         .join("");
     }
 
-    // Validate hex format
+    // Validate hex format and return a default if invalid
     if (hex.length !== 6 || !/^[0-9A-Fa-f]{6}$/.test(hex)) {
-      console.warn("Invalid hex color:", hexColor);
-      return hexColor; // Return original if invalid
+      // Return a default color without logging warnings
+      return "#007bff"; // Default blue color
     }
 
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
+    try {
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
 
-    const newR = Math.max(0, Math.min(255, r + (r * percent) / 100));
-    const newG = Math.max(0, Math.min(255, g + (g * percent) / 100));
-    const newB = Math.max(0, Math.min(255, b + (b * percent) / 100));
+      const newR = Math.max(0, Math.min(255, r + (r * percent) / 100));
+      const newG = Math.max(0, Math.min(255, g + (g * percent) / 100));
+      const newB = Math.max(0, Math.min(255, b + (b * percent) / 100));
 
-    return `rgb(${Math.round(newR)}, ${Math.round(newG)}, ${Math.round(newB)})`;
+      return `rgb(${Math.round(newR)}, ${Math.round(newG)}, ${Math.round(
+        newB
+      )})`;
+    } catch (error) {
+      // If any parsing error occurs, return the default color
+      return "#007bff";
+    }
   };
 
   return (

@@ -145,7 +145,7 @@ const LandingPage = () => {
   return (
     <div className={`landing-page ${darkMode ? "dark" : "light"}`}>
       <SEO
-        title="Connected - Chess Training and Community Platform"
+        title="Connected | A Connect 4 training platform"
         description="Welcome to Connected, the ultimate Connect 4 training software! Sharpen your skills, learn from our advanced AI, and enjoy a sleek modern gaming experience."
         canonicalUrl="/"
       />

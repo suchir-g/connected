@@ -8,8 +8,8 @@ import React, { useEffect } from "react";
  * @param {string} props.description - Page description
  */
 const SEO = ({
-  title = "Connected - Chess Training and Community Platform",
-  description = "Master chess with Connected - play against AI, track your progress, and connect with other players in a social chess community.",
+  title = "Connected | A Connect 4 training platform",
+  description = "Master Connect 4 with Connected - play against AI, track your progress, and connect with other players in a social Connect 4 community.",
 }) => {
   useEffect(() => {
     // Update the document title
