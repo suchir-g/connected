@@ -1,13 +1,13 @@
 .board {
   display: flex;
   flex-direction: column;
-  background: linear-gradient(145deg, #0077b6, #0062a3);
+  background: linear-gradient(145deg, #0077b6, #005a8d);
   padding: 12px;
   border-radius: 12px;
   width: max-content;
   margin: auto;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  position: relative;
 }
 
 .board-row {
@@ -17,93 +17,44 @@
 .cell {
   width: 60px;
   height: 60px;
-  margin: 5px;
-  background-color: #90e0ef; 
+  margin: 6px;
+  background-color: #90e0ef;
   border-radius: 50%;
   position: relative;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
-  overflow: visible; /* Changed from hidden to visible */
-}
-
-.cell:before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 50%);
-  border-radius: 50%;
-  pointer-events: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
 }
 
 .cell:hover {
   transform: scale(1.05);
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25);
 }
 
 .cell.highlighted {
-  box-shadow: 0 0 10px 5px rgba(255, 215, 0, 0.7);
+  box-shadow: 
+    inset 0 0 8px rgba(0, 0, 0, 0.2),
+    0 0 12px 2px rgba(255, 215, 0, 0.7);
 }
 
 .piece {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-}
-
-.piece:after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 60%);
-  border-radius: 50%;
-  pointer-events: none;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 -1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .player1-piece {
-  background: radial-gradient(circle at center, #ff4c4c 20%, #d20000 60%, #aa0000 100%);
+  background: radial-gradient(circle at 35% 35%, #ff6b6b, #d32f2f);
 }
 
 .player2-piece {
-  background: radial-gradient(circle at center, #ffef5a 20%, #ffd700 60%, #e6c200 100%);
-}
-
-/* Dropping Animation */
-@keyframes dropPiece {
-  0% { 
-    transform: translateY(-350px);
-    opacity: 0.9;
-  }
-  70% { 
-    transform: translateY(10px);
-  }
-  85% { 
-    transform: translateY(-5px);
-  }
-  95% { 
-    transform: translateY(2px);
-  }
-  100% { 
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.piece.dropping {
-  animation: dropPiece 0.6s ease-in-out forwards;
-  z-index: 10;
+  background: radial-gradient(circle at 35% 35%, #ffeb3b, #fbc02d);
 }
 
 @media (max-width: 768px) {
@@ -130,9 +81,13 @@
   font-size: 24px;
 }
 .cell.latest-move {
-  border: 4px solid rgb(0, 0, 0);
+  box-shadow: 
+    inset 0 0 8px rgba(0, 0, 0, 0.2),
+    0 0 0 3px rgba(255, 255, 255, 0.8);
 }
 
 .cell.popout-highlighted {
-  box-shadow: 0 0 10px 5px rgba(255, 0, 0, 0.7); 
+  box-shadow: 
+    inset 0 0 8px rgba(0, 0, 0, 0.2),
+    0 0 12px 2px rgba(255, 50, 50, 0.8);
 }
